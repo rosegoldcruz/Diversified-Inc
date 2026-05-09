@@ -8,11 +8,16 @@ import {
   CheckSquare,
   CalendarDays,
   ClipboardList,
+  ClipboardCheck,
+  BookOpen,
   FolderKanban,
   Users,
   Boxes,
   BarChart3,
   FolderOpen,
+  FileText,
+  MessageCircle,
+  Bot,
   Zap,
   Settings,
   X,
@@ -44,6 +49,9 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "Forms Center", href: "/forms", icon: ClipboardList },
       { label: "Work Orders", href: "/work-orders", icon: FolderKanban },
       { label: "Employees", href: "/employees", icon: Users },
+      { label: "SOPs", href: "/sops", icon: BookOpen },
+      { label: "Requests", href: "/requests", icon: ClipboardCheck },
+      { label: "Documents", href: "/documents", icon: FileText },
     ],
   },
   {
@@ -57,8 +65,10 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "System",
     items: [
+      { label: "AI Chat", href: "/ai-chat", icon: MessageCircle },
+      { label: "AI Tools", href: "/ai-tools", icon: Bot },
       { label: "Automations", href: "/automations", icon: Zap },
-      { label: "Admin Settings", href: "/settings", icon: Settings },
+      { label: "Settings", href: "/settings", icon: Settings },
     ],
   },
 ];
