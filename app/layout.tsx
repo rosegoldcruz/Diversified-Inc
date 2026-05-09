@@ -1,0 +1,36 @@
+import "../globals.css";
+import type { Metadata } from "next";
+import { DashboardShell } from "@/components/layout/dashboard-shell";
+
+export const metadata: Metadata = {
+  title: "Diversified OS",
+  description: "Internal Operations Platform for Diversified Inc.",
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="en" className="h-full">
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="h-full bg-bgDark text-textPrimary antialiased">
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=localStorage.getItem('theme');var d=t?t==='dark':window.matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.classList.toggle('dark',d)}catch(e){}",
+          }}
+        />
+        <DashboardShell>{children}</DashboardShell>
+      </body>
+    </html>
+  );
+}

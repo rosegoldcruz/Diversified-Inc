@@ -1,0 +1,184 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import "./styles/corporate.css";
+
+:root {
+  color-scheme: light;
+  --color-background: 255 255 255;
+  --color-surface: 255 255 255;
+  --color-surface-soft: 248 250 252;
+  --color-surface-hover: 241 245 249;
+  --color-cyber-cyan: 37 99 235;
+  --color-cyber-cyan-dim: 29 78 216;
+  --color-cyber-magenta: 124 58 237;
+  --color-cyber-magenta-dim: 109 40 217;
+  --color-cyber-yellow: 217 119 6;
+  --color-cyber-yellow-dim: 180 83 9;
+  --color-cyber-red: 220 38 38;
+  --color-cyber-green: 22 163 74;
+  --color-bg-darkest: 255 255 255;
+  --color-bg-dark: 248 250 252;
+  --color-bg-medium: 241 245 249;
+  --color-bg-light: 226 232 240;
+  --color-bg-lighter: 203 213 225;
+  --color-border-subtle: 226 232 240;
+  --color-border-hover: 203 213 225;
+  --color-border-focus: 37 99 235;
+  --color-text-primary: 15 23 42;
+  --color-text-secondary: 51 65 85;
+  --color-text-muted: 100 116 139;
+  --color-text-disabled: 148 163 184;
+  --color-navy: 26 43 74;
+  --color-accent: 37 99 235;
+  --color-accent-soft: 29 78 216;
+}
+
+.dark {
+  color-scheme: dark;
+  --color-background: 7 12 21;
+  --color-surface: 15 23 42;
+  --color-surface-soft: 17 26 43;
+  --color-surface-hover: 30 41 59;
+  --color-cyber-cyan: 96 165 250;
+  --color-cyber-cyan-dim: 59 130 246;
+  --color-cyber-magenta: 167 139 250;
+  --color-cyber-magenta-dim: 139 92 246;
+  --color-cyber-yellow: 251 191 36;
+  --color-cyber-yellow-dim: 245 158 11;
+  --color-cyber-red: 248 113 113;
+  --color-cyber-green: 52 211 153;
+  --color-bg-darkest: 2 6 23;
+  --color-bg-dark: 7 12 21;
+  --color-bg-medium: 15 23 42;
+  --color-bg-light: 30 41 59;
+  --color-bg-lighter: 51 65 85;
+  --color-border-subtle: 51 65 85;
+  --color-border-hover: 71 85 105;
+  --color-border-focus: 96 165 250;
+  --color-text-primary: 241 245 249;
+  --color-text-secondary: 203 213 225;
+  --color-text-muted: 148 163 184;
+  --color-text-disabled: 100 116 139;
+  --color-navy: 96 165 250;
+  --color-accent: 96 165 250;
+  --color-accent-soft: 59 130 246;
+}
+
+body {
+  @apply bg-bgDark text-textPrimary antialiased;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+/* Scrollbar — clean */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgb(var(--color-bg-lighter)) transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 5px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgb(var(--color-bg-lighter));
+  border-radius: 999px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgb(var(--color-border-hover));
+}
+
+.dark .shadow-soft,
+.dark .shadow-sm,
+.dark .shadow-cyberSm,
+.dark .shadow-cyberMd,
+.dark .shadow-cyberLg,
+.dark .shadow-cyberInset {
+  box-shadow: none;
+}
+
+.dark .bg-white {
+  background-color: rgb(var(--color-surface));
+}
+
+.dark .border-\[\#E2E8F0\] {
+  border-color: rgb(var(--color-border-subtle));
+}
+
+.dark .text-\[\#0F172A\] {
+  color: rgb(var(--color-text-primary));
+}
+
+/* Card — clean white with subtle shadow */
+.glass-panel {
+  @apply bg-surface border border-borderSubtle rounded-lg shadow-sm;
+}
+
+/* Cyber card — remapped to clean corporate card */
+.cyber-card-tw {
+  @apply relative bg-surface border border-borderSubtle rounded-lg p-5 shadow-sm;
+}
+
+.cyber-card-tw::before {
+  display: none;
+}
+
+/* Neon text utilities — remapped to corporate colors */
+.text-neon-cyan {
+  @apply text-[#2563EB];
+}
+
+.text-neon-magenta {
+  @apply text-[#7C3AED];
+}
+
+.text-neon-yellow {
+  @apply text-[#D97706];
+}
+
+/* Cyber button — remapped to corporate primary button */
+.btn-cyber {
+  @apply relative px-5 py-2.5 font-sans font-semibold text-sm;
+  @apply rounded-md bg-[#2563EB] text-white border border-[#2563EB];
+  @apply transition-colors duration-150 cursor-pointer;
+  clip-path: none;
+}
+
+.btn-cyber:hover {
+  @apply bg-[#1D4ED8] border-[#1D4ED8];
+}
+
+.btn-cyber:active {
+  transform: scale(0.98);
+}
+
+/* Cyber input — remapped to corporate input */
+.input-cyber {
+  @apply w-full px-3 py-2.5 font-sans text-sm;
+  @apply bg-surface border border-borderSubtle text-textPrimary rounded-md;
+  @apply transition-colors duration-150;
+}
+
+.input-cyber:focus {
+  @apply outline-none border-[#2563EB] ring-2 ring-[#2563EB]/20;
+}
+
+.input-cyber::placeholder {
+  @apply text-[#94A3B8];
+}
+
+/* Remove cyber grid background */
+.cyber-grid {
+  background-image: none;
+}
+
+/* Remove scan lines */
+.scan-lines::before {
+  display: none;
+}
