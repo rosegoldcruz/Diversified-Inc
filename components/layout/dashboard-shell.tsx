@@ -46,7 +46,7 @@ type MobileBottomNavProps = {
 
 function MobileBottomNav({ pathname, onMoreClick }: MobileBottomNavProps) {
   const items = [
-    { label: "Dashboard", href: "/", icon: LayoutDashboard },
+    { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { label: "Tasks", href: "/tasks", icon: CheckSquare },
     { label: "Work Orders", href: "/work-orders", icon: FolderKanban },
     { label: "Files", href: "/files", icon: FolderOpen },

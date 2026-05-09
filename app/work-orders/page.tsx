@@ -1,112 +1,162 @@
-// TODO: reconnect to Postgres/Supabase when backend is available.
 "use client";
 
-import { useMemo, useState } from "react";
-import { mockWorkOrders } from "@/app/lib/mockData";
-import type { WorkOrder } from "@/app/lib/mockData";
+import { useEffect, useState } from "react";
 
-const STATUS_COLORS: Record<WorkOrder["status"], string> = {
-  scheduled: "bg-cyber-cyan/10 border-cyber-cyan/50 text-cyber-cyan",
-  "in-progress": "bg-cyber-green/10 border-cyber-green/50 text-cyber-green",
-  completed: "bg-cyber-green/10 border-cyber-green/50 text-cyber-green",
-  cancelled: "bg-textMuted/20 border-textMuted/50 text-textMuted",
-  pending: "bg-cyber-yellow/10 border-cyber-yellow/50 text-cyber-yellow",
+type WorkOrder = {
+  id: number;
+  title: string;
+  type: string | null;
+  status: string | null;
+  priority: string | null;
+  owner_name: string | null;
+  due_date: string | null;
 };
 
-function Badge({ label, colorClass }: { label: string; colorClass: string }) {
-  return (
-    <span className={`inline-flex items-center gap-1.5 border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${colorClass}`}>
-      <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
-      {label.replace("-", " ")}
-    </span>
-  );
-}
+export default function WorkOrdersPage() {
+  const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-function KpiCard({ label, value, variant = "cyan" }: { label: string; value: string | number; variant?: "cyan" | "green" | "yellow" | "red" }) {
-  const colors = {
-    cyan: { border: "border-cyber-cyan/30", text: "text-cyber-cyan", glow: "rgba(0,240,255,0.5)" },
-    green: { border: "border-cyber-green/30", text: "text-cyber-green", glow: "rgba(0,255,102,0.5)" },
-    yellow: { border: "border-cyber-yellow/30", text: "text-cyber-yellow", glow: "rgba(255,230,0,0.5)" },
-    red: { border: "border-cyber-red/30", text: "text-cyber-red", glow: "rgba(255,0,68,0.5)" },
-  };
-  const c = colors[variant];
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadWorkOrders() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await fetch("/api/work-orders", { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`Failed to load work orders (${response.status})`);
+        }
+
+        const data = (await response.json()) as WorkOrder[];
+        if (!cancelled) {
+          setWorkOrders(data);
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setError(loadError instanceof Error ? loadError.message : "Failed to load work orders");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadWorkOrders();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
-    <div className={`cyber-card-tw ${c.border} shadow-cyberInset`}>
-      <p className="font-display text-[10px] font-bold uppercase tracking-[0.2em] text-textMuted">{label}</p>
-      <p className={`mt-2 text-2xl font-bold font-display ${c.text}`} style={{ textShadow: `0 0 15px ${c.glow}` }}>{value}</p>
+    <div className="space-y-6">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">Work Orders</h1>
+        <p className="max-w-3xl text-sm text-textSecondary">
+          Live work orders with type, priority, ownership, and due dates from PostgreSQL.
+        </p>
+      </header>
+
+      {error ? <ErrorPanel message={error} /> : null}
+
+      {loading ? (
+        <LoadingPanel label="Loading work orders..." />
+      ) : (
+        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+          {workOrders.map((workOrder) => (
+            <article key={workOrder.id} className="rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-lg font-semibold text-textPrimary">{workOrder.title}</h2>
+                  <p className="text-sm text-textSecondary">{workOrder.type || "Uncategorized"}</p>
+                </div>
+                <TaskPriorityBadge priority={workOrder.priority} />
+              </div>
+              <div className="mt-4 flex flex-wrap gap-2">
+                <TaskStatusBadge status={workOrder.status} />
+              </div>
+              <dl className="mt-5 space-y-3 text-sm">
+                <InfoRow label="Owner" value={workOrder.owner_name || "Unassigned"} />
+                <InfoRow label="Due Date" value={formatDate(workOrder.due_date)} />
+              </dl>
+            </article>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-export default function WorkOrdersPage() {
-  const [search, setSearch] = useState("");
-  const workOrders = mockWorkOrders;
+function InfoRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-start justify-between gap-4 border-t border-borderSubtle pt-3 first:border-t-0 first:pt-0">
+      <dt className="text-textMuted">{label}</dt>
+      <dd className="text-right text-textPrimary">{value}</dd>
+    </div>
+  );
+}
 
-  const filtered = useMemo(() => {
-    if (!search) return workOrders;
-    const s = search.toLowerCase();
-    return workOrders.filter((w) =>
-      w.id.toLowerCase().includes(s) ||
-      w.jobId.toLowerCase().includes(s) ||
-      w.installer.toLowerCase().includes(s)
-    );
-  }, [workOrders, search]);
-
-  const scheduledCount = workOrders.filter((w) => w.status === "scheduled").length;
-  const inProgressCount = workOrders.filter((w) => w.status === "in-progress").length;
-  const pendingCount = workOrders.filter((w) => w.status === "pending").length;
-  const completedCount = workOrders.filter((w) => w.status === "completed").length;
+function TaskStatusBadge({ status }: { status: string | null }) {
+  const normalized = (status || "todo").toLowerCase();
+  const styles: Record<string, string> = {
+    todo: "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300",
+    pending: "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300",
+    in_progress: "border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-300",
+    completed: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
+    blocked: "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-300",
+  };
 
   return (
-    <div className="space-y-6">
-        <div className="space-y-1">
-          <h1 className="font-display text-3xl font-bold uppercase tracking-wider text-cyber-cyan" style={{ textShadow: "0 0 20px rgba(0,240,255,0.5)" }}>
-            Work Orders
-          </h1>
-          <p className="text-sm text-textSecondary font-mono">Installer work order queue and scheduled jobs</p>
-        </div>
+    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${styles[normalized] || styles.todo}`}>
+      {normalized.replaceAll("_", " ")}
+    </span>
+  );
+}
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <KpiCard label="Scheduled" value={scheduledCount} variant="cyan" />
-          <KpiCard label="In Progress" value={inProgressCount} variant="green" />
-          <KpiCard label="Pending" value={pendingCount} variant="yellow" />
-          <KpiCard label="Completed" value={completedCount} variant="green" />
-        </div>
+function TaskPriorityBadge({ priority }: { priority: string | null }) {
+  const normalized = (priority || "low").toLowerCase();
+  const styles: Record<string, string> = {
+    high: "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-300",
+    medium: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    low: "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300",
+  };
 
-        <div className="flex flex-wrap items-center gap-3">
-          <input
-            type="text"
-            placeholder="Search WO ID, job ID, installer..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-64 border border-borderSubtle bg-surface px-3 py-2 text-xs text-textPrimary placeholder-textMuted focus:border-cyber-cyan/60 focus:outline-none font-mono"
-          />
-          <span className="text-xs text-textMuted font-mono">{filtered.length} / {workOrders.length} orders</span>
-        </div>
+  return (
+    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${styles[normalized] || styles.low}`}>
+      {normalized}
+    </span>
+  );
+}
 
-        <section className="cyber-card-tw border-l-4 border-l-cyber-cyan shadow-cyberInset overflow-x-auto p-0">
-          <table className="min-w-full text-xs">
-            <thead>
-              <tr className="border-b border-borderSubtle bg-bgDark">
-                {["WO ID", "Job ID", "Installer", "Status", "Scheduled Date", "Notes"].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left font-display text-[10px] uppercase tracking-[0.15em] text-cyber-cyan/70">{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((wo) => (
-                <tr key={wo.id} className={`border-b border-borderSubtle hover:bg-surface/60 transition-colors ${wo.status === "pending" ? "bg-cyber-yellow/5" : ""}`}>
-                  <td className="px-4 py-3 font-mono text-cyber-cyan font-bold">{wo.id}</td>
-                  <td className="px-4 py-3 font-mono text-textSecondary">{wo.jobId}</td>
-                  <td className="px-4 py-3 font-medium text-textPrimary">{wo.installer}</td>
-                  <td className="px-4 py-3"><Badge label={wo.status} colorClass={STATUS_COLORS[wo.status]} /></td>
-                  <td className="px-4 py-3 text-textMuted font-mono">{wo.scheduledDate}</td>
-                  <td className="px-4 py-3 text-textSecondary max-w-[260px]">{wo.notes}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </section>
-      </div>
+function formatDate(value: string | null) {
+  if (!value) return "No due date";
+
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(parsed);
+}
+
+function LoadingPanel({ label }: { label: string }) {
+  return (
+    <div className="rounded-xl border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
+      {label}
+    </div>
+  );
+}
+
+function ErrorPanel({ message }: { message: string }) {
+  return (
+    <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-300">
+      {message}
+    </div>
   );
 }

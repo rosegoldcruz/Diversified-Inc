@@ -7,16 +7,12 @@ import {
   LayoutDashboard,
   CheckSquare,
   CalendarDays,
-  ClipboardCheck,
   ClipboardList,
-  BookOpen,
   FolderKanban,
   Users,
   Boxes,
   BarChart3,
   FolderOpen,
-  MessageCircle,
-  Bot,
   Zap,
   Settings,
   X,
@@ -37,7 +33,7 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Workspace",
     items: [
-      { label: "Dashboard", href: "/", icon: LayoutDashboard },
+      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
       { label: "Tasks", href: "/tasks", icon: CheckSquare },
       { label: "Projection Calendar", href: "/calendar", icon: CalendarDays },
     ],
@@ -46,16 +42,14 @@ const NAV_GROUPS: NavGroup[] = [
     label: "Operations",
     items: [
       { label: "Forms Center", href: "/forms", icon: ClipboardList },
-      { label: "SOPs", href: "/sops", icon: BookOpen },
       { label: "Work Orders", href: "/work-orders", icon: FolderKanban },
       { label: "Employees", href: "/employees", icon: Users },
-      { label: "Inventory", href: "/inventory", icon: Boxes },
-      { label: "Requests", href: "/requests", icon: ClipboardCheck },
     ],
   },
   {
     label: "Management",
     items: [
+      { label: "Inventory", href: "/inventory", icon: Boxes },
       { label: "Reports", href: "/reports", icon: BarChart3 },
       { label: "Files", href: "/files", icon: FolderOpen },
     ],
@@ -63,8 +57,6 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "System",
     items: [
-      { label: "AI Chat", href: "/ai-chat", icon: MessageCircle },
-      { label: "AI Tools", href: "/ai-tools", icon: Bot },
       { label: "Automations", href: "/automations", icon: Zap },
       { label: "Admin Settings", href: "/settings", icon: Settings },
     ],

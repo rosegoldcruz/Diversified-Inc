@@ -1,210 +1,122 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Search } from "lucide-react";
-import { SopCard } from "@/components/sop-card";
-import { mockSops } from "@/app/lib/mockData";
-import type { SopCategory, SopStatus } from "@/types/workspace";
+import { useEffect, useState } from "react";
 
-const STATUS_OPTIONS: Array<SopStatus | "All"> = ["All", "Active", "Needs Review", "Draft", "Archived"];
-
-const CATEGORY_OPTIONS: Array<SopCategory | "All"> = [
-  "All",
-  "Office Procedures",
-  "Field Operations",
-  "Safety",
-  "HR / Employee",
-  "Inventory",
-  "Work Orders",
-  "Customer Follow-Up",
-  "Billing / Admin",
-];
+type Sop = {
+  id: number;
+  title: string;
+  category: string | null;
+  owner_name: string | null;
+  status: string | null;
+  version: string | number | null;
+  last_updated: string | null;
+};
 
 export default function SopsPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState<SopStatus | "All">("All");
-  const [selectedCategory, setSelectedCategory] = useState<SopCategory | "All">("All");
-  const [selectedDepartment, setSelectedDepartment] = useState<string>("All");
+  const [sops, setSops] = useState<Sop[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const departmentOptions = useMemo(() => {
-    return ["All", ...new Set(mockSops.map((sop) => sop.department).sort())];
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSops() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await fetch("/api/sops", { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`Failed to load SOPs (${response.status})`);
+        }
+
+        const data = (await response.json()) as Sop[];
+        if (!cancelled) {
+          setSops(data);
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setError(loadError instanceof Error ? loadError.message : "Failed to load SOPs");
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadSops();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
-
-  const filteredSops = useMemo(() => {
-    const normalizedQuery = searchQuery.trim().toLowerCase();
-
-    return mockSops.filter((sop) => {
-      const matchesQuery =
-        normalizedQuery.length === 0 ||
-        sop.title.toLowerCase().includes(normalizedQuery) ||
-        sop.description.toLowerCase().includes(normalizedQuery) ||
-        sop.owner.toLowerCase().includes(normalizedQuery);
-
-      const matchesStatus = selectedStatus === "All" || sop.status === selectedStatus;
-      const matchesCategory = selectedCategory === "All" || sop.category === selectedCategory;
-      const matchesDepartment = selectedDepartment === "All" || sop.department === selectedDepartment;
-
-      return matchesQuery && matchesStatus && matchesCategory && matchesDepartment;
-    });
-  }, [searchQuery, selectedStatus, selectedCategory, selectedDepartment]);
-
-  const recentlyUpdated = useMemo(() => {
-    return [...mockSops]
-      .sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime())
-      .slice(0, 3);
-  }, []);
-
-  const stats = useMemo(
-    () => ({
-      total: mockSops.length,
-      active: mockSops.filter((sop) => sop.status === "Active").length,
-      needsReview: mockSops.filter((sop) => sop.status === "Needs Review").length,
-      draft: mockSops.filter((sop) => sop.status === "Draft").length,
-    }),
-    [],
-  );
 
   return (
     <div className="space-y-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-bold text-navy">SOPs</h1>
-        <p className="max-w-3xl text-sm text-textMuted">
-          Internal procedures and operational knowledge base for Diversified teams. Find the right process, related forms,
-          files, tasks, and work order context from anywhere.
+        <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">SOPs</h1>
+        <p className="max-w-3xl text-sm text-textSecondary">
+          Live standard operating procedures from PostgreSQL with ownership, versioning, and review status.
         </p>
       </header>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <SummaryCard label="Total SOPs" value={stats.total} />
-        <SummaryCard label="Active SOPs" value={stats.active} />
-        <SummaryCard label="Needs Review" value={stats.needsReview} />
-        <SummaryCard label="Draft SOPs" value={stats.draft} />
-      </section>
+      {error ? <ErrorPanel message={error} /> : null}
 
-      <section className="rounded-lg border border-borderSubtle bg-surface p-4 shadow-soft">
-        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-          <label className="space-y-1 lg:col-span-2">
-            <span className="text-xs font-semibold uppercase tracking-wide text-textMuted">Search SOPs</span>
-            <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-textDisabled" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search title, description, or owner"
-                className="h-10 w-full rounded-md border border-borderSubtle bg-bgDark pl-9 pr-3 text-sm text-textPrimary outline-none transition-colors placeholder:text-textDisabled focus:border-borderFocus focus:ring-2 focus:ring-accent/20"
-              />
-            </div>
-          </label>
-
-          <SelectFilter
-            label="Category"
-            value={selectedCategory}
-            onChange={(value) => setSelectedCategory(value as SopCategory | "All")}
-            options={CATEGORY_OPTIONS}
-          />
-
-          <SelectFilter
-            label="Status"
-            value={selectedStatus}
-            onChange={(value) => setSelectedStatus(value as SopStatus | "All")}
-            options={STATUS_OPTIONS}
-          />
-
-          <SelectFilter
-            label="Department"
-            value={selectedDepartment}
-            onChange={setSelectedDepartment}
-            options={departmentOptions}
-          />
-        </div>
-      </section>
-
-      <section className="space-y-3">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-lg font-semibold text-textPrimary">SOP Library</h2>
-          <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">
-            {filteredSops.length} of {mockSops.length} visible
-          </p>
-        </div>
-
-        {filteredSops.length > 0 ? (
-          <div className="grid gap-4 lg:grid-cols-2">
-            {filteredSops.map((sop) => (
-              <SopCard key={sop.id} sop={sop} />
-            ))}
-          </div>
-        ) : (
-          <EmptyState />
-        )}
-      </section>
-
-      <section className="space-y-3">
-        <h2 className="text-lg font-semibold text-textPrimary">Recently Updated</h2>
-        <div className="grid gap-3 md:grid-cols-3">
-          {recentlyUpdated.map((sop) => (
-            <article key={sop.id} className="rounded-lg border border-borderSubtle bg-surface p-4 shadow-soft">
-              <p className="text-xs font-semibold uppercase tracking-wide text-textDisabled">{sop.category}</p>
-              <h3 className="mt-1 text-sm font-semibold text-navy">{sop.title}</h3>
-              <p className="mt-2 text-xs text-textMuted">Updated {formatDate(sop.lastUpdated)}</p>
+      {loading ? (
+        <LoadingPanel label="Loading SOPs..." />
+      ) : (
+        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+          {sops.map((sop) => (
+            <article key={sop.id} className="rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">{sop.category || "General"}</p>
+                  <h2 className="mt-1 text-lg font-semibold text-textPrimary">{sop.title}</h2>
+                </div>
+                <SopStatusBadge status={sop.status} />
+              </div>
+              <dl className="mt-5 space-y-3 text-sm">
+                <InfoRow label="Owner" value={sop.owner_name || "Unassigned"} />
+                <InfoRow label="Version" value={String(sop.version || "-" )} />
+                <InfoRow label="Last Updated" value={formatDate(sop.last_updated)} />
+              </dl>
             </article>
           ))}
         </div>
-      </section>
+      )}
     </div>
   );
 }
 
-function SummaryCard({ label, value }: { label: string; value: number }) {
+function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <article className="rounded-lg border border-borderSubtle bg-surface p-4 shadow-soft">
-      <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">{label}</p>
-      <p className="mt-2 text-2xl font-bold text-navy">{value}</p>
-    </article>
+    <div className="flex items-start justify-between gap-4 border-t border-borderSubtle pt-3 first:border-t-0 first:pt-0">
+      <dt className="text-textMuted">{label}</dt>
+      <dd className="text-right text-textPrimary">{value}</dd>
+    </div>
   );
 }
 
-function SelectFilter({
-  label,
-  value,
-  onChange,
-  options,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  options: string[];
-}) {
+function SopStatusBadge({ status }: { status: string | null }) {
+  const normalized = (status || "draft").toLowerCase();
+  const styles: Record<string, string> = {
+    active: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
+    draft: "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300",
+    archived: "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300",
+    needs_review: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  };
+
   return (
-    <label className="space-y-1">
-      <span className="text-xs font-semibold uppercase tracking-wide text-textMuted">{label}</span>
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-10 w-full rounded-md border border-borderSubtle bg-bgDark px-3 text-sm text-textPrimary outline-none transition-colors focus:border-borderFocus focus:ring-2 focus:ring-accent/20"
-      >
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
-    </label>
+    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${styles[normalized] || styles.draft}`}>
+      {normalized.replaceAll("_", " ")}
+    </span>
   );
 }
 
-function EmptyState() {
-  return (
-    <article className="rounded-lg border border-dashed border-borderHover bg-surface p-8 text-center">
-      <h3 className="text-base font-semibold text-textPrimary">No SOPs match your filters</h3>
-      <p className="mt-2 text-sm text-textMuted">
-        Adjust the search or filter selections to find procedures, process documentation, and related operational context.
-      </p>
-    </article>
-  );
-}
+function formatDate(value: string | null) {
+  if (!value) return "Not available";
 
-function formatDate(value: string) {
   const parsed = new Date(value);
   if (Number.isNaN(parsed.getTime())) return value;
 
@@ -213,4 +125,20 @@ function formatDate(value: string) {
     day: "numeric",
     year: "numeric",
   }).format(parsed);
+}
+
+function LoadingPanel({ label }: { label: string }) {
+  return (
+    <div className="rounded-xl border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
+      {label}
+    </div>
+  );
+}
+
+function ErrorPanel({ message }: { message: string }) {
+  return (
+    <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-300">
+      {message}
+    </div>
+  );
 }
