@@ -15,14 +15,6 @@ function parseId(id: string) {
   return parsed;
 }
 
-function isUndefinedColumnError(error: unknown) {
-  if (!error || typeof error !== "object") {
-    return false;
-  }
-
-  return "code" in error && (error as { code?: string }).code === "42703";
-}
-
 async function getTaskById(taskId: number) {
   const rows = await query(
     `SELECT
@@ -66,39 +58,54 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   }
 
   try {
-    const body = (await request.json()) as { status?: string };
-    const status = body.status?.trim().toLowerCase();
+    const body = (await request.json()) as Record<string, unknown>;
+    const acceptedFields = [
+      "division",
+      "topic",
+      "notes",
+      "start_date",
+      "start_time",
+      "end_time",
+      "all_day",
+      "repeat_schedule",
+      "estimated_hours",
+      "estimated_minutes",
+      "is_private",
+      "locked",
+      "completed_at",
+      "status",
+      "priority",
+      "title",
+      "description",
+      "due_date",
+      "assigned_to",
+    ];
 
-    if (!status) {
+    const updates: string[] = [];
+    const values: unknown[] = [];
+
+    acceptedFields.forEach((field) => {
+      if (!(field in body)) return;
+      values.push(normalizePatchValue(field, body[field]));
+      updates.push(`${field} = $${values.length}`);
+    });
+
+    if (updates.length === 0) {
       return NextResponse.json(
-        { error: "status is required" },
+        { error: "No accepted fields provided" },
         { status: 400 },
       );
     }
 
-    let updatedRows;
+    values.push(taskId);
 
-    try {
-      updatedRows = await query(
-        `UPDATE tasks
-         SET status = $1, updated_at = NOW()
-         WHERE id = $2
-         RETURNING *`,
-        [status, taskId],
-      );
-    } catch (error) {
-      if (!isUndefinedColumnError(error)) {
-        throw error;
-      }
-
-      updatedRows = await query(
-        `UPDATE tasks
-         SET status = $1
-         WHERE id = $2
-         RETURNING *`,
-        [status, taskId],
-      );
-    }
+    const updatedRows = await query(
+      `UPDATE tasks
+       SET ${updates.join(", ")}
+       WHERE id = $${values.length}
+       RETURNING *`,
+      values,
+    );
 
     if (updatedRows.length === 0) {
       return NextResponse.json({ error: "Task not found" }, { status: 404 });
@@ -111,4 +118,27 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       error instanceof Error ? error.message : "Failed to update task";
     return NextResponse.json({ error: message }, { status: 500 });
   }
+}
+
+function normalizePatchValue(field: string, value: unknown) {
+  if (
+    field === "estimated_hours" ||
+    field === "estimated_minutes" ||
+    field === "assigned_to"
+  ) {
+    if (value === "" || value === null || value === undefined) return null;
+    const parsed = Number(value);
+    return Number.isInteger(parsed) ? parsed : null;
+  }
+
+  if (field === "all_day" || field === "is_private" || field === "locked") {
+    return Boolean(value);
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  }
+
+  return value ?? null;
 }

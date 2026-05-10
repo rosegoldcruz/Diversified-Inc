@@ -245,7 +245,10 @@ export default function RequestsPage() {
             </div>
 
             <dl className="mt-6 space-y-4 text-sm">
-              <SlideOverRow label="Requester" value={selectedRequest.requester} />
+              <SlideOverRow
+                label="Requester"
+                value={selectedRequest.requester}
+              />
               <SlideOverRow label="Category" value={selectedRequest.category} />
               <SlideOverRow
                 label="Priority"
@@ -294,8 +297,7 @@ function StatCard({ label, value }: { label: string; value: number }) {
 function PriorityBadge({ priority }: { priority: RequestPriority }) {
   const styles: Record<RequestPriority, string> = {
     Low: "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300",
-    Medium:
-      "border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-300",
+    Medium: "border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-300",
     High: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
     Urgent: "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-300",
   };

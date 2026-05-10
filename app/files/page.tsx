@@ -50,7 +50,9 @@ export default function FilesPage() {
       } catch (loadError) {
         if (!cancelled) {
           setError(
-            loadError instanceof Error ? loadError.message : "Failed to load files",
+            loadError instanceof Error
+              ? loadError.message
+              : "Failed to load files",
           );
         }
       } finally {
@@ -75,7 +77,8 @@ export default function FilesPage() {
         query.length === 0 ||
         file.file_name.toLowerCase().includes(query) ||
         (file.linked_job || "").toLowerCase().includes(query);
-      const matchesType = typeFilter.length === 0 || file.file_type === typeFilter;
+      const matchesType =
+        typeFilter.length === 0 || file.file_type === typeFilter;
       return matchesSearch && matchesType;
     });
   }, [files, search, typeFilter]);
@@ -166,8 +169,13 @@ export default function FilesPage() {
                 {filteredFiles.map((file) => {
                   const Icon = getFileIcon(file.file_type);
                   return (
-                    <tr key={file.id} className="transition-colors hover:bg-bgDark">
-                      <td className="px-4 py-3 text-textMuted">{file.file_id}</td>
+                    <tr
+                      key={file.id}
+                      className="transition-colors hover:bg-bgDark"
+                    >
+                      <td className="px-4 py-3 text-textMuted">
+                        {file.file_id}
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           <Icon className="h-4 w-4 shrink-0 text-accent" />
@@ -229,10 +237,22 @@ export default function FilesPage() {
                     <TypeBadge type={file.file_type} />
                   </div>
                   <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
-                    <MobileField label="Linked Job" value={file.linked_job || "-"} />
-                    <MobileField label="Size" value={file.file_size || "Unknown"} />
-                    <MobileField label="Uploaded" value={formatDate(file.uploaded_at)} />
-                    <MobileField label="By" value={file.uploaded_by || "Unknown"} />
+                    <MobileField
+                      label="Linked Job"
+                      value={file.linked_job || "-"}
+                    />
+                    <MobileField
+                      label="Size"
+                      value={file.file_size || "Unknown"}
+                    />
+                    <MobileField
+                      label="Uploaded"
+                      value={formatDate(file.uploaded_at)}
+                    />
+                    <MobileField
+                      label="By"
+                      value={file.uploaded_by || "Unknown"}
+                    />
                   </dl>
                 </article>
               );
@@ -266,8 +286,7 @@ function TypeBadge({ type }: { type: string }) {
     contract:
       "border-cyan-500/30 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300",
     photo: "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300",
-    document:
-      "border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300",
+    document: "border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300",
     permit:
       "border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-300",
     archive:

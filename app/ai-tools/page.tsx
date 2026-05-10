@@ -38,7 +38,8 @@ const tools: ToolConfig[] = [
     title: "Installer Brief Generator",
     description:
       "Input job details and get a ready-to-send one-page installer brief.",
-    placeholder: "Job address, scope, materials confirmed, special instructions...",
+    placeholder:
+      "Job address, scope, materials confirmed, special instructions...",
     buttonLabel: "Generate Brief ->",
     icon: ClipboardList,
     systemPrompt:
@@ -48,7 +49,8 @@ const tools: ToolConfig[] = [
     title: "Incident Report Draft",
     description:
       "Describe what happened on site and get a formatted incident report.",
-    placeholder: "Describe the incident: what happened, when, who was involved...",
+    placeholder:
+      "Describe the incident: what happened, when, who was involved...",
     buttonLabel: "Draft Report ->",
     icon: Shield,
     systemPrompt:
@@ -116,14 +118,18 @@ function ToolCard({ tool }: { tool: ToolConfig }) {
 
       if (!aiResponse.ok) {
         const errorText = await aiResponse.text();
-        throw new Error(errorText || `AI request failed (${aiResponse.status})`);
+        throw new Error(
+          errorText || `AI request failed (${aiResponse.status})`,
+        );
       }
 
       const responseText = await readAiResponse(aiResponse);
       setResponse(responseText || "No response returned.");
     } catch (toolError) {
       setError(
-        toolError instanceof Error ? toolError.message : "Failed to run AI tool",
+        toolError instanceof Error
+          ? toolError.message
+          : "Failed to run AI tool",
       );
     } finally {
       setLoading(false);
@@ -189,7 +195,10 @@ async function readAiResponse(response: Response) {
 }
 
 function extractTextFromStream(raw: string) {
-  const lines = raw.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const lines = raw
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
   const collected: string[] = [];
 
   for (const line of lines) {
