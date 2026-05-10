@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type Employee = {
@@ -68,20 +69,24 @@ export default function EmployeesPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {employees.map((employee) => (
-            <article key={employee.id} className="rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft">
+            <Link
+              key={employee.id}
+              href={`/employees/${employee.id}`}
+              className="rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft transition hover:bg-bgDark"
+            >
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h2 className="text-lg font-semibold text-textPrimary">{employee.name}</h2>
                   <p className="text-sm text-textSecondary">{employee.role || "Role not set"}</p>
                 </div>
                 <StatusBadge status={employee.status} />
-              </div>
+                </div>
               <dl className="mt-5 space-y-3 text-sm">
                 <InfoRow label="Department" value={employee.department || "Unassigned"} />
                 <InfoRow label="Email" value={employee.email || "No email"} />
                 <InfoRow label="Phone" value={employee.phone || "No phone"} />
               </dl>
-            </article>
+            </Link>
           ))}
         </div>
       )}

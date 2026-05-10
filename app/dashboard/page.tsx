@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
   ClipboardList,
@@ -120,36 +121,42 @@ export default function DashboardPage() {
       value: stats.total_tasks,
       icon: ClipboardList,
       color: "text-sky-500",
+      href: "/tasks",
     },
     {
       label: "Open Work Orders",
       value: stats.open_work_orders,
       icon: Wrench,
       color: "text-sky-500",
+      href: "/work-orders?status=open",
     },
     {
       label: "Low Stock Items",
       value: stats.low_stock_items,
       icon: AlertTriangle,
       color: "text-amber-500",
+      href: "/inventory?status=low_stock",
     },
     {
       label: "Total Employees",
       value: stats.total_employees,
       icon: Users,
       color: "text-sky-500",
+      href: "/employees",
     },
     {
       label: "High Priority Tasks",
       value: stats.high_priority_tasks,
       icon: Flame,
       color: "text-red-500",
+      href: "/tasks?priority=high",
     },
     {
       label: "Blocked Tasks",
       value: stats.blocked_tasks,
       icon: Ban,
       color: "text-red-500",
+      href: "/tasks?status=blocked",
     },
   ];
 
@@ -174,9 +181,10 @@ export default function DashboardPage() {
             {statCards.map((card) => {
               const Icon = card.icon;
               return (
-                <article
+                <Link
                   key={card.label}
-                  className="rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft"
+                  href={card.href}
+                  className="block cursor-pointer rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft transition-colors hover:border-accent"
                 >
                   <div className="flex items-center gap-2.5">
                     <Icon className={`h-5 w-5 ${card.color}`} />
@@ -187,7 +195,7 @@ export default function DashboardPage() {
                   <p className="mt-3 text-5xl font-bold text-textPrimary">
                     {card.value}
                   </p>
-                </article>
+                </Link>
               );
             })}
           </section>
@@ -214,9 +222,10 @@ export default function DashboardPage() {
                 </p>
               ) : (
                 quickTasks.map((task) => (
-                  <article
+                  <Link
                     key={task.id}
-                    className="rounded-lg border border-borderSubtle bg-bgDark p-4"
+                    href={`/tasks/${task.id}`}
+                    className="block rounded-lg border border-borderSubtle bg-bgDark p-4 transition hover:bg-surface"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
@@ -235,7 +244,7 @@ export default function DashboardPage() {
                     <p className="mt-3 text-sm text-textMuted">
                       Due {formatDate(task.due_date)}
                     </p>
-                  </article>
+                  </Link>
                 ))
               )}
             </div>

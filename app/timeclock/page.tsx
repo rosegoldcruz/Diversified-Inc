@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 const EMPLOYEES = [
@@ -399,7 +400,12 @@ export default function TimeclockPage() {
                         }
                       >
                         <td className="px-4 py-3 font-medium text-textPrimary">
-                          {entry.employee_name}
+                          <Link
+                            href={`/employees?search=${encodeURIComponent(entry.employee_name)}`}
+                            className="text-accent hover:underline"
+                          >
+                            {entry.employee_name}
+                          </Link>
                         </td>
                         <td className="px-4 py-3 text-textSecondary">
                           {formatTime(entry.clock_in)}

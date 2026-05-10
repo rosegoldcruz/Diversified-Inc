@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 type Task = {
@@ -41,6 +42,7 @@ const EMPTY_DATA: ReportData = {
 };
 
 export default function ReportsPage() {
+  const router = useRouter();
   const [data, setData] = useState<ReportData>(EMPTY_DATA);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -176,6 +178,26 @@ export default function ReportsPage() {
     });
   }, [data.inventory]);
 
+  const workOrderBreakdown = useMemo(() => {
+    return {
+      open: data.workOrders.filter((workOrder) => {
+        const status = normalize(workOrder.status);
+        return status === "open" || status === "todo";
+      }).length,
+      in_progress: data.workOrders.filter(
+        (workOrder) => normalize(workOrder.status) === "in_progress",
+      ).length,
+      pending: data.workOrders.filter((workOrder) => {
+        const status = normalize(workOrder.status);
+        return status === "pending" || status === "waiting";
+      }).length,
+      completed: data.workOrders.filter((workOrder) => {
+        const status = normalize(workOrder.status);
+        return status === "completed" || status === "complete";
+      }).length,
+    };
+  }, [data.workOrders]);
+
   const cards = [
     { label: "Total Tasks", value: metrics.totalTasks },
     { label: "Completed Tasks", value: metrics.completedTasks },
@@ -236,13 +258,19 @@ export default function ReportsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-borderSubtle">
-                  <tr>
+                  <tr
+                    onClick={() => router.push("/tasks?status=todo")}
+                    className="cursor-pointer transition-colors hover:bg-bgDark"
+                  >
                     <td className="px-4 py-3 text-textSecondary">todo</td>
                     <td className="px-4 py-3 font-medium text-textPrimary">
                       {taskBreakdown.todo}
                     </td>
                   </tr>
-                  <tr>
+                  <tr
+                    onClick={() => router.push("/tasks?status=in_progress")}
+                    className="cursor-pointer transition-colors hover:bg-bgDark"
+                  >
                     <td className="px-4 py-3 text-textSecondary">
                       in_progress
                     </td>
@@ -250,16 +278,85 @@ export default function ReportsPage() {
                       {taskBreakdown.in_progress}
                     </td>
                   </tr>
-                  <tr>
+                  <tr
+                    onClick={() => router.push("/tasks?status=completed")}
+                    className="cursor-pointer transition-colors hover:bg-bgDark"
+                  >
                     <td className="px-4 py-3 text-textSecondary">completed</td>
                     <td className="px-4 py-3 font-medium text-textPrimary">
                       {taskBreakdown.completed}
                     </td>
                   </tr>
-                  <tr>
+                  <tr
+                    onClick={() => router.push("/tasks?status=blocked")}
+                    className="cursor-pointer transition-colors hover:bg-bgDark"
+                  >
                     <td className="px-4 py-3 text-textSecondary">blocked</td>
                     <td className="px-4 py-3 font-medium text-textPrimary">
                       {taskBreakdown.blocked}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft">
+            <h2 className="text-lg font-semibold text-textPrimary">
+              Work Order Breakdown by Status
+            </h2>
+            <p className="mt-1 text-sm text-textSecondary">
+              Counts for open, in_progress, pending, and completed work orders.
+            </p>
+            <div className="mt-4 overflow-x-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead className="bg-bgDark text-xs uppercase tracking-wide text-textMuted">
+                  <tr>
+                    <th className="px-4 py-3 font-semibold">Status</th>
+                    <th className="px-4 py-3 font-semibold">Count</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-borderSubtle">
+                  <tr
+                    onClick={() => router.push("/work-orders?status=open")}
+                    className="cursor-pointer transition-colors hover:bg-bgDark"
+                  >
+                    <td className="px-4 py-3 text-textSecondary">open</td>
+                    <td className="px-4 py-3 font-medium text-textPrimary">
+                      {workOrderBreakdown.open}
+                    </td>
+                  </tr>
+                  <tr
+                    onClick={() =>
+                      router.push("/work-orders?status=in_progress")
+                    }
+                    className="cursor-pointer transition-colors hover:bg-bgDark"
+                  >
+                    <td className="px-4 py-3 text-textSecondary">
+                      in_progress
+                    </td>
+                    <td className="px-4 py-3 font-medium text-textPrimary">
+                      {workOrderBreakdown.in_progress}
+                    </td>
+                  </tr>
+                  <tr
+                    onClick={() => router.push("/work-orders?status=pending")}
+                    className="cursor-pointer transition-colors hover:bg-bgDark"
+                  >
+                    <td className="px-4 py-3 text-textSecondary">pending</td>
+                    <td className="px-4 py-3 font-medium text-textPrimary">
+                      {workOrderBreakdown.pending}
+                    </td>
+                  </tr>
+                  <tr
+                    onClick={() =>
+                      router.push("/work-orders?status=completed")
+                    }
+                    className="cursor-pointer transition-colors hover:bg-bgDark"
+                  >
+                    <td className="px-4 py-3 text-textSecondary">completed</td>
+                    <td className="px-4 py-3 font-medium text-textPrimary">
+                      {workOrderBreakdown.completed}
                     </td>
                   </tr>
                 </tbody>
@@ -293,7 +390,11 @@ export default function ReportsPage() {
                   </thead>
                   <tbody className="divide-y divide-borderSubtle">
                     {inventoryAlerts.map((item) => (
-                      <tr key={item.id}>
+                      <tr
+                        key={item.id}
+                        onClick={() => router.push(`/inventory/${item.id}`)}
+                        className="cursor-pointer transition-colors hover:bg-bgDark"
+                      >
                         <td className="px-4 py-3 font-medium text-textPrimary">
                           {item.item_name}
                         </td>

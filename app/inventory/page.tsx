@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertTriangle } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 type InventoryItem = {
@@ -15,6 +16,7 @@ type InventoryItem = {
 };
 
 export default function InventoryPage() {
+  const router = useRouter();
   const [items, setItems] = useState<InventoryItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -69,7 +71,7 @@ export default function InventoryPage() {
         <LoadingPanel label="Loading inventory..." />
       ) : (
         <section className="overflow-hidden rounded-xl border border-borderSubtle bg-surface shadow-soft">
-          <div className="overflow-x-auto">
+          <div className="hidden overflow-x-auto md:block">
             <table className="min-w-full text-left text-sm">
               <thead className="bg-bgDark text-xs uppercase tracking-wide text-textMuted">
                 <tr>
@@ -88,7 +90,11 @@ export default function InventoryPage() {
                   const showWarning = item.reorder_threshold !== null && quantity <= reorderThreshold;
 
                   return (
-                    <tr key={item.id}>
+                    <tr
+                      key={item.id}
+                      onClick={() => router.push(`/inventory/${item.id}`)}
+                      className="cursor-pointer transition-colors hover:bg-bgDark"
+                    >
                       <td className="px-4 py-3 font-medium text-textPrimary">
                         <div className="flex items-center gap-2">
                           <span>{item.item_name}</span>
@@ -105,6 +111,47 @@ export default function InventoryPage() {
                 })}
               </tbody>
             </table>
+          </div>
+
+          <div className="grid gap-3 p-4 md:hidden">
+            {items.map((item) => {
+              const quantity = item.quantity ?? 0;
+              const reorderThreshold = item.reorder_threshold ?? 0;
+              const showWarning =
+                item.reorder_threshold !== null && quantity <= reorderThreshold;
+
+              return (
+                <article
+                  key={item.id}
+                  onClick={() => router.push(`/inventory/${item.id}`)}
+                  className="cursor-pointer rounded-lg border border-borderSubtle bg-bgDark p-4 transition-colors hover:bg-surface"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h2 className="font-medium text-textPrimary">
+                        {item.item_name}
+                      </h2>
+                      <p className="mt-1 text-sm text-textSecondary">
+                        {item.category || "Uncategorized"}
+                      </p>
+                    </div>
+                    {showWarning ? (
+                      <AlertTriangle
+                        className="mt-0.5 h-4 w-4 text-amber-500"
+                        aria-hidden="true"
+                      />
+                    ) : null}
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-2">
+                    <p className="text-sm text-textSecondary">
+                      {quantity}
+                      {item.unit ? ` ${item.unit}` : ""}
+                    </p>
+                    <InventoryStatusBadge status={item.status} />
+                  </div>
+                </article>
+              );
+            })}
           </div>
         </section>
       )}

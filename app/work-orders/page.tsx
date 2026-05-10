@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
 
 type WorkOrder = {
   id: number;
@@ -13,10 +15,22 @@ type WorkOrder = {
 };
 
 export default function WorkOrdersPage() {
+  return (
+    <Suspense fallback={<LoadingPanel label="Loading work orders..." />}>
+      <WorkOrdersPageContent />
+    </Suspense>
+  );
+}
+
+function WorkOrdersPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
   const [statusFilter, setStatusFilter] = useState("All");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const statusParam = searchParams.get("status");
 
   const filteredWorkOrders = useMemo(() => {
     if (statusFilter === "All") {
@@ -67,6 +81,10 @@ export default function WorkOrdersPage() {
     };
   }, []);
 
+  useEffect(() => {
+    setStatusFilter(toWorkOrderFilterFromParam(statusParam));
+  }, [statusParam]);
+
   return (
     <div className="space-y-6">
       <header className="space-y-1">
@@ -101,48 +119,118 @@ export default function WorkOrdersPage() {
       {loading ? (
         <LoadingPanel label="Loading work orders..." />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-          {filteredWorkOrders.map((workOrder) => (
-            <article
-              key={workOrder.id}
-              className="rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft"
-            >
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h2 className="text-lg font-semibold text-textPrimary">
-                    {workOrder.title}
-                  </h2>
-                  <p className="text-sm text-textSecondary">
-                    {workOrder.type || "Uncategorized"}
-                  </p>
-                </div>
-                <TaskPriorityBadge priority={workOrder.priority} />
-              </div>
-              <div className="mt-4 flex flex-wrap gap-2">
-                <TaskStatusBadge status={workOrder.status} />
-              </div>
-              <dl className="mt-5 space-y-3 text-sm">
-                <InfoRow
-                  label="Owner"
-                  value={workOrder.owner_name || "Unassigned"}
-                />
-                <InfoRow
-                  label="Due Date"
-                  value={formatDate(workOrder.due_date)}
-                />
-              </dl>
-            </article>
-          ))}
+        <section className="overflow-hidden rounded-xl border border-borderSubtle bg-surface shadow-soft">
+          <div className="hidden overflow-x-auto md:block">
+            <table className="min-w-full text-left text-sm">
+              <thead className="bg-bgDark text-xs uppercase tracking-wide text-textMuted">
+                <tr>
+                  <th className="px-4 py-3 font-semibold">Title</th>
+                  <th className="px-4 py-3 font-semibold">Type</th>
+                  <th className="px-4 py-3 font-semibold">Status</th>
+                  <th className="px-4 py-3 font-semibold">Priority</th>
+                  <th className="px-4 py-3 font-semibold">Owner</th>
+                  <th className="px-4 py-3 font-semibold">Due Date</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-borderSubtle">
+                {filteredWorkOrders.map((workOrder) => (
+                  <tr
+                    key={workOrder.id}
+                    onClick={() => router.push(`/work-orders/${workOrder.id}`)}
+                    className="cursor-pointer transition-colors hover:bg-bgDark"
+                  >
+                    <td className="px-4 py-3 font-medium text-textPrimary">
+                      {workOrder.title}
+                    </td>
+                    <td className="px-4 py-3 text-textSecondary">
+                      {workOrder.type || "Uncategorized"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <TaskStatusBadge status={workOrder.status} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <TaskPriorityBadge priority={workOrder.priority} />
+                    </td>
+                    <td className="px-4 py-3 text-textSecondary">
+                      {workOrder.owner_name || "Unassigned"}
+                    </td>
+                    <td className="px-4 py-3 text-textSecondary">
+                      {formatDate(workOrder.due_date)}
+                    </td>
+                  </tr>
+                ))}
 
-          {filteredWorkOrders.length === 0 ? (
-            <article className="rounded-xl border border-dashed border-borderSubtle bg-surface p-8 text-center text-sm text-textSecondary lg:col-span-2 xl:col-span-3">
-              No work orders match this status filter.
-            </article>
-          ) : null}
-        </div>
+                {filteredWorkOrders.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-4 py-8 text-center text-sm text-textSecondary"
+                    >
+                      No work orders match this status filter.
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="grid gap-3 p-4 md:hidden">
+            {filteredWorkOrders.map((workOrder) => (
+              <Link key={workOrder.id} href={`/work-orders/${workOrder.id}`}>
+                <article className="rounded-xl border border-borderSubtle bg-bgDark p-5 shadow-soft">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h2 className="text-lg font-semibold text-textPrimary">
+                        {workOrder.title}
+                      </h2>
+                      <p className="text-sm text-textSecondary">
+                        {workOrder.type || "Uncategorized"}
+                      </p>
+                    </div>
+                    <TaskPriorityBadge priority={workOrder.priority} />
+                  </div>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <TaskStatusBadge status={workOrder.status} />
+                  </div>
+                  <dl className="mt-5 space-y-3 text-sm">
+                    <InfoRow
+                      label="Owner"
+                      value={workOrder.owner_name || "Unassigned"}
+                    />
+                    <InfoRow
+                      label="Due Date"
+                      value={formatDate(workOrder.due_date)}
+                    />
+                  </dl>
+                </article>
+              </Link>
+            ))}
+
+            {filteredWorkOrders.length === 0 ? (
+              <article className="rounded-xl border border-dashed border-borderSubtle bg-bgDark p-8 text-center text-sm text-textSecondary">
+                No work orders match this status filter.
+              </article>
+            ) : null}
+          </div>
+        </section>
       )}
     </div>
   );
+}
+
+function toWorkOrderFilterFromParam(value: string | null) {
+  const normalized = (value || "").toLowerCase();
+
+  if (normalized === "open") return "Open";
+  if (normalized === "in_progress" || normalized === "in-progress") {
+    return "In Progress";
+  }
+  if (normalized === "pending" || normalized === "waiting") return "Pending";
+  if (normalized === "completed" || normalized === "complete") {
+    return "Completed";
+  }
+
+  return "All";
 }
 
 function toFilterStatus(status: string | null) {

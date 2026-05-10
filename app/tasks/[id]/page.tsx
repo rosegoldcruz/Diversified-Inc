@@ -3,79 +3,73 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
-type WorkOrderDetail = {
+type TaskDetail = {
   id: number;
   title: string;
   description: string | null;
-  type: string | null;
+  notes?: string | null;
   status: string | null;
   priority: string | null;
-  owner_name: string | null;
   assigned_to_name: string | null;
+  assigned_department: string | null;
   due_date: string | null;
   created_at: string | null;
-  customer_name?: string | null;
-  client_name?: string | null;
-  site?: string | null;
-  site_name?: string | null;
+  updated_at: string | null;
 };
 
 const STATUS_OPTIONS = [
-  { label: "Open", value: "open" },
+  { label: "Todo", value: "todo" },
   { label: "In Progress", value: "in_progress" },
-  { label: "Pending", value: "pending" },
   { label: "Completed", value: "completed" },
-  { label: "Cancelled", value: "cancelled" },
+  { label: "Blocked", value: "blocked" },
 ];
 
-export default function WorkOrderDetailPage() {
+export default function TaskDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const workOrderId = useMemo(() => {
+  const taskId = useMemo(() => {
     const id = params?.id;
     return Array.isArray(id) ? id[0] : id;
   }, [params]);
 
-  const [workOrder, setWorkOrder] = useState<WorkOrderDetail | null>(null);
-  const [status, setStatus] = useState("open");
+  const [task, setTask] = useState<TaskDetail | null>(null);
+  const [status, setStatus] = useState("todo");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!workOrderId) {
-      setError("Invalid work order id");
+    if (!taskId) {
+      setError("Invalid task id");
       setLoading(false);
       return;
     }
 
     let cancelled = false;
 
-    async function loadWorkOrder() {
+    async function loadTask() {
       try {
         setLoading(true);
         setError(null);
 
-        const response = await fetch(`/api/work-orders/${workOrderId}`, {
+        const response = await fetch(`/api/tasks/${taskId}`, {
           cache: "no-store",
         });
 
         if (!response.ok) {
-          throw new Error(`Failed to load work order (${response.status})`);
+          throw new Error(`Failed to load task (${response.status})`);
         }
 
-        const data = (await response.json()) as WorkOrderDetail;
+        const data = (await response.json()) as TaskDetail;
 
         if (!cancelled) {
-          setWorkOrder(data);
-          setStatus((data.status || "open").toLowerCase());
+          setTask(data);
+          setStatus((data.status || "todo").toLowerCase());
         }
       } catch (loadError) {
         if (!cancelled) {
           setError(
-            loadError instanceof Error
-              ? loadError.message
-              : "Failed to load work order",
+            loadError instanceof Error ? loadError.message : "Failed to load task",
           );
         }
       } finally {
@@ -85,15 +79,15 @@ export default function WorkOrderDetailPage() {
       }
     }
 
-    loadWorkOrder();
+    loadTask();
 
     return () => {
       cancelled = true;
     };
-  }, [workOrderId]);
+  }, [taskId]);
 
   async function updateStatus() {
-    if (!workOrderId) {
+    if (!taskId) {
       return;
     }
 
@@ -101,7 +95,7 @@ export default function WorkOrderDetailPage() {
       setSaving(true);
       setError(null);
 
-      const response = await fetch(`/api/work-orders/${workOrderId}`, {
+      const response = await fetch(`/api/tasks/${taskId}`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -110,17 +104,17 @@ export default function WorkOrderDetailPage() {
       });
 
       if (!response.ok) {
-        throw new Error(`Failed to update work order (${response.status})`);
+        throw new Error(`Failed to update task (${response.status})`);
       }
 
-      const data = (await response.json()) as WorkOrderDetail;
-      setWorkOrder(data);
+      const data = (await response.json()) as TaskDetail;
+      setTask(data);
       setStatus((data.status || status).toLowerCase());
     } catch (updateError) {
       setError(
         updateError instanceof Error
           ? updateError.message
-          : "Failed to update work order",
+          : "Failed to update task",
       );
     } finally {
       setSaving(false);
@@ -130,12 +124,12 @@ export default function WorkOrderDetailPage() {
   if (loading) {
     return (
       <div className="rounded-xl border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
-        Loading work order...
+        Loading task...
       </div>
     );
   }
 
-  if (!workOrder) {
+  if (!task) {
     return (
       <div className="space-y-4 rounded-xl border border-borderSubtle bg-surface p-6 shadow-soft">
         <button
@@ -143,19 +137,14 @@ export default function WorkOrderDetailPage() {
           onClick={() => router.back()}
           className="text-sm font-medium text-textSecondary hover:text-textPrimary"
         >
-          ← Back to Work Orders
+          ← Back to Tasks
         </button>
         <p className="text-sm text-red-700 dark:text-red-300">
-          {error || "Work order not found"}
+          {error || "Task not found"}
         </p>
       </div>
     );
   }
-
-  const clientValue =
-    workOrder.client_name || workOrder.customer_name || "Not specified";
-  const siteValue = workOrder.site_name || workOrder.site || "Not specified";
-  const assignee = workOrder.assigned_to_name || workOrder.owner_name || "Unassigned";
 
   return (
     <div className="space-y-6">
@@ -164,18 +153,15 @@ export default function WorkOrderDetailPage() {
         onClick={() => router.back()}
         className="text-sm font-medium text-textSecondary hover:text-textPrimary"
       >
-        ← Back to Work Orders
+        ← Back to Tasks
       </button>
 
       <section className="space-y-4 rounded-xl border border-borderSubtle bg-surface p-6 shadow-soft">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold text-textPrimary">{workOrder.title}</h1>
-            <p className="mt-1 text-sm text-textMuted">WO-{workOrder.id}</p>
-          </div>
+          <h1 className="text-2xl font-semibold text-textPrimary">{task.title}</h1>
           <div className="flex flex-wrap gap-2">
-            <StatusBadge status={workOrder.status} />
-            <PriorityBadge priority={workOrder.priority} />
+            <StatusBadge status={task.status} />
+            <PriorityBadge priority={task.priority} />
           </div>
         </div>
 
@@ -186,11 +172,23 @@ export default function WorkOrderDetailPage() {
         ) : null}
 
         <dl className="grid gap-3 rounded-lg border border-borderSubtle bg-bgDark p-4 sm:grid-cols-2">
-          <InfoRow label="Client/Site" value={`${clientValue} / ${siteValue}`} />
-          <InfoRow label="Assigned To" value={assignee} />
-          <InfoRow label="Due Date" value={formatDate(workOrder.due_date)} />
-          <InfoRow label="Created At" value={formatDateTime(workOrder.created_at)} />
+          <InfoRow label="Assigned To" value={task.assigned_to_name || "Unassigned"} />
+          <InfoRow label="Due Date" value={formatDate(task.due_date)} />
+          <InfoRow
+            label="Department"
+            value={task.assigned_department || "Not specified"}
+          />
+          <InfoRow label="Created At" value={formatDateTime(task.created_at)} />
         </dl>
+
+        <section className="rounded-lg border border-borderSubtle bg-bgDark p-4">
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-textMuted">
+            Description
+          </h2>
+          <p className="mt-2 text-sm text-textSecondary">
+            {task.description || task.notes || "No description or notes available."}
+          </p>
+        </section>
 
         <section className="rounded-lg border border-borderSubtle bg-bgDark p-4">
           <h2 className="text-sm font-semibold uppercase tracking-wide text-textMuted">
@@ -219,16 +217,9 @@ export default function WorkOrderDetailPage() {
           </div>
         </section>
 
-        <section className="rounded-lg border border-borderSubtle bg-bgDark p-4">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-textMuted">
-            Timeline
-          </h2>
-          <ul className="mt-3 space-y-2 text-sm text-textSecondary">
-            <li>Created work order and added to operations queue.</li>
-            <li>Status reviewed by operations manager.</li>
-            <li>Current phase: {labelize(workOrder.status || "open")}.</li>
-          </ul>
-        </section>
+        <p className="text-sm text-textMuted">
+          Last updated: {formatDateTime(task.updated_at || task.created_at)}
+        </p>
       </section>
     </div>
   );
@@ -246,22 +237,19 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 function StatusBadge({ status }: { status: string | null }) {
-  const normalized = (status || "open").toLowerCase();
+  const normalized = (status || "todo").toLowerCase();
   const styles: Record<string, string> = {
-    open: "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300",
+    todo: "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300",
     in_progress:
       "border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-300",
-    pending:
-      "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
     completed:
       "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
-    cancelled: "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-300",
-    closed: "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300",
+    blocked: "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-300",
   };
 
   return (
     <span
-      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${styles[normalized] || styles.open}`}
+      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${styles[normalized] || styles.todo}`}
     >
       {labelize(normalized)}
     </span>

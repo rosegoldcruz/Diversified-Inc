@@ -1,4 +1,7 @@
-import { ClipboardCheck } from "lucide-react";
+"use client";
+
+import { ClipboardCheck, X } from "lucide-react";
+import { useState } from "react";
 
 type RequestStatus =
   | "Submitted"
@@ -95,6 +98,9 @@ const priorityStyles: Record<RequestPriority, string> = {
 };
 
 export default function RequestsPage() {
+  const [selectedRequest, setSelectedRequest] =
+    useState<InternalRequest | null>(null);
+
   const activeCount = requests.filter((request) =>
     ["Submitted", "Under Review"].includes(request.status),
   ).length;
@@ -149,7 +155,8 @@ export default function RequestsPage() {
               {requests.map((request) => (
                 <tr
                   key={request.id}
-                  className="transition-colors hover:bg-bgDark"
+                  onClick={() => setSelectedRequest(request)}
+                  className="cursor-pointer transition-colors hover:bg-bgDark"
                 >
                   <td className="px-4 py-3">
                     <div className="font-semibold text-textPrimary">
@@ -183,7 +190,8 @@ export default function RequestsPage() {
         {requests.map((request) => (
           <article
             key={request.id}
-            className="rounded-lg border border-borderSubtle bg-surface p-4 shadow-soft"
+            onClick={() => setSelectedRequest(request)}
+            className="cursor-pointer rounded-lg border border-borderSubtle bg-surface p-4 shadow-soft"
           >
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -210,6 +218,77 @@ export default function RequestsPage() {
           </article>
         ))}
       </section>
+
+      <aside
+        className={`fixed right-0 top-0 h-full w-80 bg-surface border-l border-borderSubtle shadow-lg z-50 transform transition-transform duration-300 ${
+          selectedRequest ? "translate-x-0" : "translate-x-full"
+        }`}
+        aria-hidden={selectedRequest ? "false" : "true"}
+      >
+        <div className="flex h-full flex-col p-5">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">
+                {selectedRequest?.id || "Request"}
+              </p>
+              <h2 className="mt-1 text-lg font-semibold text-textPrimary">
+                {selectedRequest?.requester || "Request Details"}
+              </h2>
+              <p className="mt-1 text-sm text-textSecondary">
+                {selectedRequest
+                  ? `${selectedRequest.category} • ${selectedRequest.status}`
+                  : "Select a request to inspect details."}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSelectedRequest(null)}
+              className="rounded-md border border-borderSubtle p-1.5 text-textSecondary transition-colors hover:bg-bgDark hover:text-textPrimary"
+              aria-label="Close request details"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+
+          {selectedRequest ? (
+            <dl className="mt-6 space-y-4 text-sm">
+              <SlideOverRow label="Request ID" value={selectedRequest.id} />
+              <SlideOverRow
+                label="Requester"
+                value={selectedRequest.requester}
+              />
+              <SlideOverRow
+                label="Category"
+                value={selectedRequest.category}
+              />
+              <SlideOverRow
+                label="Priority"
+                value={selectedRequest.priority}
+              />
+              <SlideOverRow label="Status" value={selectedRequest.status} />
+              <SlideOverRow
+                label="Submitted Date"
+                value={selectedRequest.submittedDate}
+              />
+              <SlideOverRow
+                label="Assigned Reviewer"
+                value={selectedRequest.assignedReviewer}
+              />
+            </dl>
+          ) : null}
+        </div>
+      </aside>
+    </div>
+  );
+}
+
+function SlideOverRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="border-b border-borderSubtle pb-3">
+      <dt className="text-xs font-semibold uppercase tracking-wide text-textMuted">
+        {label}
+      </dt>
+      <dd className="mt-1 text-textPrimary">{value}</dd>
     </div>
   );
 }

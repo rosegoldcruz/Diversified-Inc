@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
 
 type Task = {
   id: number;
@@ -12,11 +14,24 @@ type Task = {
 };
 
 export default function TasksPage() {
+  return (
+    <Suspense fallback={<LoadingPanel label="Loading tasks..." />}>
+      <TasksPageContent />
+    </Suspense>
+  );
+}
+
+function TasksPageContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [statusFilter, setStatusFilter] = useState("All");
   const [priorityFilter, setPriorityFilter] = useState("All");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const statusParam = searchParams.get("status");
+  const priorityParam = searchParams.get("priority");
 
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
@@ -68,6 +83,13 @@ export default function TasksPage() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    const nextStatus = toStatusFilterFromParam(statusParam);
+    const nextPriority = toPriorityFilterFromParam(priorityParam);
+    setStatusFilter(nextStatus);
+    setPriorityFilter(nextPriority);
+  }, [priorityParam, statusParam]);
 
   return (
     <div className="space-y-6">
@@ -133,7 +155,11 @@ export default function TasksPage() {
               </thead>
               <tbody className="divide-y divide-borderSubtle">
                 {filteredTasks.map((task) => (
-                  <tr key={task.id}>
+                  <tr
+                    key={task.id}
+                    onClick={() => router.push(`/tasks/${task.id}`)}
+                    className="cursor-pointer transition-colors hover:bg-bgDark"
+                  >
                     <td className="px-4 py-3 font-medium text-textPrimary">
                       {task.title}
                     </td>
@@ -168,24 +194,23 @@ export default function TasksPage() {
 
           <div className="grid gap-3 p-4 md:hidden">
             {filteredTasks.map((task) => (
-              <article
-                key={task.id}
-                className="rounded-lg border border-borderSubtle bg-bgDark p-4"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <h2 className="font-medium text-textPrimary">{task.title}</h2>
-                  <TaskPriorityBadge priority={task.priority} />
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <TaskStatusBadge status={task.status} />
-                </div>
-                <p className="mt-3 text-sm text-textSecondary">
-                  Assigned to {task.assigned_to_name || "Unassigned"}
-                </p>
-                <p className="mt-1 text-sm text-textMuted">
-                  Due {formatDate(task.due_date)}
-                </p>
-              </article>
+              <Link key={task.id} href={`/tasks/${task.id}`}>
+                <article className="rounded-lg border border-borderSubtle bg-bgDark p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <h2 className="font-medium text-textPrimary">{task.title}</h2>
+                    <TaskPriorityBadge priority={task.priority} />
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <TaskStatusBadge status={task.status} />
+                  </div>
+                  <p className="mt-3 text-sm text-textSecondary">
+                    Assigned to {task.assigned_to_name || "Unassigned"}
+                  </p>
+                  <p className="mt-1 text-sm text-textMuted">
+                    Due {formatDate(task.due_date)}
+                  </p>
+                </article>
+              </Link>
             ))}
 
             {filteredTasks.length === 0 ? (
@@ -198,6 +223,27 @@ export default function TasksPage() {
       )}
     </div>
   );
+}
+
+function toStatusFilterFromParam(value: string | null) {
+  const normalized = (value || "").toLowerCase();
+  if (normalized === "todo" || normalized === "not_started") return "Todo";
+  if (normalized === "in_progress" || normalized === "in-progress") {
+    return "In Progress";
+  }
+  if (normalized === "completed" || normalized === "complete") {
+    return "Completed";
+  }
+  if (normalized === "blocked") return "Blocked";
+  return "All";
+}
+
+function toPriorityFilterFromParam(value: string | null) {
+  const normalized = (value || "").toLowerCase();
+  if (normalized === "high" || normalized === "urgent") return "High";
+  if (normalized === "medium" || normalized === "normal") return "Medium";
+  if (normalized === "low") return "Low";
+  return "All";
 }
 
 function toStatusFilterValue(status: string | null) {
