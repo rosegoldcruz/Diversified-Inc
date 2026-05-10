@@ -18,12 +18,91 @@ type SubmittedRecord = {
   submittedDate: string;
 };
 
-const formNames: FormName[] = [
-  "Work Order Request",
-  "Vehicle Request",
-  "Claim Report",
-  "PO Request",
-  "Microsoft 365 Access Request",
+type FormDefinition = {
+  name: FormName;
+  category: string;
+  description: string;
+  active: boolean;
+  fields: string[];
+};
+
+const formDefinitions: FormDefinition[] = [
+  {
+    name: "Work Order Request",
+    category: "Operations",
+    description:
+      "Submit an operational issue for scheduling, assignment, and completion tracking.",
+    active: true,
+    fields: [
+      "Priority",
+      "Division",
+      "Description of Issues",
+      "Date",
+      "Truck#",
+      "Reported By",
+    ],
+  },
+  {
+    name: "Vehicle Request",
+    category: "Operations",
+    description:
+      "Request a vehicle reservation for internal transport and field coordination.",
+    active: true,
+    fields: [
+      "Requested By",
+      "Vehicle Needed Date",
+      "Pickup Time",
+      "Return Time",
+      "Division",
+      "Purpose",
+    ],
+  },
+  {
+    name: "Claim Report",
+    category: "Claims",
+    description:
+      "Report claim incidents with severity, summary details, and supporting documentation.",
+    active: true,
+    fields: [
+      "Claim Date",
+      "Reported By",
+      "Division",
+      "Severity",
+      "Incident Summary",
+      "Supporting Photos",
+    ],
+  },
+  {
+    name: "PO Request",
+    category: "Purchasing",
+    description:
+      "Submit a purchase order request with vendor, timeline, and budget visibility.",
+    active: true,
+    fields: [
+      "Vendor",
+      "Requested By",
+      "Needed By",
+      "Estimated Amount",
+      "Division",
+      "Purchase Details",
+    ],
+  },
+  {
+    name: "Microsoft 365 Access Request",
+    category: "IT / Access",
+    description:
+      "Request a Microsoft 365 license, account setup, or access modification for a team member.",
+    active: true,
+    fields: [
+      "Full Name",
+      "Employee ID",
+      "Access Type",
+      "Requested Software",
+      "Manager Name",
+      "Effective Date",
+      "Notes",
+    ],
+  },
 ];
 
 const initialRecords: SubmittedRecord[] = [
@@ -53,6 +132,10 @@ const initialRecords: SubmittedRecord[] = [
 export default function FormsCenterPage() {
   const [activeForm, setActiveForm] = useState<FormName>("Work Order Request");
   const [records, setRecords] = useState<SubmittedRecord[]>(initialRecords);
+  const activeFormDefinition = useMemo(
+    () => formDefinitions.find((form) => form.name === activeForm),
+    [activeForm],
+  );
 
   const activeRecords = useMemo(
     () => records.filter((record) => record.form === activeForm),
@@ -97,30 +180,71 @@ export default function FormsCenterPage() {
             <ClipboardList className="h-4 w-4" />
             Forms
           </div>
-          <div className="space-y-1">
-            {formNames.map((form) => (
+          <div className="space-y-2">
+            {formDefinitions.map((form) => (
               <button
-                key={form}
+                key={form.name}
                 type="button"
-                onClick={() => setActiveForm(form)}
+                onClick={() => setActiveForm(form.name)}
                 className={[
-                  "flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm font-semibold transition-colors",
-                  activeForm === form
-                    ? "bg-navy text-white"
-                    : "text-textSecondary hover:bg-bgDark",
+                  "w-full rounded-lg border px-3 py-3 text-left transition-colors",
+                  activeForm === form.name
+                    ? "border-navy bg-navy text-white"
+                    : "border-borderSubtle bg-bgDark text-textPrimary hover:border-borderHover",
                 ].join(" ")}
               >
-                <span>{form}</span>
-                <span
-                  className={[
-                    "rounded-full px-2 py-0.5 text-xs",
-                    activeForm === form
-                      ? "bg-white/15 text-white"
-                      : "bg-bgDark text-textMuted",
-                  ].join(" ")}
-                >
-                  {records.filter((record) => record.form === form).length}
-                </span>
+                <div className="space-y-2">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="text-sm font-semibold">{form.name}</span>
+                    <span
+                      className={[
+                        "rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                        activeForm === form.name
+                          ? "bg-white/15 text-white"
+                          : "bg-surface text-textMuted",
+                      ].join(" ")}
+                    >
+                      {
+                        records.filter((record) => record.form === form.name)
+                          .length
+                      }
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span
+                      className={[
+                        "rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                        activeForm === form.name
+                          ? "bg-white/15 text-white"
+                          : "bg-surface text-textMuted",
+                      ].join(" ")}
+                    >
+                      {form.category}
+                    </span>
+                    {form.active ? (
+                      <span
+                        className={[
+                          "rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                          activeForm === form.name
+                            ? "bg-emerald-400/20 text-emerald-50"
+                            : "bg-emerald-500/10 text-emerald-700",
+                        ].join(" ")}
+                      >
+                        Active
+                      </span>
+                    ) : null}
+                  </div>
+                  <p
+                    className={[
+                      "text-xs leading-5",
+                      activeForm === form.name
+                        ? "text-white/90"
+                        : "text-textMuted",
+                    ].join(" ")}
+                  >
+                    {form.description}
+                  </p>
+                </div>
               </button>
             ))}
           </div>
@@ -130,7 +254,8 @@ export default function FormsCenterPage() {
           <div className="border-b border-borderSubtle px-5 py-4">
             <h2 className="text-lg font-bold text-navy">{activeForm}</h2>
             <p className="mt-1 text-sm text-textMuted">
-              Complete the form fields and submit to create a trackable record.
+              {activeFormDefinition?.description ||
+                "Complete the form fields and submit to create a trackable record."}
             </p>
           </div>
           <form onSubmit={handleSubmit} className="space-y-5 px-5 py-5">
@@ -272,15 +397,16 @@ function POFields() {
 function Microsoft365AccessFields() {
   return (
     <div className="grid gap-4 md:grid-cols-2">
-      <TextField label="Employee Name" />
-      <TextField label="Department" />
+      <TextField label="Full Name" />
+      <TextField label="Employee ID" />
       <SelectField
         label="Access Type"
-        options={["Email", "Calendar", "SharePoint", "Teams", "Full Suite"]}
+        options={["New Account", "License Upgrade", "Access Removal"]}
       />
-      <TextField label="Requested By" />
-      <TextAreaField label="Reason" />
-      <TextField label="Date Needed" type="date" />
+      <TextField label="Requested Software" />
+      <TextField label="Manager Name" />
+      <TextField label="Effective Date" type="date" />
+      <TextAreaField label="Notes" />
     </div>
   );
 }

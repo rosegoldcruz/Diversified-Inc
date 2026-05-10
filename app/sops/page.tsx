@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 type Sop = {
   id: number;
   title: string;
+  description: string | null;
   category: string | null;
   owner_name: string | null;
   status: string | null;
@@ -26,8 +27,8 @@ export default function SopsPage() {
 
     return sops.filter((sop) => {
       const title = sop.title.toLowerCase();
-      const category = (sop.category || "general").toLowerCase();
-      return title.includes(query) || category.includes(query);
+      const description = (sop.description || "").toLowerCase();
+      return title.includes(query) || description.includes(query);
     });
   }, [search, sops]);
 
@@ -73,9 +74,14 @@ export default function SopsPage() {
   return (
     <div className="space-y-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">
-          SOPs
-        </h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">
+            SOPs
+          </h1>
+          <span className="inline-flex rounded-full border border-borderSubtle bg-bgDark px-3 py-1 text-xs font-semibold uppercase tracking-wide text-textMuted">
+            {filteredSops.length} of {sops.length} SOPs
+          </span>
+        </div>
         <p className="max-w-3xl text-sm text-textSecondary">
           Live standard operating procedures from PostgreSQL with ownership,
           versioning, and review status.
@@ -83,13 +89,25 @@ export default function SopsPage() {
       </header>
 
       <div className="rounded-xl border border-borderSubtle bg-surface p-4 shadow-soft">
-        <input
-          type="search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search SOPs by title or category"
-          className="h-10 w-full rounded-md border border-borderSubtle bg-bgDark px-3 text-sm text-textPrimary outline-none transition-colors placeholder:text-textDisabled focus:border-accent focus:ring-2 focus:ring-accent/20"
-        />
+        <div className="relative">
+          <input
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search SOPs..."
+            className="h-10 w-full rounded-md border border-borderSubtle bg-bgDark px-3 pr-10 text-sm text-textPrimary outline-none transition-colors placeholder:text-textDisabled focus:border-accent focus:ring-2 focus:ring-accent/20"
+          />
+          {search.trim() ? (
+            <button
+              type="button"
+              onClick={() => setSearch("")}
+              aria-label="Clear SOP search"
+              className="absolute right-2 top-1/2 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-base leading-none text-textMuted transition-colors hover:bg-borderSubtle hover:text-textPrimary"
+            >
+              ×
+            </button>
+          ) : null}
+        </div>
       </div>
 
       {error ? <ErrorPanel message={error} /> : null}
