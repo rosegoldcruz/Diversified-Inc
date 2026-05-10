@@ -75,11 +75,14 @@ http_status() {
 }
 
 health_check() {
+  local quiet="${1:-0}"
   local css_path
   css_path="$(dashboard_css_path || true)"
 
   if [[ -z "$css_path" ]]; then
-    log "ERROR: unable to extract dashboard CSS asset path"
+    if [[ "$quiet" -ne 1 ]]; then
+      log "WARN: unable to extract dashboard CSS asset path"
+    fi
     return 1
   fi
 
@@ -143,7 +146,7 @@ wait_for_health() {
   local elapsed=0
 
   while (( elapsed < timeout )); do
-    if health_check; then
+    if health_check 1; then
       return 0
     fi
     sleep "$interval"
