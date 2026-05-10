@@ -88,9 +88,14 @@ function WorkOrdersPageContent() {
   return (
     <div className="space-y-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">
-          Work Orders
-        </h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">
+            Work Orders
+          </h1>
+          <span className="inline-flex rounded-full border border-borderSubtle bg-bgDark px-3 py-1 text-xs font-semibold uppercase tracking-wide text-textMuted">
+            {filteredWorkOrders.length} of {workOrders.length} Work Orders
+          </span>
+        </div>
         <p className="max-w-3xl text-sm text-textSecondary">
           Live work orders with type, priority, ownership, and due dates from
           PostgreSQL.
@@ -107,9 +112,11 @@ function WorkOrdersPageContent() {
           >
             <option>All</option>
             <option>Open</option>
+            <option>Scheduled</option>
             <option>In Progress</option>
-            <option>Pending</option>
-            <option>Completed</option>
+            <option>Waiting</option>
+            <option>Complete</option>
+            <option>Canceled</option>
           </select>
         </label>
       </section>
@@ -222,12 +229,16 @@ function toWorkOrderFilterFromParam(value: string | null) {
   const normalized = (value || "").toLowerCase();
 
   if (normalized === "open") return "Open";
+  if (normalized === "scheduled") return "Scheduled";
   if (normalized === "in_progress" || normalized === "in-progress") {
     return "In Progress";
   }
-  if (normalized === "pending" || normalized === "waiting") return "Pending";
+  if (normalized === "pending" || normalized === "waiting") return "Waiting";
   if (normalized === "completed" || normalized === "complete") {
-    return "Completed";
+    return "Complete";
+  }
+  if (normalized === "canceled" || normalized === "cancelled") {
+    return "Canceled";
   }
 
   return "All";
@@ -236,10 +247,14 @@ function toWorkOrderFilterFromParam(value: string | null) {
 function toFilterStatus(status: string | null) {
   const normalized = (status || "open").toLowerCase();
 
+  if (normalized === "scheduled") return "Scheduled";
   if (normalized === "in_progress") return "In Progress";
-  if (normalized === "pending" || normalized === "waiting") return "Pending";
+  if (normalized === "pending" || normalized === "waiting") return "Waiting";
   if (normalized === "completed" || normalized === "complete")
-    return "Completed";
+    return "Complete";
+  if (normalized === "canceled" || normalized === "cancelled") {
+    return "Canceled";
+  }
   return "Open";
 }
 

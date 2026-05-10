@@ -94,9 +94,14 @@ function TasksPageContent() {
   return (
     <div className="space-y-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">
-          Tasks
-        </h1>
+        <div className="flex flex-wrap items-center gap-3">
+          <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">
+            Tasks
+          </h1>
+          <span className="inline-flex rounded-full border border-borderSubtle bg-bgDark px-3 py-1 text-xs font-semibold uppercase tracking-wide text-textMuted">
+            {filteredTasks.length} of {tasks.length} Tasks
+          </span>
+        </div>
         <p className="max-w-3xl text-sm text-textSecondary">
           Live task queue from PostgreSQL with assignment, priority, and due
           date visibility.
@@ -113,9 +118,10 @@ function TasksPageContent() {
               className="h-10 rounded-md border border-borderSubtle bg-bgDark px-3 text-sm font-medium normal-case text-textPrimary outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/20"
             >
               <option>All</option>
-              <option>Todo</option>
+              <option>Not Started</option>
               <option>In Progress</option>
-              <option>Completed</option>
+              <option>Waiting</option>
+              <option>Complete</option>
               <option>Blocked</option>
             </select>
           </label>
@@ -128,9 +134,10 @@ function TasksPageContent() {
               className="h-10 rounded-md border border-borderSubtle bg-bgDark px-3 text-sm font-medium normal-case text-textPrimary outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/20"
             >
               <option>All</option>
-              <option>High</option>
-              <option>Medium</option>
               <option>Low</option>
+              <option>Normal</option>
+              <option>High</option>
+              <option>Urgent</option>
             </select>
           </label>
         </div>
@@ -229,12 +236,19 @@ function TasksPageContent() {
 
 function toStatusFilterFromParam(value: string | null) {
   const normalized = (value || "").toLowerCase();
-  if (normalized === "todo" || normalized === "not_started") return "Todo";
+  if (
+    normalized === "todo" ||
+    normalized === "not_started" ||
+    normalized === "not-started"
+  ) {
+    return "Not Started";
+  }
   if (normalized === "in_progress" || normalized === "in-progress") {
     return "In Progress";
   }
+  if (normalized === "waiting") return "Waiting";
   if (normalized === "completed" || normalized === "complete") {
-    return "Completed";
+    return "Complete";
   }
   if (normalized === "blocked") return "Blocked";
   return "All";
@@ -242,25 +256,31 @@ function toStatusFilterFromParam(value: string | null) {
 
 function toPriorityFilterFromParam(value: string | null) {
   const normalized = (value || "").toLowerCase();
-  if (normalized === "high" || normalized === "urgent") return "High";
-  if (normalized === "medium" || normalized === "normal") return "Medium";
+  if (normalized === "urgent") return "Urgent";
+  if (normalized === "high") return "High";
+  if (normalized === "medium" || normalized === "normal") return "Normal";
   if (normalized === "low") return "Low";
   return "All";
 }
 
 function toStatusFilterValue(status: string | null) {
   const normalized = (status || "todo").toLowerCase();
+  if (normalized === "todo" || normalized === "not_started") {
+    return "Not Started";
+  }
   if (normalized === "in_progress") return "In Progress";
+  if (normalized === "waiting") return "Waiting";
   if (normalized === "completed" || normalized === "complete")
-    return "Completed";
+    return "Complete";
   if (normalized === "blocked") return "Blocked";
-  return "Todo";
+  return "Not Started";
 }
 
 function toPriorityFilterValue(priority: string | null) {
   const normalized = (priority || "low").toLowerCase();
+  if (normalized === "urgent") return "Urgent";
   if (normalized === "high") return "High";
-  if (normalized === "medium" || normalized === "normal") return "Medium";
+  if (normalized === "medium" || normalized === "normal") return "Normal";
   return "Low";
 }
 
@@ -268,18 +288,34 @@ function TaskStatusBadge({ status }: { status: string | null }) {
   const normalized = (status || "todo").toLowerCase();
   const styles: Record<string, string> = {
     todo: "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300",
+    not_started:
+      "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300",
     in_progress:
       "border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-300",
     completed:
       "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
+    complete:
+      "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
+    waiting:
+      "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
     blocked: "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-300",
+  };
+
+  const labels: Record<string, string> = {
+    todo: "Not Started",
+    not_started: "Not Started",
+    in_progress: "In Progress",
+    completed: "Complete",
+    complete: "Complete",
+    waiting: "Waiting",
+    blocked: "Blocked",
   };
 
   return (
     <span
       className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${styles[normalized] || styles.todo}`}
     >
-      {normalized.replaceAll("_", " ")}
+      {labels[normalized] || "Not Started"}
     </span>
   );
 }
@@ -287,17 +323,29 @@ function TaskStatusBadge({ status }: { status: string | null }) {
 function TaskPriorityBadge({ priority }: { priority: string | null }) {
   const normalized = (priority || "low").toLowerCase();
   const styles: Record<string, string> = {
+    urgent:
+      "border-fuchsia-500/30 bg-fuchsia-500/10 text-fuchsia-700 dark:text-fuchsia-300",
     high: "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-300",
     medium:
       "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    normal:
+      "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
     low: "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300",
+  };
+
+  const labels: Record<string, string> = {
+    urgent: "Urgent",
+    high: "High",
+    medium: "Normal",
+    normal: "Normal",
+    low: "Low",
   };
 
   return (
     <span
       className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${styles[normalized] || styles.low}`}
     >
-      {normalized}
+      {labels[normalized] || "Low"}
     </span>
   );
 }
