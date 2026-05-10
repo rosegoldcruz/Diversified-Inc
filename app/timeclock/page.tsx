@@ -228,7 +228,7 @@ export default function TimeclockPage() {
           }
         })(),
       ]);
-    } catch (_err) {
+    } catch {
       setMessage({ type: "error", text: "Network error" });
     }
   };
@@ -310,7 +310,7 @@ export default function TimeclockPage() {
             </button>
             <button
               onClick={() => handlePunch("out")}
-              className="px-4 py-2 rounded-md border border-slate-300 text-slate-700 hover:bg-slate-50 transition-colors font-medium dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800"
+              className="rounded-md border border-borderSubtle bg-surface px-4 py-2 font-medium text-textSecondary transition-colors hover:bg-bgDark hover:text-textPrimary"
             >
               Clock Out
             </button>

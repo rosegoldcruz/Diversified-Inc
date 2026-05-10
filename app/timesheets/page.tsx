@@ -40,7 +40,7 @@ function getStatusBadgeClasses(status: string): string {
   const baseClasses = "px-3 py-1 rounded text-sm font-medium";
   switch (status) {
     case "draft":
-      return `${baseClasses} bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300`;
+      return `${baseClasses} bg-bgDark text-textSecondary`;
     case "submitted":
       return `${baseClasses} bg-amber-100 text-amber-700 dark:bg-amber-900 dark:text-amber-200`;
     case "approved":
@@ -58,6 +58,10 @@ function getCurrentWeekStart(): string {
   const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
   const monday = new Date(today.setDate(diff));
   return monday.toISOString().split("T")[0];
+}
+
+function toDateOnly(value: string): string {
+  return value.split("T")[0];
 }
 
 export default function TimesheetsPage() {
@@ -102,7 +106,9 @@ export default function TimesheetsPage() {
     (ts) => ts.status === "submitted",
   ).length;
   const approvedThisWeek = timesheets.filter(
-    (ts) => ts.status === "approved" && ts.week_start === currentWeekStart,
+    (ts) =>
+      ts.status === "approved" &&
+      toDateOnly(ts.week_start) === currentWeekStart,
   ).length;
 
   return (
