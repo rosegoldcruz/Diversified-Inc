@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "auto-heal": "bash ./scripts/auto-heal-deploy.sh",
+    "install-auto-heal": "bash ./scripts/install-auto-heal-cron.sh"
   },
   "dependencies": {
     "@ai-sdk/deepseek": "^2.0.34",
