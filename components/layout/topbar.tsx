@@ -2,15 +2,13 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Search, Bell, Filter, Menu, ChevronLeft, ChevronRight, ArrowLeft, Moon, Sun } from "lucide-react";
+import { Search, Bell, Filter, Menu, ArrowLeft, Moon, Sun } from "lucide-react";
 
 type TopBarProps = {
   onMenuToggle: () => void;
-  onDesktopToggle?: () => void;
-  desktopCollapsed?: boolean;
 };
 
-export function TopBar({ onMenuToggle, onDesktopToggle, desktopCollapsed }: TopBarProps) {
+export function TopBar({ onMenuToggle }: TopBarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -45,14 +43,6 @@ export function TopBar({ onMenuToggle, onDesktopToggle, desktopCollapsed }: TopB
         )}
         <button
           type="button"
-          onClick={onDesktopToggle}
-          className="hidden h-8 w-8 shrink-0 items-center justify-center rounded-md border border-borderSubtle text-textMuted transition-colors hover:bg-bgDark hover:text-textPrimary lg:inline-flex"
-          aria-label={desktopCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-        >
-          {desktopCollapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-        </button>
-        <button
-          type="button"
           onClick={onMenuToggle}
           className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-borderSubtle text-textMuted transition-colors hover:bg-bgDark hover:text-textPrimary lg:hidden"
           aria-label="Open navigation"
@@ -85,7 +75,11 @@ export function TopBar({ onMenuToggle, onDesktopToggle, desktopCollapsed }: TopB
           aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
           title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
         >
-          {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          {theme === "dark" ? (
+            <Sun className="h-4 w-4" />
+          ) : (
+            <Moon className="h-4 w-4" />
+          )}
         </button>
 
         {/* Notifications */}
@@ -100,8 +94,12 @@ export function TopBar({ onMenuToggle, onDesktopToggle, desktopCollapsed }: TopB
             D
           </div>
           <div className="leading-tight">
-            <div className="text-xs font-semibold text-textPrimary">Diversified OS</div>
-            <div className="text-[10px] text-textMuted">Internal Operations</div>
+            <div className="text-xs font-semibold text-textPrimary">
+              Diversified OS
+            </div>
+            <div className="text-[10px] text-textMuted">
+              Internal Operations
+            </div>
           </div>
         </div>
       </div>

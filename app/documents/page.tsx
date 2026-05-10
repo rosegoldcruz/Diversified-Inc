@@ -1,7 +1,12 @@
 "use client";
 
 type DocumentStatus = "Signed" | "Pending" | "Draft";
-type DocumentType = "Contract" | "Quote" | "Permit" | "Completion Record" | "QC Photos";
+type DocumentType =
+  | "Contract"
+  | "Quote"
+  | "Permit"
+  | "Completion Record"
+  | "QC Photos";
 
 type InternalDocument = {
   id: string;
@@ -72,30 +77,44 @@ const documents: InternalDocument[] = [
 ];
 
 const statusStyles: Record<DocumentStatus, string> = {
-  Signed: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-  Pending: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
-  Draft: "border-slate-500/30 bg-slate-500/10 text-slate-700 dark:text-slate-300",
+  Signed:
+    "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  Pending:
+    "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  Draft:
+    "border-slate-500/30 bg-slate-500/10 text-slate-700 dark:text-slate-300",
 };
 
 const typeStyles: Record<DocumentType, string> = {
-  Contract: "border-cyan-500/30 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300",
+  Contract:
+    "border-cyan-500/30 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300",
   Quote: "border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300",
-  Permit: "border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-300",
-  "Completion Record": "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-  "QC Photos": "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300",
+  Permit:
+    "border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-300",
+  "Completion Record":
+    "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  "QC Photos":
+    "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300",
 };
 
 export default function DocumentsPage() {
-  const signedCount = documents.filter((document) => document.status === "Signed").length;
-  const pendingCount = documents.filter((document) => document.status === "Pending").length;
-  const draftCount = documents.filter((document) => document.status === "Draft").length;
+  const signedCount = documents.filter(
+    (document) => document.status === "Signed",
+  ).length;
+  const pendingCount = documents.filter(
+    (document) => document.status === "Pending",
+  ).length;
+  const draftCount = documents.filter(
+    (document) => document.status === "Draft",
+  ).length;
 
   return (
     <div className="space-y-6">
       <div className="space-y-1">
         <h1 className="text-2xl font-bold text-navy">Documents</h1>
         <p className="text-sm text-textMuted">
-          Internal contracts, quotes, permits, completion records, and QC photos linked to active work.
+          Internal contracts, quotes, permits, completion records, and QC photos
+          linked to active work.
         </p>
       </div>
 
@@ -120,21 +139,34 @@ export default function DocumentsPage() {
             </thead>
             <tbody className="divide-y divide-borderSubtle">
               {documents.map((document) => (
-                <tr key={document.id} className="transition-colors hover:bg-bgDark">
+                <tr
+                  key={document.id}
+                  className="transition-colors hover:bg-bgDark"
+                >
                   <td className="px-4 py-3 text-textMuted">{document.id}</td>
-                  <td className="px-4 py-3 font-medium text-textPrimary">{document.documentName}</td>
+                  <td className="px-4 py-3 font-medium text-textPrimary">
+                    {document.documentName}
+                  </td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${typeStyles[document.type]}`}>
+                    <span
+                      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${typeStyles[document.type]}`}
+                    >
                       {document.type}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-textSecondary">{document.linkedJobOrWorkOrder}</td>
+                  <td className="px-4 py-3 text-textSecondary">
+                    {document.linkedJobOrWorkOrder}
+                  </td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${statusStyles[document.status]}`}>
+                    <span
+                      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${statusStyles[document.status]}`}
+                    >
                       {document.status}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-textSecondary">{document.uploadedDate}</td>
+                  <td className="px-4 py-3 text-textSecondary">
+                    {document.uploadedDate}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -148,7 +180,9 @@ export default function DocumentsPage() {
 function SummaryCard({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-lg border border-borderSubtle bg-surface p-4 shadow-soft">
-      <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">{label}</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">
+        {label}
+      </p>
       <p className="mt-2 text-2xl font-bold text-navy">{value}</p>
     </div>
   );

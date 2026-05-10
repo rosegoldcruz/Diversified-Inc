@@ -23,7 +23,9 @@ export default function WorkOrdersPage() {
       return workOrders;
     }
 
-    return workOrders.filter((workOrder) => toFilterStatus(workOrder.status) === statusFilter);
+    return workOrders.filter(
+      (workOrder) => toFilterStatus(workOrder.status) === statusFilter,
+    );
   }, [statusFilter, workOrders]);
 
   useEffect(() => {
@@ -45,7 +47,11 @@ export default function WorkOrdersPage() {
         }
       } catch (loadError) {
         if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : "Failed to load work orders");
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : "Failed to load work orders",
+          );
         }
       } finally {
         if (!cancelled) {
@@ -64,9 +70,12 @@ export default function WorkOrdersPage() {
   return (
     <div className="space-y-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">Work Orders</h1>
+        <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">
+          Work Orders
+        </h1>
         <p className="max-w-3xl text-sm text-textSecondary">
-          Live work orders with type, priority, ownership, and due dates from PostgreSQL.
+          Live work orders with type, priority, ownership, and due dates from
+          PostgreSQL.
         </p>
       </header>
 
@@ -94,11 +103,18 @@ export default function WorkOrdersPage() {
       ) : (
         <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
           {filteredWorkOrders.map((workOrder) => (
-            <article key={workOrder.id} className="rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft">
+            <article
+              key={workOrder.id}
+              className="rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft"
+            >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-semibold text-textPrimary">{workOrder.title}</h2>
-                  <p className="text-sm text-textSecondary">{workOrder.type || "Uncategorized"}</p>
+                  <h2 className="text-lg font-semibold text-textPrimary">
+                    {workOrder.title}
+                  </h2>
+                  <p className="text-sm text-textSecondary">
+                    {workOrder.type || "Uncategorized"}
+                  </p>
                 </div>
                 <TaskPriorityBadge priority={workOrder.priority} />
               </div>
@@ -106,8 +122,14 @@ export default function WorkOrdersPage() {
                 <TaskStatusBadge status={workOrder.status} />
               </div>
               <dl className="mt-5 space-y-3 text-sm">
-                <InfoRow label="Owner" value={workOrder.owner_name || "Unassigned"} />
-                <InfoRow label="Due Date" value={formatDate(workOrder.due_date)} />
+                <InfoRow
+                  label="Owner"
+                  value={workOrder.owner_name || "Unassigned"}
+                />
+                <InfoRow
+                  label="Due Date"
+                  value={formatDate(workOrder.due_date)}
+                />
               </dl>
             </article>
           ))}
@@ -128,7 +150,8 @@ function toFilterStatus(status: string | null) {
 
   if (normalized === "in_progress") return "In Progress";
   if (normalized === "pending" || normalized === "waiting") return "Pending";
-  if (normalized === "completed" || normalized === "complete") return "Completed";
+  if (normalized === "completed" || normalized === "complete")
+    return "Completed";
   return "Open";
 }
 
@@ -145,14 +168,19 @@ function TaskStatusBadge({ status }: { status: string | null }) {
   const normalized = (status || "todo").toLowerCase();
   const styles: Record<string, string> = {
     todo: "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300",
-    pending: "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300",
-    in_progress: "border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-300",
-    completed: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
+    pending:
+      "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300",
+    in_progress:
+      "border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-300",
+    completed:
+      "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
     blocked: "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-300",
   };
 
   return (
-    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${styles[normalized] || styles.todo}`}>
+    <span
+      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${styles[normalized] || styles.todo}`}
+    >
       {normalized.replaceAll("_", " ")}
     </span>
   );
@@ -162,12 +190,15 @@ function TaskPriorityBadge({ priority }: { priority: string | null }) {
   const normalized = (priority || "low").toLowerCase();
   const styles: Record<string, string> = {
     high: "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-300",
-    medium: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    medium:
+      "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
     low: "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300",
   };
 
   return (
-    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${styles[normalized] || styles.low}`}>
+    <span
+      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${styles[normalized] || styles.low}`}
+    >
       {normalized}
     </span>
   );

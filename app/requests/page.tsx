@@ -1,6 +1,11 @@
 import { ClipboardCheck } from "lucide-react";
 
-type RequestStatus = "Submitted" | "Under Review" | "Approved" | "Denied" | "Completed";
+type RequestStatus =
+  | "Submitted"
+  | "Under Review"
+  | "Approved"
+  | "Denied"
+  | "Completed";
 type RequestPriority = "Low" | "Medium" | "High" | "Urgent";
 
 type InternalRequest = {
@@ -71,11 +76,15 @@ const requests: InternalRequest[] = [
 ];
 
 const statusStyles: Record<RequestStatus, string> = {
-  Submitted: "border-blue-500/40 bg-blue-500/10 text-blue-700 dark:text-blue-300",
-  "Under Review": "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300",
-  Approved: "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  Submitted:
+    "border-blue-500/40 bg-blue-500/10 text-blue-700 dark:text-blue-300",
+  "Under Review":
+    "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  Approved:
+    "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
   Denied: "border-red-500/40 bg-red-500/10 text-red-700 dark:text-red-300",
-  Completed: "border-slate-500/40 bg-slate-500/10 text-slate-700 dark:text-slate-300",
+  Completed:
+    "border-slate-500/40 bg-slate-500/10 text-slate-700 dark:text-slate-300",
 };
 
 const priorityStyles: Record<RequestPriority, string> = {
@@ -96,7 +105,8 @@ export default function RequestsPage() {
         <div className="space-y-1">
           <h1 className="text-2xl font-bold text-navy">Requests</h1>
           <p className="max-w-2xl text-sm text-textMuted">
-            Track internal requests from submission through review, approval, and completion.
+            Track internal requests from submission through review, approval,
+            and completion.
           </p>
         </div>
         <div className="inline-flex h-10 items-center gap-2 rounded-md border border-borderSubtle bg-surface px-3 text-sm font-semibold text-textSecondary shadow-soft">
@@ -107,8 +117,19 @@ export default function RequestsPage() {
 
       <section className="grid gap-3 sm:grid-cols-3">
         <SummaryCard label="Total Requests" value={requests.length} />
-        <SummaryCard label="Under Review" value={requests.filter((request) => request.status === "Under Review").length} />
-        <SummaryCard label="Completed" value={requests.filter((request) => request.status === "Completed").length} />
+        <SummaryCard
+          label="Under Review"
+          value={
+            requests.filter((request) => request.status === "Under Review")
+              .length
+          }
+        />
+        <SummaryCard
+          label="Completed"
+          value={
+            requests.filter((request) => request.status === "Completed").length
+          }
+        />
       </section>
 
       <section className="hidden overflow-hidden rounded-lg border border-borderSubtle bg-surface shadow-soft md:block">
@@ -126,20 +147,31 @@ export default function RequestsPage() {
             </thead>
             <tbody className="divide-y divide-borderSubtle">
               {requests.map((request) => (
-                <tr key={request.id} className="transition-colors hover:bg-bgDark">
+                <tr
+                  key={request.id}
+                  className="transition-colors hover:bg-bgDark"
+                >
                   <td className="px-4 py-3">
-                    <div className="font-semibold text-textPrimary">{request.requester}</div>
+                    <div className="font-semibold text-textPrimary">
+                      {request.requester}
+                    </div>
                     <div className="text-xs text-textMuted">{request.id}</div>
                   </td>
-                  <td className="px-4 py-3 text-textSecondary">{request.category}</td>
+                  <td className="px-4 py-3 text-textSecondary">
+                    {request.category}
+                  </td>
                   <td className="px-4 py-3">
                     <PriorityBadge priority={request.priority} />
                   </td>
                   <td className="px-4 py-3">
                     <StatusBadge status={request.status} />
                   </td>
-                  <td className="px-4 py-3 text-textSecondary">{request.submittedDate}</td>
-                  <td className="px-4 py-3 text-textSecondary">{request.assignedReviewer}</td>
+                  <td className="px-4 py-3 text-textSecondary">
+                    {request.submittedDate}
+                  </td>
+                  <td className="px-4 py-3 text-textSecondary">
+                    {request.assignedReviewer}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -149,10 +181,15 @@ export default function RequestsPage() {
 
       <section className="space-y-3 md:hidden">
         {requests.map((request) => (
-          <article key={request.id} className="rounded-lg border border-borderSubtle bg-surface p-4 shadow-soft">
+          <article
+            key={request.id}
+            className="rounded-lg border border-borderSubtle bg-surface p-4 shadow-soft"
+          >
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="font-semibold text-textPrimary">{request.requester}</p>
+                <p className="font-semibold text-textPrimary">
+                  {request.requester}
+                </p>
                 <p className="mt-0.5 text-xs text-textMuted">{request.id}</p>
               </div>
               <StatusBadge status={request.status} />
@@ -160,7 +197,9 @@ export default function RequestsPage() {
             <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
               <MobileField label="Category" value={request.category} />
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-textDisabled">Priority</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-textDisabled">
+                  Priority
+                </p>
                 <div className="mt-1">
                   <PriorityBadge priority={request.priority} />
                 </div>
@@ -178,7 +217,9 @@ export default function RequestsPage() {
 function SummaryCard({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-lg border border-borderSubtle bg-surface p-4 shadow-soft">
-      <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">{label}</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">
+        {label}
+      </p>
       <p className="mt-2 text-2xl font-bold text-navy">{value}</p>
     </div>
   );
@@ -186,7 +227,9 @@ function SummaryCard({ label, value }: { label: string; value: number }) {
 
 function PriorityBadge({ priority }: { priority: RequestPriority }) {
   return (
-    <span className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${priorityStyles[priority]}`}>
+    <span
+      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${priorityStyles[priority]}`}
+    >
       {priority}
     </span>
   );
@@ -194,7 +237,9 @@ function PriorityBadge({ priority }: { priority: RequestPriority }) {
 
 function StatusBadge({ status }: { status: RequestStatus }) {
   return (
-    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${statusStyles[status]}`}>
+    <span
+      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${statusStyles[status]}`}
+    >
       {status}
     </span>
   );
@@ -203,7 +248,9 @@ function StatusBadge({ status }: { status: RequestStatus }) {
 function MobileField({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-wide text-textDisabled">{label}</p>
+      <p className="text-xs font-semibold uppercase tracking-wide text-textDisabled">
+        {label}
+      </p>
       <p className="mt-1 text-textSecondary">{value}</p>
     </div>
   );

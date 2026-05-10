@@ -50,7 +50,11 @@ export default function SopsPage() {
         }
       } catch (loadError) {
         if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : "Failed to load SOPs");
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : "Failed to load SOPs",
+          );
         }
       } finally {
         if (!cancelled) {
@@ -69,9 +73,12 @@ export default function SopsPage() {
   return (
     <div className="space-y-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">SOPs</h1>
+        <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">
+          SOPs
+        </h1>
         <p className="max-w-3xl text-sm text-textSecondary">
-          Live standard operating procedures from PostgreSQL with ownership, versioning, and review status.
+          Live standard operating procedures from PostgreSQL with ownership,
+          versioning, and review status.
         </p>
       </header>
 
@@ -92,18 +99,26 @@ export default function SopsPage() {
       ) : (
         <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
           {filteredSops.map((sop) => (
-            <article key={sop.id} className="rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft">
+            <article
+              key={sop.id}
+              className="rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft"
+            >
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <CategoryBadge category={sop.category} />
-                  <h2 className="mt-2 text-xl font-bold text-textPrimary">{sop.title}</h2>
+                  <h2 className="mt-2 text-xl font-bold text-textPrimary">
+                    {sop.title}
+                  </h2>
                 </div>
                 <SopStatusBadge status={sop.status} />
               </div>
               <dl className="mt-5 space-y-3 text-sm">
                 <InfoRow label="Owner" value={sop.owner_name || "Unassigned"} />
                 <InfoRow label="Version" value={formatVersion(sop.version)} />
-                <InfoRow label="Last Updated" value={formatDate(sop.last_updated)} />
+                <InfoRow
+                  label="Last Updated"
+                  value={formatDate(sop.last_updated)}
+                />
               </dl>
             </article>
           ))}
@@ -125,7 +140,9 @@ function CategoryBadge({ category }: { category: string | null }) {
   const styles = getCategoryStyle(normalized);
 
   return (
-    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${styles}`}>
+    <span
+      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${styles}`}
+    >
       {label}
     </span>
   );
@@ -143,9 +160,12 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 function SopStatusBadge({ status }: { status: string | null }) {
   const normalized = normalizeStatus(status);
   const styles: Record<string, string> = {
-    active: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
-    under_review: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
-    archived: "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300",
+    active:
+      "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
+    under_review:
+      "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    archived:
+      "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300",
   };
 
   const labels: Record<string, string> = {
@@ -155,7 +175,9 @@ function SopStatusBadge({ status }: { status: string | null }) {
   };
 
   return (
-    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${styles[normalized] || styles.archived}`}>
+    <span
+      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${styles[normalized] || styles.archived}`}
+    >
       {labels[normalized] || "Archived"}
     </span>
   );
@@ -164,7 +186,8 @@ function SopStatusBadge({ status }: { status: string | null }) {
 function normalizeStatus(status: string | null) {
   const normalized = (status || "archived").toLowerCase();
   if (normalized === "active") return "active";
-  if (normalized === "under_review" || normalized === "needs_review") return "under_review";
+  if (normalized === "under_review" || normalized === "needs_review")
+    return "under_review";
   if (normalized === "archived") return "archived";
   return "archived";
 }
@@ -199,7 +222,9 @@ function formatVersion(value: string | number | null) {
     return "-";
   }
 
-  return stringValue.toLowerCase().startsWith("v") ? stringValue : `v${stringValue}`;
+  return stringValue.toLowerCase().startsWith("v")
+    ? stringValue
+    : `v${stringValue}`;
 }
 
 function formatDate(value: string | null) {

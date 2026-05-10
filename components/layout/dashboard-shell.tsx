@@ -175,13 +175,10 @@ export function DashboardShell({ children }: { children: ReactNode }) {
         mobileOpen={sidebarOpen}
         onClose={closeSidebar}
         desktopCollapsed={desktopCollapsed}
+        onDesktopToggle={toggleDesktopSidebar}
       />
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <TopBar
-          onMenuToggle={toggleSidebar}
-          onDesktopToggle={toggleDesktopSidebar}
-          desktopCollapsed={desktopCollapsed}
-        />
+        <TopBar onMenuToggle={toggleSidebar} />
         <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-4 pb-28 pt-5 sm:px-5 lg:px-8 lg:pb-6">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div

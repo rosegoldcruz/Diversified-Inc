@@ -22,6 +22,8 @@ import {
   Zap,
   Settings,
   X,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 type NavItem = {
@@ -78,12 +80,14 @@ type SidebarProps = {
   mobileOpen?: boolean;
   onClose?: () => void;
   desktopCollapsed?: boolean;
+  onDesktopToggle?: () => void;
 };
 
 export function Sidebar({
   mobileOpen = false,
   onClose,
   desktopCollapsed = false,
+  onDesktopToggle,
 }: SidebarProps) {
   const pathname = usePathname();
 
@@ -116,20 +120,22 @@ export function Sidebar({
               sizes="(max-width: 1024px) 85vw, 256px"
             />
             <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/60 via-black/25 to-transparent" />
-            <div
-              className={[
-                "absolute inset-x-3 bottom-2 text-white",
-                desktopCollapsed ? "lg:hidden" : "",
-              ].join(" ")}
-            >
-              <div className="text-base font-bold leading-tight">
-                Diversified OS
-              </div>
-              <div className="text-[11px] text-white/80">
-                Internal Operations Platform
-              </div>
-            </div>
           </div>
+          <button
+            type="button"
+            onClick={onDesktopToggle}
+            className="absolute right-2 top-2 hidden h-8 w-8 items-center justify-center rounded-md border border-white/30 bg-black/35 text-white transition-colors hover:bg-black/55 lg:inline-flex"
+            aria-label={
+              desktopCollapsed ? "Expand sidebar" : "Collapse sidebar"
+            }
+            title={desktopCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {desktopCollapsed ? (
+              <ChevronRight className="h-4 w-4" />
+            ) : (
+              <ChevronLeft className="h-4 w-4" />
+            )}
+          </button>
           <button
             type="button"
             onClick={onClose}

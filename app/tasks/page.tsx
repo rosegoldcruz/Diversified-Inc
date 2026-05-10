@@ -20,8 +20,12 @@ export default function TasksPage() {
 
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {
-      const statusMatches = statusFilter === "All" || toStatusFilterValue(task.status) === statusFilter;
-      const priorityMatches = priorityFilter === "All" || toPriorityFilterValue(task.priority) === priorityFilter;
+      const statusMatches =
+        statusFilter === "All" ||
+        toStatusFilterValue(task.status) === statusFilter;
+      const priorityMatches =
+        priorityFilter === "All" ||
+        toPriorityFilterValue(task.priority) === priorityFilter;
       return statusMatches && priorityMatches;
     });
   }, [priorityFilter, statusFilter, tasks]);
@@ -45,7 +49,11 @@ export default function TasksPage() {
         }
       } catch (loadError) {
         if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : "Failed to load tasks");
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : "Failed to load tasks",
+          );
         }
       } finally {
         if (!cancelled) {
@@ -64,9 +72,12 @@ export default function TasksPage() {
   return (
     <div className="space-y-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">Tasks</h1>
+        <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">
+          Tasks
+        </h1>
         <p className="max-w-3xl text-sm text-textSecondary">
-          Live task queue from PostgreSQL with assignment, priority, and due date visibility.
+          Live task queue from PostgreSQL with assignment, priority, and due
+          date visibility.
         </p>
       </header>
 
@@ -123,17 +134,30 @@ export default function TasksPage() {
               <tbody className="divide-y divide-borderSubtle">
                 {filteredTasks.map((task) => (
                   <tr key={task.id}>
-                    <td className="px-4 py-3 font-medium text-textPrimary">{task.title}</td>
-                    <td className="px-4 py-3"><TaskStatusBadge status={task.status} /></td>
-                    <td className="px-4 py-3"><TaskPriorityBadge priority={task.priority} /></td>
-                    <td className="px-4 py-3 text-textSecondary">{task.assigned_to_name || "Unassigned"}</td>
-                    <td className="px-4 py-3 text-textSecondary">{formatDate(task.due_date)}</td>
+                    <td className="px-4 py-3 font-medium text-textPrimary">
+                      {task.title}
+                    </td>
+                    <td className="px-4 py-3">
+                      <TaskStatusBadge status={task.status} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <TaskPriorityBadge priority={task.priority} />
+                    </td>
+                    <td className="px-4 py-3 text-textSecondary">
+                      {task.assigned_to_name || "Unassigned"}
+                    </td>
+                    <td className="px-4 py-3 text-textSecondary">
+                      {formatDate(task.due_date)}
+                    </td>
                   </tr>
                 ))}
 
                 {filteredTasks.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-sm text-textSecondary">
+                    <td
+                      colSpan={5}
+                      className="px-4 py-8 text-center text-sm text-textSecondary"
+                    >
                       No tasks match the selected filters.
                     </td>
                   </tr>
@@ -144,7 +168,10 @@ export default function TasksPage() {
 
           <div className="grid gap-3 p-4 md:hidden">
             {filteredTasks.map((task) => (
-              <article key={task.id} className="rounded-lg border border-borderSubtle bg-bgDark p-4">
+              <article
+                key={task.id}
+                className="rounded-lg border border-borderSubtle bg-bgDark p-4"
+              >
                 <div className="flex items-start justify-between gap-3">
                   <h2 className="font-medium text-textPrimary">{task.title}</h2>
                   <TaskPriorityBadge priority={task.priority} />
@@ -152,8 +179,12 @@ export default function TasksPage() {
                 <div className="mt-3 flex flex-wrap gap-2">
                   <TaskStatusBadge status={task.status} />
                 </div>
-                <p className="mt-3 text-sm text-textSecondary">Assigned to {task.assigned_to_name || "Unassigned"}</p>
-                <p className="mt-1 text-sm text-textMuted">Due {formatDate(task.due_date)}</p>
+                <p className="mt-3 text-sm text-textSecondary">
+                  Assigned to {task.assigned_to_name || "Unassigned"}
+                </p>
+                <p className="mt-1 text-sm text-textMuted">
+                  Due {formatDate(task.due_date)}
+                </p>
               </article>
             ))}
 
@@ -172,7 +203,8 @@ export default function TasksPage() {
 function toStatusFilterValue(status: string | null) {
   const normalized = (status || "todo").toLowerCase();
   if (normalized === "in_progress") return "In Progress";
-  if (normalized === "completed" || normalized === "complete") return "Completed";
+  if (normalized === "completed" || normalized === "complete")
+    return "Completed";
   if (normalized === "blocked") return "Blocked";
   return "Todo";
 }
@@ -188,13 +220,17 @@ function TaskStatusBadge({ status }: { status: string | null }) {
   const normalized = (status || "todo").toLowerCase();
   const styles: Record<string, string> = {
     todo: "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300",
-    in_progress: "border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-300",
-    completed: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
+    in_progress:
+      "border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-300",
+    completed:
+      "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
     blocked: "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-300",
   };
 
   return (
-    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${styles[normalized] || styles.todo}`}>
+    <span
+      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${styles[normalized] || styles.todo}`}
+    >
       {normalized.replaceAll("_", " ")}
     </span>
   );
@@ -204,12 +240,15 @@ function TaskPriorityBadge({ priority }: { priority: string | null }) {
   const normalized = (priority || "low").toLowerCase();
   const styles: Record<string, string> = {
     high: "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-300",
-    medium: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    medium:
+      "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
     low: "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300",
   };
 
   return (
-    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${styles[normalized] || styles.low}`}>
+    <span
+      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${styles[normalized] || styles.low}`}
+    >
       {normalized}
     </span>
   );
