@@ -2,6 +2,7 @@
 
 import type { ComponentType } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -100,24 +101,26 @@ export function Sidebar({ mobileOpen = false, onClose, desktopCollapsed = false 
       ].join(" ")}
     >
       {/* Logo Section */}
-      <div className="flex items-center justify-between gap-3 border-b border-borderSubtle px-5 py-4 lg:px-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-navy">
-            <span className="text-xs font-bold text-white">D</span>
-          </div>
-          <div className={desktopCollapsed ? "lg:hidden" : ""}>
-            <div className="text-sm font-bold text-navy">
-              Diversified OS
-            </div>
-            <div className="text-[10px] text-textMuted">
-              Internal Operations Platform
-            </div>
+      <div className="relative border-b border-borderSubtle">
+        <div className="relative h-20 w-full overflow-hidden">
+          <Image
+            src="/divco.gif"
+            alt="Diversified OS"
+            fill
+            priority
+            className="object-cover"
+            sizes="(max-width: 1024px) 85vw, 256px"
+          />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/60 via-black/25 to-transparent" />
+          <div className={["absolute inset-x-3 bottom-2 text-white", desktopCollapsed ? "lg:hidden" : ""].join(" ")}>
+            <div className="text-base font-bold leading-tight">Diversified OS</div>
+            <div className="text-[11px] text-white/80">Internal Operations Platform</div>
           </div>
         </div>
         <button
           type="button"
           onClick={onClose}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md text-textMuted transition-colors hover:bg-bgDark hover:text-textPrimary lg:hidden"
+          className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-md bg-black/35 text-white transition-colors hover:bg-black/55 lg:hidden"
           aria-label="Close navigation"
         >
           <X className="h-4 w-4" />

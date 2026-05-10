@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -23,7 +23,7 @@ import {
   Zap,
   Settings,
 } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Sidebar } from "./sidebar";
 import { TopBar } from "./topbar";
 
@@ -49,11 +49,105 @@ const MOBILE_MORE_NAV = [
   { label: "Settings", href: "/settings", icon: Settings },
 ];
 
+type RouteMotionProfile = {
+  introY: number;
+  outroY: number;
+  stiffness: number;
+  damping: number;
+  mass: number;
+  stageDuration: number;
+  stageDelay: number;
+};
+
+function getRouteMotionProfile(pathname: string): RouteMotionProfile {
+  if (pathname.startsWith("/dashboard")) {
+    return {
+      introY: 10,
+      outroY: -8,
+      stiffness: 320,
+      damping: 32,
+      mass: 0.8,
+      stageDuration: 360,
+      stageDelay: 32,
+    };
+  }
+
+  const dataHeavyPrefixes = [
+    "/tasks",
+    "/work-orders",
+    "/inventory",
+    "/reports",
+    "/documents",
+    "/forms",
+    "/employees",
+    "/requests",
+  ];
+
+  if (dataHeavyPrefixes.some((prefix) => pathname.startsWith(prefix))) {
+    return {
+      introY: 14,
+      outroY: -10,
+      stiffness: 250,
+      damping: 30,
+      mass: 0.88,
+      stageDuration: 460,
+      stageDelay: 50,
+    };
+  }
+
+  return {
+    introY: 12,
+    outroY: -8,
+    stiffness: 285,
+    damping: 30,
+    mass: 0.84,
+    stageDuration: 410,
+    stageDelay: 42,
+  };
+}
+
 export function DashboardShell({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [desktopCollapsed, setDesktopCollapsed] = useState(false);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
+  const desktopStaggerRef = useRef<HTMLDivElement>(null);
   const pathname = usePathname();
+  const prefersReducedMotion = useReducedMotion();
+  const motionProfile = getRouteMotionProfile(pathname);
+
+  useEffect(() => {
+    if (prefersReducedMotion) return;
+    if (typeof window !== "undefined" && !window.matchMedia("(min-width: 1024px)").matches) {
+      return;
+    }
+
+    const stageContainer = desktopStaggerRef.current;
+    if (!stageContainer) return;
+
+    const pageRoot = stageContainer.firstElementChild as HTMLElement | null;
+    if (!pageRoot) return;
+
+    const stageNodes = Array.from(pageRoot.children)
+      .filter((node): node is HTMLElement => node instanceof HTMLElement)
+      .slice(0, 8);
+
+    if (stageNodes.length === 0) return;
+
+    for (const [index, node] of stageNodes.entries()) {
+      node.animate(
+        [
+          { opacity: 0, transform: "translateY(10px) scale(0.995)" },
+          { opacity: 1, transform: "translateY(0) scale(1)" },
+        ],
+        {
+          duration: motionProfile.stageDuration,
+          delay: motionProfile.stageDelay * index,
+          easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+          fill: "both",
+        },
+      );
+    }
+  }, [pathname, prefersReducedMotion, motionProfile.stageDelay, motionProfile.stageDuration]);
 
   const toggleSidebar = useCallback(() => {
     setSidebarOpen((open) => !open);
@@ -73,7 +167,27 @@ export function DashboardShell({ children }: { children: ReactNode }) {
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <TopBar onMenuToggle={toggleSidebar} onDesktopToggle={toggleDesktopSidebar} desktopCollapsed={desktopCollapsed} />
         <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-4 pb-28 pt-5 sm:px-5 lg:px-8 lg:pb-6">
-          {children}
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={pathname}
+              ref={desktopStaggerRef}
+              initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: motionProfile.introY, scale: 0.995 }}
+              animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+              exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: motionProfile.outroY, scale: 0.995 }}
+              transition={
+                prefersReducedMotion
+                  ? { duration: 0 }
+                  : {
+                      type: "spring",
+                      stiffness: motionProfile.stiffness,
+                      damping: motionProfile.damping,
+                      mass: motionProfile.mass,
+                    }
+              }
+            >
+              {children}
+            </motion.div>
+          </AnimatePresence>
         </main>
         <MobileBottomNav pathname={pathname} onMoreClick={() => setMobileSheetOpen(true)} />
         <MobileNavigationSheet
