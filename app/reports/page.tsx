@@ -1,14 +1,361 @@
+"use client";
 
-export default function Page() {
+import { useEffect, useMemo, useState } from "react";
+
+type Task = {
+  id: number;
+  status: string | null;
+  priority: string | null;
+};
+
+type WorkOrder = {
+  id: number;
+  status: string | null;
+};
+
+type Employee = {
+  id: number;
+};
+
+type InventoryItem = {
+  id: number;
+  item_name: string;
+  quantity: number | null;
+  unit: string | null;
+  location: string | null;
+  status: string | null;
+};
+
+type ReportData = {
+  tasks: Task[];
+  workOrders: WorkOrder[];
+  employees: Employee[];
+  inventory: InventoryItem[];
+};
+
+const EMPTY_DATA: ReportData = {
+  tasks: [],
+  workOrders: [],
+  employees: [],
+  inventory: [],
+};
+
+export default function ReportsPage() {
+  const [data, setData] = useState<ReportData>(EMPTY_DATA);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadReports() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const [
+          tasksResponse,
+          workOrdersResponse,
+          employeesResponse,
+          inventoryResponse,
+        ] = await Promise.all([
+          fetch("/api/tasks", { cache: "no-store" }),
+          fetch("/api/work-orders", { cache: "no-store" }),
+          fetch("/api/employees", { cache: "no-store" }),
+          fetch("/api/inventory", { cache: "no-store" }),
+        ]);
+
+        if (!tasksResponse.ok)
+          throw new Error(`Failed to load tasks (${tasksResponse.status})`);
+        if (!workOrdersResponse.ok)
+          throw new Error(
+            `Failed to load work orders (${workOrdersResponse.status})`,
+          );
+        if (!employeesResponse.ok)
+          throw new Error(
+            `Failed to load employees (${employeesResponse.status})`,
+          );
+        if (!inventoryResponse.ok)
+          throw new Error(
+            `Failed to load inventory (${inventoryResponse.status})`,
+          );
+
+        const [tasks, workOrders, employees, inventory] = (await Promise.all([
+          tasksResponse.json(),
+          workOrdersResponse.json(),
+          employeesResponse.json(),
+          inventoryResponse.json(),
+        ])) as [Task[], WorkOrder[], Employee[], InventoryItem[]];
+
+        if (!cancelled) {
+          setData({ tasks, workOrders, employees, inventory });
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : "Failed to load reports",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadReports();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const metrics = useMemo(() => {
+    const completedTasks = data.tasks.filter(
+      (task) => normalize(task.status) === "completed",
+    ).length;
+    const blockedTasks = data.tasks.filter(
+      (task) => normalize(task.status) === "blocked",
+    ).length;
+    const highPriorityTasks = data.tasks.filter((task) => {
+      const priority = normalize(task.priority);
+      return priority === "high" || priority === "urgent";
+    }).length;
+
+    const openWorkOrders = data.workOrders.filter((workOrder) => {
+      const status = normalize(workOrder.status);
+      return (
+        status !== "completed" &&
+        status !== "complete" &&
+        status !== "closed" &&
+        status !== "canceled" &&
+        status !== "cancelled"
+      );
+    }).length;
+
+    const lowStockItems = data.inventory.filter(
+      (item) => normalize(item.status) === "low_stock",
+    ).length;
+    const outOfStockItems = data.inventory.filter(
+      (item) => normalize(item.status) === "out_of_stock",
+    ).length;
+
+    return {
+      totalTasks: data.tasks.length,
+      completedTasks,
+      blockedTasks,
+      highPriorityTasks,
+      openWorkOrders,
+      totalEmployees: data.employees.length,
+      lowStockItems,
+      outOfStockItems,
+    };
+  }, [data]);
+
+  const taskBreakdown = useMemo(() => {
+    return {
+      todo: data.tasks.filter((task) => normalize(task.status) === "todo")
+        .length,
+      in_progress: data.tasks.filter(
+        (task) => normalize(task.status) === "in_progress",
+      ).length,
+      completed: data.tasks.filter(
+        (task) => normalize(task.status) === "completed",
+      ).length,
+      blocked: data.tasks.filter((task) => normalize(task.status) === "blocked")
+        .length,
+    };
+  }, [data.tasks]);
+
+  const inventoryAlerts = useMemo(() => {
+    return data.inventory.filter((item) => {
+      const status = normalize(item.status);
+      return status === "low_stock" || status === "out_of_stock";
+    });
+  }, [data.inventory]);
+
+  const cards = [
+    { label: "Total Tasks", value: metrics.totalTasks },
+    { label: "Completed Tasks", value: metrics.completedTasks },
+    { label: "Blocked Tasks", value: metrics.blockedTasks },
+    { label: "High Priority Tasks", value: metrics.highPriorityTasks },
+    { label: "Open Work Orders", value: metrics.openWorkOrders },
+    { label: "Total Employees", value: metrics.totalEmployees },
+    { label: "Low Stock Items", value: metrics.lowStockItems },
+    { label: "Out of Stock Items", value: metrics.outOfStockItems },
+  ];
+
   return (
-    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-400">
-      <h1 className="text-xl md:text-2xl font-semibold text-textPrimary">Reports</h1>
-      <p className="text-sm text-textSecondary max-w-2xl">
-        Enterprise-grade reporting for volume, revenue, materials, and performance.
-      </p>
-      <div className="glass-panel border-dashed border-2 border-borderSubtle/80 py-10 flex items-center justify-center text-textSecondary text-sm">
-        <span>Module shell ready. Wire real data, tables, and flows into this view.</span>
-      </div>
+    <div className="space-y-6">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">
+          Reports
+        </h1>
+        <p className="max-w-3xl text-sm text-textSecondary">
+          Live reporting across tasks, work orders, employees, and inventory.
+        </p>
+      </header>
+
+      {error ? <ErrorPanel message={error} /> : null}
+
+      {loading ? (
+        <LoadingPanel label="Loading reports..." />
+      ) : (
+        <>
+          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {cards.map((card) => (
+              <article
+                key={card.label}
+                className="rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft"
+              >
+                <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">
+                  {card.label}
+                </p>
+                <p className="mt-3 text-4xl font-semibold text-textPrimary">
+                  {card.value}
+                </p>
+              </article>
+            ))}
+          </section>
+
+          <section className="rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft">
+            <h2 className="text-lg font-semibold text-textPrimary">
+              Task Breakdown by Status
+            </h2>
+            <p className="mt-1 text-sm text-textSecondary">
+              Counts for todo, in_progress, completed, and blocked tasks.
+            </p>
+            <div className="mt-4 overflow-x-auto">
+              <table className="min-w-full text-left text-sm">
+                <thead className="bg-bgDark text-xs uppercase tracking-wide text-textMuted">
+                  <tr>
+                    <th className="px-4 py-3 font-semibold">Status</th>
+                    <th className="px-4 py-3 font-semibold">Count</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-borderSubtle">
+                  <tr>
+                    <td className="px-4 py-3 text-textSecondary">todo</td>
+                    <td className="px-4 py-3 font-medium text-textPrimary">
+                      {taskBreakdown.todo}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 text-textSecondary">
+                      in_progress
+                    </td>
+                    <td className="px-4 py-3 font-medium text-textPrimary">
+                      {taskBreakdown.in_progress}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 text-textSecondary">completed</td>
+                    <td className="px-4 py-3 font-medium text-textPrimary">
+                      {taskBreakdown.completed}
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="px-4 py-3 text-textSecondary">blocked</td>
+                    <td className="px-4 py-3 font-medium text-textPrimary">
+                      {taskBreakdown.blocked}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <section className="rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft">
+            <h2 className="text-lg font-semibold text-textPrimary">
+              Inventory Alerts
+            </h2>
+            <p className="mt-1 text-sm text-textSecondary">
+              Items currently low on stock or out of stock.
+            </p>
+
+            {inventoryAlerts.length === 0 ? (
+              <p className="mt-4 text-sm text-textSecondary">
+                No inventory alerts right now.
+              </p>
+            ) : (
+              <div className="mt-4 overflow-x-auto">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="bg-bgDark text-xs uppercase tracking-wide text-textMuted">
+                    <tr>
+                      <th className="px-4 py-3 font-semibold">Item</th>
+                      <th className="px-4 py-3 font-semibold">Quantity</th>
+                      <th className="px-4 py-3 font-semibold">Unit</th>
+                      <th className="px-4 py-3 font-semibold">Location</th>
+                      <th className="px-4 py-3 font-semibold">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-borderSubtle">
+                    {inventoryAlerts.map((item) => (
+                      <tr key={item.id}>
+                        <td className="px-4 py-3 font-medium text-textPrimary">
+                          {item.item_name}
+                        </td>
+                        <td className="px-4 py-3 text-textSecondary">
+                          {item.quantity ?? 0}
+                        </td>
+                        <td className="px-4 py-3 text-textSecondary">
+                          {item.unit || "-"}
+                        </td>
+                        <td className="px-4 py-3 text-textSecondary">
+                          {item.location || "-"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <InventoryStatusBadge status={item.status} />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        </>
+      )}
+    </div>
+  );
+}
+
+function normalize(value: string | null) {
+  return (value || "").toLowerCase();
+}
+
+function InventoryStatusBadge({ status }: { status: string | null }) {
+  const normalized = normalize(status);
+  const styles: Record<string, string> = {
+    low_stock:
+      "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    out_of_stock:
+      "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-300",
+  };
+
+  return (
+    <span
+      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${styles[normalized] || styles.low_stock}`}
+    >
+      {normalized.replaceAll("_", " ")}
+    </span>
+  );
+}
+
+function LoadingPanel({ label }: { label: string }) {
+  return (
+    <div className="rounded-xl border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
+      {label}
+    </div>
+  );
+}
+
+function ErrorPanel({ message }: { message: string }) {
+  return (
+    <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-300">
+      {message}
     </div>
   );
 }
