@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type Task = {
   id: number;
@@ -13,8 +13,18 @@ type Task = {
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [statusFilter, setStatusFilter] = useState("All");
+  const [priorityFilter, setPriorityFilter] = useState("All");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const filteredTasks = useMemo(() => {
+    return tasks.filter((task) => {
+      const statusMatches = statusFilter === "All" || toStatusFilterValue(task.status) === statusFilter;
+      const priorityMatches = priorityFilter === "All" || toPriorityFilterValue(task.priority) === priorityFilter;
+      return statusMatches && priorityMatches;
+    });
+  }, [priorityFilter, statusFilter, tasks]);
 
   useEffect(() => {
     let cancelled = false;
@@ -60,6 +70,39 @@ export default function TasksPage() {
         </p>
       </header>
 
+      <section className="rounded-xl border border-borderSubtle bg-surface p-4 shadow-soft">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-textMuted">
+            Filter By Status
+            <select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value)}
+              className="h-10 rounded-md border border-borderSubtle bg-bgDark px-3 text-sm font-medium normal-case text-textPrimary outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/20"
+            >
+              <option>All</option>
+              <option>Todo</option>
+              <option>In Progress</option>
+              <option>Completed</option>
+              <option>Blocked</option>
+            </select>
+          </label>
+
+          <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-textMuted">
+            Filter By Priority
+            <select
+              value={priorityFilter}
+              onChange={(event) => setPriorityFilter(event.target.value)}
+              className="h-10 rounded-md border border-borderSubtle bg-bgDark px-3 text-sm font-medium normal-case text-textPrimary outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/20"
+            >
+              <option>All</option>
+              <option>High</option>
+              <option>Medium</option>
+              <option>Low</option>
+            </select>
+          </label>
+        </div>
+      </section>
+
       {error ? <ErrorPanel message={error} /> : null}
 
       {loading ? (
@@ -78,7 +121,7 @@ export default function TasksPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-borderSubtle">
-                {tasks.map((task) => (
+                {filteredTasks.map((task) => (
                   <tr key={task.id}>
                     <td className="px-4 py-3 font-medium text-textPrimary">{task.title}</td>
                     <td className="px-4 py-3"><TaskStatusBadge status={task.status} /></td>
@@ -87,12 +130,20 @@ export default function TasksPage() {
                     <td className="px-4 py-3 text-textSecondary">{formatDate(task.due_date)}</td>
                   </tr>
                 ))}
+
+                {filteredTasks.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-4 py-8 text-center text-sm text-textSecondary">
+                      No tasks match the selected filters.
+                    </td>
+                  </tr>
+                ) : null}
               </tbody>
             </table>
           </div>
 
           <div className="grid gap-3 p-4 md:hidden">
-            {tasks.map((task) => (
+            {filteredTasks.map((task) => (
               <article key={task.id} className="rounded-lg border border-borderSubtle bg-bgDark p-4">
                 <div className="flex items-start justify-between gap-3">
                   <h2 className="font-medium text-textPrimary">{task.title}</h2>
@@ -105,11 +156,32 @@ export default function TasksPage() {
                 <p className="mt-1 text-sm text-textMuted">Due {formatDate(task.due_date)}</p>
               </article>
             ))}
+
+            {filteredTasks.length === 0 ? (
+              <article className="rounded-lg border border-dashed border-borderSubtle bg-bgDark p-6 text-center text-sm text-textSecondary">
+                No tasks match the selected filters.
+              </article>
+            ) : null}
           </div>
         </section>
       )}
     </div>
   );
+}
+
+function toStatusFilterValue(status: string | null) {
+  const normalized = (status || "todo").toLowerCase();
+  if (normalized === "in_progress") return "In Progress";
+  if (normalized === "completed" || normalized === "complete") return "Completed";
+  if (normalized === "blocked") return "Blocked";
+  return "Todo";
+}
+
+function toPriorityFilterValue(priority: string | null) {
+  const normalized = (priority || "low").toLowerCase();
+  if (normalized === "high") return "High";
+  if (normalized === "medium" || normalized === "normal") return "Medium";
+  return "Low";
 }
 
 function TaskStatusBadge({ status }: { status: string | null }) {

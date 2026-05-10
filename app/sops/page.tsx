@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type Sop = {
   id: number;
@@ -14,8 +14,22 @@ type Sop = {
 
 export default function SopsPage() {
   const [sops, setSops] = useState<Sop[]>([]);
+  const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const filteredSops = useMemo(() => {
+    const query = search.trim().toLowerCase();
+    if (!query) {
+      return sops;
+    }
+
+    return sops.filter((sop) => {
+      const title = sop.title.toLowerCase();
+      const category = (sop.category || "general").toLowerCase();
+      return title.includes(query) || category.includes(query);
+    });
+  }, [search, sops]);
 
   useEffect(() => {
     let cancelled = false;
@@ -61,31 +75,59 @@ export default function SopsPage() {
         </p>
       </header>
 
+      <div className="rounded-xl border border-borderSubtle bg-surface p-4 shadow-soft">
+        <input
+          type="search"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Search SOPs by title or category"
+          className="h-10 w-full rounded-md border border-borderSubtle bg-bgDark px-3 text-sm text-textPrimary outline-none transition-colors placeholder:text-textDisabled focus:border-accent focus:ring-2 focus:ring-accent/20"
+        />
+      </div>
+
       {error ? <ErrorPanel message={error} /> : null}
 
       {loading ? (
         <LoadingPanel label="Loading SOPs..." />
       ) : (
         <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-          {sops.map((sop) => (
+          {filteredSops.map((sop) => (
             <article key={sop.id} className="rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">{sop.category || "General"}</p>
-                  <h2 className="mt-1 text-lg font-semibold text-textPrimary">{sop.title}</h2>
+                  <CategoryBadge category={sop.category} />
+                  <h2 className="mt-2 text-xl font-bold text-textPrimary">{sop.title}</h2>
                 </div>
                 <SopStatusBadge status={sop.status} />
               </div>
               <dl className="mt-5 space-y-3 text-sm">
                 <InfoRow label="Owner" value={sop.owner_name || "Unassigned"} />
-                <InfoRow label="Version" value={String(sop.version || "-" )} />
+                <InfoRow label="Version" value={formatVersion(sop.version)} />
                 <InfoRow label="Last Updated" value={formatDate(sop.last_updated)} />
               </dl>
             </article>
           ))}
+
+          {filteredSops.length === 0 ? (
+            <article className="rounded-xl border border-dashed border-borderSubtle bg-surface p-8 text-center text-sm text-textSecondary lg:col-span-2 xl:col-span-3">
+              No SOPs match this search.
+            </article>
+          ) : null}
         </div>
       )}
     </div>
+  );
+}
+
+function CategoryBadge({ category }: { category: string | null }) {
+  const label = category || "General";
+  const normalized = label.toLowerCase();
+  const styles = getCategoryStyle(normalized);
+
+  return (
+    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${styles}`}>
+      {label}
+    </span>
   );
 }
 
@@ -99,19 +141,65 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 function SopStatusBadge({ status }: { status: string | null }) {
-  const normalized = (status || "draft").toLowerCase();
+  const normalized = normalizeStatus(status);
   const styles: Record<string, string> = {
     active: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
-    draft: "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300",
+    under_review: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
     archived: "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300",
-    needs_review: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  };
+
+  const labels: Record<string, string> = {
+    active: "Active",
+    under_review: "Under Review",
+    archived: "Archived",
   };
 
   return (
-    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${styles[normalized] || styles.draft}`}>
-      {normalized.replaceAll("_", " ")}
+    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${styles[normalized] || styles.archived}`}>
+      {labels[normalized] || "Archived"}
     </span>
   );
+}
+
+function normalizeStatus(status: string | null) {
+  const normalized = (status || "archived").toLowerCase();
+  if (normalized === "active") return "active";
+  if (normalized === "under_review" || normalized === "needs_review") return "under_review";
+  if (normalized === "archived") return "archived";
+  return "archived";
+}
+
+function getCategoryStyle(category: string) {
+  if (category.includes("hr") || category.includes("employee")) {
+    return "border-cyan-500/30 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300";
+  }
+  if (category.includes("safety") || category.includes("field")) {
+    return "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300";
+  }
+  if (category.includes("inventory")) {
+    return "border-indigo-500/30 bg-indigo-500/10 text-indigo-700 dark:text-indigo-300";
+  }
+  if (category.includes("work order")) {
+    return "border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300";
+  }
+  if (category.includes("admin") || category.includes("office")) {
+    return "border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-300";
+  }
+
+  return "border-slate-500/30 bg-slate-500/10 text-slate-700 dark:text-slate-300";
+}
+
+function formatVersion(value: string | number | null) {
+  if (!value) {
+    return "-";
+  }
+
+  const stringValue = String(value).trim();
+  if (!stringValue) {
+    return "-";
+  }
+
+  return stringValue.toLowerCase().startsWith("v") ? stringValue : `v${stringValue}`;
 }
 
 function formatDate(value: string | null) {
@@ -121,7 +209,7 @@ function formatDate(value: string | null) {
   if (Number.isNaN(parsed.getTime())) return value;
 
   return new Intl.DateTimeFormat("en-US", {
-    month: "short",
+    month: "long",
     day: "numeric",
     year: "numeric",
   }).format(parsed);

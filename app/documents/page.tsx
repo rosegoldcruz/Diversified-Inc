@@ -1,131 +1,155 @@
-// TODO: reconnect to Postgres/Supabase when backend is available.
 "use client";
 
-import { useMemo, useState } from "react";
-import { mockDocuments } from "@/app/lib/mockData";
-import type { Document } from "@/app/lib/mockData";
+type DocumentStatus = "Signed" | "Pending" | "Draft";
+type DocumentType = "Contract" | "Quote" | "Permit" | "Completion Record" | "QC Photos";
 
-const STATUS_COLORS: Record<Document["status"], string> = {
-  signed: "bg-cyber-green/10 border-cyber-green/50 text-cyber-green",
-  pending: "bg-cyber-yellow/10 border-cyber-yellow/50 text-cyber-yellow",
-  draft: "bg-textMuted/20 border-textMuted/50 text-textMuted",
-  expired: "bg-cyber-red/10 border-cyber-red/50 text-cyber-red",
+type InternalDocument = {
+  id: string;
+  documentName: string;
+  type: DocumentType;
+  linkedJobOrWorkOrder: string;
+  status: DocumentStatus;
+  uploadedDate: string;
 };
 
-const TYPE_COLORS: Record<Document["type"], string> = {
-  contract: "text-cyber-cyan",
-  quote: "text-cyber-yellow",
-  "qc-photo": "text-cyber-magenta",
-  completion: "text-cyber-green",
-  permit: "text-cyber-yellow",
-  invoice: "text-cyber-green",
+const documents: InternalDocument[] = [
+  {
+    id: "DOC-2026-201",
+    documentName: "North Valley Apartment Contract",
+    type: "Contract",
+    linkedJobOrWorkOrder: "WO-8824",
+    status: "Signed",
+    uploadedDate: "May 9, 2026",
+  },
+  {
+    id: "DOC-2026-202",
+    documentName: "Elm Street Cabinet Quote",
+    type: "Quote",
+    linkedJobOrWorkOrder: "JOB-4512",
+    status: "Pending",
+    uploadedDate: "May 8, 2026",
+  },
+  {
+    id: "DOC-2026-203",
+    documentName: "Downtown Fire Permit Packet",
+    type: "Permit",
+    linkedJobOrWorkOrder: "WO-8820",
+    status: "Draft",
+    uploadedDate: "May 8, 2026",
+  },
+  {
+    id: "DOC-2026-204",
+    documentName: "Warehouse Remodel Completion Record",
+    type: "Completion Record",
+    linkedJobOrWorkOrder: "JOB-4487",
+    status: "Signed",
+    uploadedDate: "May 7, 2026",
+  },
+  {
+    id: "DOC-2026-205",
+    documentName: "Fleet Bay QC Photos Set A",
+    type: "QC Photos",
+    linkedJobOrWorkOrder: "WO-8815",
+    status: "Pending",
+    uploadedDate: "May 7, 2026",
+  },
+  {
+    id: "DOC-2026-206",
+    documentName: "Main Office Expansion Contract",
+    type: "Contract",
+    linkedJobOrWorkOrder: "JOB-4526",
+    status: "Pending",
+    uploadedDate: "May 6, 2026",
+  },
+  {
+    id: "DOC-2026-207",
+    documentName: "West Service Yard Permit Renewal",
+    type: "Permit",
+    linkedJobOrWorkOrder: "WO-8830",
+    status: "Signed",
+    uploadedDate: "May 6, 2026",
+  },
+];
+
+const statusStyles: Record<DocumentStatus, string> = {
+  Signed: "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  Pending: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+  Draft: "border-slate-500/30 bg-slate-500/10 text-slate-700 dark:text-slate-300",
 };
 
-function Badge({ label, colorClass }: { label: string; colorClass: string }) {
-  return (
-    <span className={`inline-flex items-center gap-1.5 border px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider ${colorClass}`}>
-      <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse" />
-      {label}
-    </span>
-  );
-}
-
-function KpiCard({ label, value, variant = "cyan" }: { label: string; value: string | number; variant?: "cyan" | "green" | "yellow" | "magenta" }) {
-  const colors = {
-    cyan: { border: "border-cyber-cyan/30", text: "text-cyber-cyan", glow: "rgba(0,240,255,0.5)" },
-    green: { border: "border-cyber-green/30", text: "text-cyber-green", glow: "rgba(0,255,102,0.5)" },
-    yellow: { border: "border-cyber-yellow/30", text: "text-cyber-yellow", glow: "rgba(255,230,0,0.5)" },
-    magenta: { border: "border-cyber-magenta/30", text: "text-cyber-magenta", glow: "rgba(255,0,255,0.5)" },
-  };
-  const c = colors[variant];
-  return (
-    <div className={`cyber-card-tw ${c.border} shadow-cyberInset`}>
-      <p className="font-display text-[10px] font-bold uppercase tracking-[0.2em] text-textMuted">{label}</p>
-      <p className={`mt-2 text-2xl font-bold font-display ${c.text}`} style={{ textShadow: `0 0 15px ${c.glow}` }}>{value}</p>
-    </div>
-  );
-}
+const typeStyles: Record<DocumentType, string> = {
+  Contract: "border-cyan-500/30 bg-cyan-500/10 text-cyan-700 dark:text-cyan-300",
+  Quote: "border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300",
+  Permit: "border-violet-500/30 bg-violet-500/10 text-violet-700 dark:text-violet-300",
+  "Completion Record": "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+  "QC Photos": "border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-300",
+};
 
 export default function DocumentsPage() {
-  const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
-  const documents = mockDocuments;
-
-  const filtered = useMemo(() => {
-    return documents.filter((d) => {
-      const matchSearch = !search || d.name.toLowerCase().includes(search.toLowerCase()) || d.linkedJob.toLowerCase().includes(search.toLowerCase());
-      const matchType = !typeFilter || d.type === typeFilter;
-      return matchSearch && matchType;
-    });
-  }, [documents, search, typeFilter]);
-
-  const signedCount = documents.filter((d) => d.status === "signed").length;
-  const pendingCount = documents.filter((d) => d.status === "pending").length;
-  const draftCount = documents.filter((d) => d.status === "draft").length;
+  const signedCount = documents.filter((document) => document.status === "Signed").length;
+  const pendingCount = documents.filter((document) => document.status === "Pending").length;
+  const draftCount = documents.filter((document) => document.status === "Draft").length;
 
   return (
     <div className="space-y-6">
-        <div className="space-y-1">
-          <h1 className="font-display text-3xl font-bold uppercase tracking-wider text-cyber-cyan" style={{ textShadow: "0 0 20px rgba(0,240,255,0.5)" }}>
-            Documents
-          </h1>
-          <p className="text-sm text-textSecondary font-mono">Quotes, contracts, QC photos, and completion records</p>
-        </div>
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold text-navy">Documents</h1>
+        <p className="text-sm text-textMuted">
+          Internal contracts, quotes, permits, completion records, and QC photos linked to active work.
+        </p>
+      </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <KpiCard label="Total Documents" value={documents.length} variant="cyan" />
-          <KpiCard label="Signed" value={signedCount} variant="green" />
-          <KpiCard label="Pending Signature" value={pendingCount} variant="yellow" />
-          <KpiCard label="Drafts" value={draftCount} variant="magenta" />
-        </div>
+      <section className="grid gap-3 sm:grid-cols-3">
+        <SummaryCard label="Signed" value={signedCount} />
+        <SummaryCard label="Pending" value={pendingCount} />
+        <SummaryCard label="Draft" value={draftCount} />
+      </section>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <input
-            type="text"
-            placeholder="Search document name or job ID..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-64 border border-borderSubtle bg-surface px-3 py-2 text-xs text-textPrimary placeholder-textMuted focus:border-cyber-cyan/60 focus:outline-none font-mono"
-          />
-          <select
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            className="border border-borderSubtle bg-surface px-3 py-2 text-xs text-textPrimary focus:border-cyber-cyan/60 focus:outline-none font-mono"
-          >
-            <option value="">All Types</option>
-            <option value="contract">Contract</option>
-            <option value="quote">Quote</option>
-            <option value="qc-photo">QC Photo</option>
-            <option value="completion">Completion</option>
-            <option value="permit">Permit</option>
-            <option value="invoice">Invoice</option>
-          </select>
-          <span className="text-xs text-textMuted font-mono">{filtered.length} / {documents.length} records</span>
-        </div>
-
-        <section className="cyber-card-tw border-l-4 border-l-cyber-cyan shadow-cyberInset overflow-x-auto p-0">
-          <table className="min-w-full text-xs">
-            <thead>
-              <tr className="border-b border-borderSubtle bg-bgDark">
-                {["ID", "Document Name", "Type", "Linked Job", "Status", "Uploaded"].map((h) => (
-                  <th key={h} className="px-4 py-3 text-left font-display text-[10px] uppercase tracking-[0.15em] text-cyber-cyan/70">{h}</th>
-                ))}
+      <section className="overflow-hidden rounded-lg border border-borderSubtle bg-surface shadow-soft">
+        <div className="overflow-x-auto">
+          <table className="min-w-[920px] w-full text-left text-sm">
+            <thead className="bg-bgDark text-xs uppercase tracking-wide text-textMuted">
+              <tr>
+                <th className="px-4 py-3 font-semibold">ID</th>
+                <th className="px-4 py-3 font-semibold">Document Name</th>
+                <th className="px-4 py-3 font-semibold">Type</th>
+                <th className="px-4 py-3 font-semibold">Linked Job/WO</th>
+                <th className="px-4 py-3 font-semibold">Status</th>
+                <th className="px-4 py-3 font-semibold">Uploaded Date</th>
               </tr>
             </thead>
-            <tbody>
-              {filtered.map((doc) => (
-                <tr key={doc.id} className="border-b border-borderSubtle hover:bg-surface/60 transition-colors">
-                  <td className="px-4 py-3 font-mono text-textMuted">{doc.id}</td>
-                  <td className="px-4 py-3 font-medium text-textPrimary">{doc.name}</td>
-                  <td className={`px-4 py-3 font-mono text-[10px] font-bold uppercase tracking-wider ${TYPE_COLORS[doc.type]}`}>{doc.type.replace("-", " ")}</td>
-                  <td className="px-4 py-3 font-mono text-cyber-cyan">{doc.linkedJob}</td>
-                  <td className="px-4 py-3"><Badge label={doc.status} colorClass={STATUS_COLORS[doc.status]} /></td>
-                  <td className="px-4 py-3 text-textMuted font-mono">{doc.uploadedAt}</td>
+            <tbody className="divide-y divide-borderSubtle">
+              {documents.map((document) => (
+                <tr key={document.id} className="transition-colors hover:bg-bgDark">
+                  <td className="px-4 py-3 text-textMuted">{document.id}</td>
+                  <td className="px-4 py-3 font-medium text-textPrimary">{document.documentName}</td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${typeStyles[document.type]}`}>
+                      {document.type}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-textSecondary">{document.linkedJobOrWorkOrder}</td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${statusStyles[document.status]}`}>
+                      {document.status}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-textSecondary">{document.uploadedDate}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </section>
-      </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function SummaryCard({ label, value }: { label: string; value: number }) {
+  return (
+    <div className="rounded-lg border border-borderSubtle bg-surface p-4 shadow-soft">
+      <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">{label}</p>
+      <p className="mt-2 text-2xl font-bold text-navy">{value}</p>
+    </div>
   );
 }

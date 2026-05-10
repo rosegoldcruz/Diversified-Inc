@@ -3,7 +3,12 @@
 import { FormEvent, useMemo, useState } from "react";
 import { ClipboardList, FileText, Plus, Upload } from "lucide-react";
 
-type FormName = "Work Order Request" | "Vehicle Request" | "Claim Report" | "PO Request";
+type FormName =
+  | "Work Order Request"
+  | "Vehicle Request"
+  | "Claim Report"
+  | "PO Request"
+  | "Microsoft 365 Access Request";
 
 type SubmittedRecord = {
   id: string;
@@ -18,6 +23,7 @@ const formNames: FormName[] = [
   "Vehicle Request",
   "Claim Report",
   "PO Request",
+  "Microsoft 365 Access Request",
 ];
 
 const initialRecords: SubmittedRecord[] = [
@@ -127,6 +133,7 @@ export default function FormsCenterPage() {
               {activeForm === "Vehicle Request" && <VehicleFields />}
               {activeForm === "Claim Report" && <ClaimFields />}
               {activeForm === "PO Request" && <POFields />}
+              {activeForm === "Microsoft 365 Access Request" && <Microsoft365AccessFields />}
               <button
                 type="submit"
                 className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-navy px-4 text-sm font-semibold text-white transition-colors hover:bg-[#243B63]"
@@ -234,6 +241,19 @@ function POFields() {
   );
 }
 
+function Microsoft365AccessFields() {
+  return (
+    <div className="grid gap-4 md:grid-cols-2">
+      <TextField label="Employee Name" />
+      <TextField label="Department" />
+      <SelectField label="Access Type" options={["Email", "Calendar", "SharePoint", "Teams", "Full Suite"]} />
+      <TextField label="Requested By" />
+      <TextAreaField label="Reason" />
+      <TextField label="Date Needed" type="date" />
+    </div>
+  );
+}
+
 function TextField({ label, type = "text" }: { label: string; type?: string }) {
   return (
     <label className="space-y-1">
@@ -313,6 +333,7 @@ function defaultAssignee(form: FormName) {
     "Vehicle Request": "Fleet Queue",
     "Claim Report": "Claims Queue",
     "PO Request": "Purchasing Queue",
+    "Microsoft 365 Access Request": "IT Access Queue",
   };
 
   return assignees[form];

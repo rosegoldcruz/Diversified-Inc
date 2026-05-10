@@ -1,4 +1,4 @@
-import { ClipboardCheck, Filter, Search } from "lucide-react";
+import { ClipboardCheck } from "lucide-react";
 
 type RequestStatus = "Submitted" | "Under Review" | "Approved" | "Denied" | "Completed";
 type RequestPriority = "Low" | "Medium" | "High" | "Urgent";
@@ -15,58 +15,58 @@ type InternalRequest = {
 
 const requests: InternalRequest[] = [
   {
-    id: "REQ-2026-041",
-    requester: "Maya Chen",
+    id: "REQ-2026-052",
+    requester: "Callie Brooks",
     category: "Purchase Order",
     priority: "High",
     status: "Under Review",
     submittedDate: "May 9, 2026",
-    assignedReviewer: "Jordan Blake",
+    assignedReviewer: "Cathy Reynolds",
   },
   {
-    id: "REQ-2026-040",
-    requester: "Andre Lawson",
-    category: "Installer Scheduling",
-    priority: "Urgent",
-    status: "Submitted",
-    submittedDate: "May 9, 2026",
-    assignedReviewer: "Riley Patel",
-  },
-  {
-    id: "REQ-2026-039",
-    requester: "Riley Patel",
-    category: "Claims Review",
+    id: "REQ-2026-051",
+    requester: "Jayden Ellis",
+    category: "Vehicle Request",
     priority: "Medium",
     status: "Approved",
     submittedDate: "May 8, 2026",
-    assignedReviewer: "Maya Chen",
+    assignedReviewer: "Jordan Taylor",
   },
   {
-    id: "REQ-2026-038",
-    requester: "Jordan Blake",
-    category: "Document Update",
-    priority: "Low",
-    status: "Completed",
+    id: "REQ-2026-050",
+    requester: "Luis Moreno",
+    category: "IT Access",
+    priority: "Urgent",
+    status: "Submitted",
     submittedDate: "May 8, 2026",
-    assignedReviewer: "Andre Lawson",
+    assignedReviewer: "Cathy Reynolds",
   },
   {
-    id: "REQ-2026-037",
-    requester: "Elena Martinez",
-    category: "Vehicle Request",
-    priority: "Medium",
+    id: "REQ-2026-049",
+    requester: "Sarah Kim",
+    category: "Time Off",
+    priority: "Low",
     status: "Denied",
     submittedDate: "May 7, 2026",
-    assignedReviewer: "Jordan Blake",
+    assignedReviewer: "Jill Anderson",
   },
   {
-    id: "REQ-2026-036",
-    requester: "Sam Rivera",
-    category: "Material Transfer",
+    id: "REQ-2026-048",
+    requester: "Marcus Lee",
+    category: "Maintenance Request",
     priority: "High",
     status: "Under Review",
     submittedDate: "May 7, 2026",
-    assignedReviewer: "Maya Chen",
+    assignedReviewer: "Terry Mitchell",
+  },
+  {
+    id: "REQ-2026-047",
+    requester: "Olivia Turner",
+    category: "Supply Reorder",
+    priority: "Medium",
+    status: "Completed",
+    submittedDate: "May 6, 2026",
+    assignedReviewer: "Jordan Taylor",
   },
 ];
 
@@ -109,22 +109,6 @@ export default function RequestsPage() {
         <SummaryCard label="Total Requests" value={requests.length} />
         <SummaryCard label="Under Review" value={requests.filter((request) => request.status === "Under Review").length} />
         <SummaryCard label="Completed" value={requests.filter((request) => request.status === "Completed").length} />
-      </section>
-
-      <section className="rounded-lg border border-borderSubtle bg-surface p-3 shadow-soft">
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <label className="relative min-w-0 flex-1">
-            <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-textDisabled" />
-            <input
-              className="h-10 w-full rounded-md border border-borderSubtle bg-bgDark pl-9 pr-3 text-sm text-textPrimary outline-none placeholder:text-textDisabled focus:border-accent focus:ring-2 focus:ring-accent/20"
-              placeholder="Search requests, categories, or team members"
-            />
-          </label>
-          <button className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-borderSubtle px-3 text-sm font-semibold text-textSecondary transition-colors hover:bg-bgDark hover:text-textPrimary">
-            <Filter className="h-4 w-4" />
-            Filters
-          </button>
-        </div>
       </section>
 
       <section className="hidden overflow-hidden rounded-lg border border-borderSubtle bg-surface shadow-soft md:block">

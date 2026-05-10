@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type WorkOrder = {
   id: number;
@@ -14,8 +14,17 @@ type WorkOrder = {
 
 export default function WorkOrdersPage() {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
+  const [statusFilter, setStatusFilter] = useState("All");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const filteredWorkOrders = useMemo(() => {
+    if (statusFilter === "All") {
+      return workOrders;
+    }
+
+    return workOrders.filter((workOrder) => toFilterStatus(workOrder.status) === statusFilter);
+  }, [statusFilter, workOrders]);
 
   useEffect(() => {
     let cancelled = false;
@@ -61,13 +70,30 @@ export default function WorkOrdersPage() {
         </p>
       </header>
 
+      <section className="rounded-xl border border-borderSubtle bg-surface p-4 shadow-soft">
+        <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-textMuted sm:max-w-xs">
+          Status Filter
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+            className="h-10 rounded-md border border-borderSubtle bg-bgDark px-3 text-sm font-medium normal-case text-textPrimary outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/20"
+          >
+            <option>All</option>
+            <option>Open</option>
+            <option>In Progress</option>
+            <option>Pending</option>
+            <option>Completed</option>
+          </select>
+        </label>
+      </section>
+
       {error ? <ErrorPanel message={error} /> : null}
 
       {loading ? (
         <LoadingPanel label="Loading work orders..." />
       ) : (
         <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
-          {workOrders.map((workOrder) => (
+          {filteredWorkOrders.map((workOrder) => (
             <article key={workOrder.id} className="rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft">
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -85,10 +111,25 @@ export default function WorkOrdersPage() {
               </dl>
             </article>
           ))}
+
+          {filteredWorkOrders.length === 0 ? (
+            <article className="rounded-xl border border-dashed border-borderSubtle bg-surface p-8 text-center text-sm text-textSecondary lg:col-span-2 xl:col-span-3">
+              No work orders match this status filter.
+            </article>
+          ) : null}
         </div>
       )}
     </div>
   );
+}
+
+function toFilterStatus(status: string | null) {
+  const normalized = (status || "open").toLowerCase();
+
+  if (normalized === "in_progress") return "In Progress";
+  if (normalized === "pending" || normalized === "waiting") return "Pending";
+  if (normalized === "completed" || normalized === "complete") return "Completed";
+  return "Open";
 }
 
 function InfoRow({ label, value }: { label: string; value: string }) {
