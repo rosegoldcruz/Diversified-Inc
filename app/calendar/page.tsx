@@ -101,7 +101,8 @@ export default function CalendarPage() {
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isNewTask, setIsNewTask] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
-  const [editorState, setEditorState] = useState<EditorState>(EMPTY_EDITOR_STATE);
+  const [editorState, setEditorState] =
+    useState<EditorState>(EMPTY_EDITOR_STATE);
   const [saving, setSaving] = useState(false);
   const [editorError, setEditorError] = useState<string | null>(null);
 
@@ -119,7 +120,9 @@ export default function CalendarPage() {
         throw new Error(`Failed to load tasks (${tasksResponse.status})`);
       }
       if (!employeesResponse.ok) {
-        throw new Error(`Failed to load employees (${employeesResponse.status})`);
+        throw new Error(
+          `Failed to load employees (${employeesResponse.status})`,
+        );
       }
 
       const [taskData, employeeData] = (await Promise.all([
@@ -129,7 +132,12 @@ export default function CalendarPage() {
 
       if (!cancelled?.()) {
         setTasks(taskData);
-        setEmployees(employeeData.map((employee) => ({ id: employee.id, name: employee.name })));
+        setEmployees(
+          employeeData.map((employee) => ({
+            id: employee.id,
+            name: employee.name,
+          })),
+        );
       }
     } catch (loadError) {
       if (!cancelled?.()) {
@@ -269,7 +277,10 @@ export default function CalendarPage() {
       locked: !editorState.locked,
     });
     if (updated) {
-      setEditorState((current) => ({ ...current, locked: Boolean(updated.locked) }));
+      setEditorState((current) => ({
+        ...current,
+        locked: Boolean(updated.locked),
+      }));
     }
   }
 
@@ -290,7 +301,9 @@ export default function CalendarPage() {
 
       const updatedTask = (await response.json()) as Task;
       setTasks((current) =>
-        current.map((task) => (task.id === updatedTask.id ? updatedTask : task)),
+        current.map((task) =>
+          task.id === updatedTask.id ? updatedTask : task,
+        ),
       );
       setSelectedTask(updatedTask);
       return updatedTask;
@@ -311,7 +324,9 @@ export default function CalendarPage() {
       <aside className="flex w-64 shrink-0 flex-col border-r border-borderSubtle bg-surface">
         <div className="border-b border-borderSubtle p-4">
           <div className="flex items-center justify-between gap-3">
-            <h2 className="text-base font-semibold text-textPrimary">Task List</h2>
+            <h2 className="text-base font-semibold text-textPrimary">
+              Task List
+            </h2>
             <span className="rounded-full border border-borderSubtle bg-bgDark px-2 py-0.5 text-xs font-semibold text-textMuted">
               {taskListItems.length}
             </span>
@@ -347,7 +362,8 @@ export default function CalendarPage() {
                     {task.title}
                   </p>
                   <p className="mt-1 text-xs text-textMuted">
-                    {task.division || "Diversified"} - {task.assigned_to_name || "Unassigned"}
+                    {task.division || "Diversified"} -{" "}
+                    {task.assigned_to_name || "Unassigned"}
                   </p>
                   <div className="mt-2">
                     <StatusBadge status={task.status} compact />
@@ -426,7 +442,9 @@ export default function CalendarPage() {
           <div className="min-w-[980px]">
             <div
               className="sticky top-0 z-10 grid bg-surface"
-              style={{ gridTemplateColumns: `5rem repeat(${visibleDays.length}, minmax(10rem, 1fr))` }}
+              style={{
+                gridTemplateColumns: `5rem repeat(${visibleDays.length}, minmax(10rem, 1fr))`,
+              }}
             >
               <div className="border-b border-r border-borderSubtle px-2 py-3 text-xs font-semibold uppercase tracking-wide text-textMuted">
                 Time
@@ -437,7 +455,9 @@ export default function CalendarPage() {
                   className="border-b border-r border-borderSubtle px-3 py-3 text-xs font-semibold uppercase tracking-wide text-textMuted"
                 >
                   <span className="block">{formatDayName(day)}</span>
-                  <span className="block text-textPrimary">{formatShortDate(day)}</span>
+                  <span className="block text-textPrimary">
+                    {formatShortDate(day)}
+                  </span>
                 </div>
               ))}
             </div>
@@ -447,7 +467,9 @@ export default function CalendarPage() {
                 <div
                   key={hour}
                   className="grid min-h-16"
-                  style={{ gridTemplateColumns: `5rem repeat(${visibleDays.length}, minmax(10rem, 1fr))` }}
+                  style={{
+                    gridTemplateColumns: `5rem repeat(${visibleDays.length}, minmax(10rem, 1fr))`,
+                  }}
                 >
                   <div className="min-h-16 border-b border-r border-borderSubtle px-2 pt-1 text-xs text-textMuted">
                     {formatHourLabel(hour)}
@@ -536,7 +558,9 @@ function TaskEditorModal({
         <div className="flex items-start justify-between gap-4 border-b border-borderSubtle px-6 py-4">
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-xl font-semibold text-textPrimary">Task Editor</h2>
+              <h2 className="text-xl font-semibold text-textPrimary">
+                Task Editor
+              </h2>
               {isLocked ? (
                 <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
                   <Lock className="h-3 w-3" /> Locked
@@ -572,7 +596,10 @@ function TaskEditorModal({
               value={editorState.title}
               disabled={isLocked}
               onChange={(event) =>
-                setEditorState((current) => ({ ...current, title: event.target.value }))
+                setEditorState((current) => ({
+                  ...current,
+                  title: event.target.value,
+                }))
               }
               className="w-full rounded-lg border border-borderSubtle bg-bgDark px-3 py-2 text-sm text-textPrimary focus:border-accent focus:outline-none disabled:opacity-60"
             />
@@ -584,7 +611,10 @@ function TaskEditorModal({
                 value={editorState.division}
                 disabled={isLocked}
                 onChange={(event) =>
-                  setEditorState((current) => ({ ...current, division: event.target.value }))
+                  setEditorState((current) => ({
+                    ...current,
+                    division: event.target.value,
+                  }))
                 }
                 className="w-full rounded-lg border border-borderSubtle bg-bgDark px-3 py-2 text-sm text-textPrimary focus:border-accent focus:outline-none disabled:opacity-60"
               >
@@ -599,7 +629,10 @@ function TaskEditorModal({
                 value={editorState.topic}
                 disabled={isLocked}
                 onChange={(event) =>
-                  setEditorState((current) => ({ ...current, topic: event.target.value }))
+                  setEditorState((current) => ({
+                    ...current,
+                    topic: event.target.value,
+                  }))
                 }
                 className="w-full rounded-lg border border-borderSubtle bg-bgDark px-3 py-2 text-sm text-textPrimary focus:border-accent focus:outline-none disabled:opacity-60"
               />
@@ -609,7 +642,10 @@ function TaskEditorModal({
                 value={editorState.priority}
                 disabled={isLocked}
                 onChange={(event) =>
-                  setEditorState((current) => ({ ...current, priority: event.target.value }))
+                  setEditorState((current) => ({
+                    ...current,
+                    priority: event.target.value,
+                  }))
                 }
                 className="w-full rounded-lg border border-borderSubtle bg-bgDark px-3 py-2 text-sm text-textPrimary focus:border-accent focus:outline-none disabled:opacity-60"
               >
@@ -626,7 +662,10 @@ function TaskEditorModal({
               value={editorState.due_date}
               disabled={isLocked}
               onChange={(event) =>
-                setEditorState((current) => ({ ...current, due_date: event.target.value }))
+                setEditorState((current) => ({
+                  ...current,
+                  due_date: event.target.value,
+                }))
               }
               className="w-full rounded-lg border border-borderSubtle bg-bgDark px-3 py-2 text-sm text-textPrimary focus:border-accent focus:outline-none disabled:opacity-60"
             />
@@ -636,7 +675,10 @@ function TaskEditorModal({
               value={editorState.assigned_to}
               disabled={isLocked}
               onChange={(event) =>
-                setEditorState((current) => ({ ...current, assigned_to: event.target.value }))
+                setEditorState((current) => ({
+                  ...current,
+                  assigned_to: event.target.value,
+                }))
               }
               className="w-full rounded-lg border border-borderSubtle bg-bgDark px-3 py-2 text-sm text-textPrimary focus:border-accent focus:outline-none disabled:opacity-60"
             >
@@ -656,7 +698,10 @@ function TaskEditorModal({
                 value={editorState.start_date}
                 disabled={isLocked}
                 onChange={(event) =>
-                  setEditorState((current) => ({ ...current, start_date: event.target.value }))
+                  setEditorState((current) => ({
+                    ...current,
+                    start_date: event.target.value,
+                  }))
                 }
                 className="w-full rounded-lg border border-borderSubtle bg-bgDark px-3 py-2 text-sm text-textPrimary focus:border-accent focus:outline-none disabled:opacity-60"
               />
@@ -667,7 +712,10 @@ function TaskEditorModal({
                 value={editorState.start_time}
                 disabled={isLocked}
                 onChange={(event) =>
-                  setEditorState((current) => ({ ...current, start_time: event.target.value }))
+                  setEditorState((current) => ({
+                    ...current,
+                    start_time: event.target.value,
+                  }))
                 }
                 className="w-full rounded-lg border border-borderSubtle bg-bgDark px-3 py-2 text-sm text-textPrimary focus:border-accent focus:outline-none disabled:opacity-60"
               />
@@ -678,7 +726,10 @@ function TaskEditorModal({
                 value={editorState.end_time}
                 disabled={isLocked}
                 onChange={(event) =>
-                  setEditorState((current) => ({ ...current, end_time: event.target.value }))
+                  setEditorState((current) => ({
+                    ...current,
+                    end_time: event.target.value,
+                  }))
                 }
                 className="w-full rounded-lg border border-borderSubtle bg-bgDark px-3 py-2 text-sm text-textPrimary focus:border-accent focus:outline-none disabled:opacity-60"
               />
@@ -692,7 +743,10 @@ function TaskEditorModal({
               value={editorState.estimated_hours}
               disabled={isLocked}
               onChange={(event) =>
-                setEditorState((current) => ({ ...current, estimated_hours: Number(event.target.value) }))
+                setEditorState((current) => ({
+                  ...current,
+                  estimated_hours: Number(event.target.value),
+                }))
               }
               className="w-full rounded-lg border border-borderSubtle bg-bgDark px-3 py-2 text-sm text-textPrimary focus:border-accent focus:outline-none disabled:opacity-60"
             />
@@ -705,7 +759,10 @@ function TaskEditorModal({
               value={editorState.estimated_minutes}
               disabled={isLocked}
               onChange={(event) =>
-                setEditorState((current) => ({ ...current, estimated_minutes: Number(event.target.value) }))
+                setEditorState((current) => ({
+                  ...current,
+                  estimated_minutes: Number(event.target.value),
+                }))
               }
               className="w-full rounded-lg border border-borderSubtle bg-bgDark px-3 py-2 text-sm text-textPrimary focus:border-accent focus:outline-none disabled:opacity-60"
             />
@@ -716,7 +773,10 @@ function TaskEditorModal({
               value={editorState.description}
               disabled={isLocked}
               onChange={(event) =>
-                setEditorState((current) => ({ ...current, description: event.target.value }))
+                setEditorState((current) => ({
+                  ...current,
+                  description: event.target.value,
+                }))
               }
               className="min-h-[80px] w-full rounded-lg border border-borderSubtle bg-bgDark px-3 py-2 text-sm text-textPrimary focus:border-accent focus:outline-none disabled:opacity-60"
             />
@@ -727,7 +787,10 @@ function TaskEditorModal({
               value={editorState.notes}
               disabled={isLocked}
               onChange={(event) =>
-                setEditorState((current) => ({ ...current, notes: event.target.value }))
+                setEditorState((current) => ({
+                  ...current,
+                  notes: event.target.value,
+                }))
               }
               className="min-h-[80px] w-full rounded-lg border border-borderSubtle bg-bgDark px-3 py-2 text-sm text-textPrimary focus:border-accent focus:outline-none disabled:opacity-60"
             />
@@ -747,7 +810,10 @@ function TaskEditorModal({
               checked={editorState.is_private}
               disabled={isLocked}
               onChange={(checked) =>
-                setEditorState((current) => ({ ...current, is_private: checked }))
+                setEditorState((current) => ({
+                  ...current,
+                  is_private: checked,
+                }))
               }
             />
             <label className="min-w-44 flex-1">
@@ -758,7 +824,10 @@ function TaskEditorModal({
                 value={editorState.repeat_schedule}
                 disabled={isLocked}
                 onChange={(event) =>
-                  setEditorState((current) => ({ ...current, repeat_schedule: event.target.value }))
+                  setEditorState((current) => ({
+                    ...current,
+                    repeat_schedule: event.target.value,
+                  }))
                 }
                 className="w-full rounded-lg border border-borderSubtle bg-bgDark px-3 py-2 text-sm text-textPrimary focus:border-accent focus:outline-none disabled:opacity-60"
               >

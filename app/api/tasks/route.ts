@@ -65,10 +65,7 @@ export async function POST(request: NextRequest) {
     const title = body.title?.trim();
 
     if (!title) {
-      return NextResponse.json(
-        { error: "title is required" },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: "title is required" }, { status: 400 });
     }
 
     const rows = await query(
