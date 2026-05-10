@@ -34,9 +34,11 @@ export async function POST(req: NextRequest) {
       const result = await query(
         `UPDATE timeclock_entries
          SET clock_out = NOW()
-         WHERE employee_name = $1 AND clock_out IS NULL
-         ORDER BY clock_in DESC
-         LIMIT 1
+         WHERE id = (
+           SELECT id FROM timeclock_entries
+           WHERE employee_name = $1 AND clock_out IS NULL
+           ORDER BY clock_in DESC LIMIT 1
+         )
          RETURNING *`,
         [employee_name]
       );
