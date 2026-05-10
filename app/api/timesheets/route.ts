@@ -1,5 +1,5 @@
-import { query } from '@/lib/db';
-import { NextRequest, NextResponse } from 'next/server';
+import { query } from "@/lib/db";
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET() {
   try {
@@ -9,12 +9,15 @@ export async function GET() {
               friday_hours, saturday_hours, sunday_hours, total_hours,
               status, submitted_at, approved_by, notes, created_at
        FROM timesheets
-       ORDER BY week_start DESC`
+       ORDER BY week_start DESC`,
     );
     return NextResponse.json(result);
   } catch (error) {
-    console.error('Error fetching timesheets:', error);
-    return NextResponse.json({ error: 'Failed to fetch timesheets' }, { status: 500 });
+    console.error("Error fetching timesheets:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch timesheets" },
+      { status: 500 },
+    );
   }
 }
 
@@ -52,11 +55,14 @@ export async function POST(req: NextRequest) {
         saturday_hours,
         sunday_hours,
         notes,
-      ]
+      ],
     );
     return NextResponse.json(result[0]);
   } catch (error) {
-    console.error('Error creating timesheet:', error);
-    return NextResponse.json({ error: 'Failed to create timesheet' }, { status: 500 });
+    console.error("Error creating timesheet:", error);
+    return NextResponse.json(
+      { error: "Failed to create timesheet" },
+      { status: 500 },
+    );
   }
 }

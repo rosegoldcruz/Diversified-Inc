@@ -53,7 +53,9 @@ export default function TimeclockPage() {
 
         const response = await fetch("/api/timeclock", { cache: "no-store" });
         if (!response.ok) {
-          throw new Error(`Failed to fetch timeclock entries (${response.status})`);
+          throw new Error(
+            `Failed to fetch timeclock entries (${response.status})`,
+          );
         }
 
         const data = (await response.json()) as TimeclockEntry[];
@@ -62,7 +64,9 @@ export default function TimeclockPage() {
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Failed to fetch entries");
+          setError(
+            err instanceof Error ? err.message : "Failed to fetch entries",
+          );
         }
       } finally {
         if (!cancelled) {
@@ -87,9 +91,13 @@ export default function TimeclockPage() {
         setLoadingActive(true);
         setErrorActive(null);
 
-        const response = await fetch("/api/timeclock/active", { cache: "no-store" });
+        const response = await fetch("/api/timeclock/active", {
+          cache: "no-store",
+        });
         if (!response.ok) {
-          throw new Error(`Failed to fetch active entries (${response.status})`);
+          throw new Error(
+            `Failed to fetch active entries (${response.status})`,
+          );
         }
 
         const data = (await response.json()) as TimeclockEntry[];
@@ -98,7 +106,11 @@ export default function TimeclockPage() {
         }
       } catch (err) {
         if (!cancelled) {
-          setErrorActive(err instanceof Error ? err.message : "Failed to fetch active entries");
+          setErrorActive(
+            err instanceof Error
+              ? err.message
+              : "Failed to fetch active entries",
+          );
         }
       } finally {
         if (!cancelled) {
@@ -208,7 +220,9 @@ export default function TimeclockPage() {
           }
         })(),
         (async () => {
-          const response = await fetch("/api/timeclock/active", { cache: "no-store" });
+          const response = await fetch("/api/timeclock/active", {
+            cache: "no-store",
+          });
           if (response.ok) {
             setActiveEntries(await response.json());
           }
@@ -230,7 +244,9 @@ export default function TimeclockPage() {
     <div className="space-y-6">
       {/* Header */}
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">Timeclock</h1>
+        <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">
+          Timeclock
+        </h1>
         <p className="max-w-3xl text-sm text-textSecondary">
           Log employee clock-ins and clock-outs in real time.
         </p>
@@ -239,9 +255,12 @@ export default function TimeclockPage() {
       {/* SECTION A: Punch Panel */}
       <section className="space-y-4 rounded-xl border border-borderSubtle bg-surface p-6 shadow-soft">
         <div>
-          <h2 className="text-lg font-semibold text-textPrimary">Clock In / Clock Out</h2>
+          <h2 className="text-lg font-semibold text-textPrimary">
+            Clock In / Clock Out
+          </h2>
           <p className="mt-1 text-sm text-textSecondary">
-            Select an employee and click Clock In to start their shift. Click Clock Out to end their shift.
+            Select an employee and click Clock In to start their shift. Click
+            Clock Out to end their shift.
           </p>
         </div>
 
@@ -261,7 +280,10 @@ export default function TimeclockPage() {
         {/* Controls */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <div className="flex-1">
-            <label htmlFor="employee-select" className="block text-sm font-medium text-textPrimary">
+            <label
+              htmlFor="employee-select"
+              className="block text-sm font-medium text-textPrimary"
+            >
               Select Employee
             </label>
             <select
@@ -298,7 +320,9 @@ export default function TimeclockPage() {
 
       {/* SECTION B: Currently Clocked In */}
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-textPrimary">Currently Clocked In</h2>
+        <h2 className="text-lg font-semibold text-textPrimary">
+          Currently Clocked In
+        </h2>
 
         {errorActive ? <ErrorPanel message={errorActive} /> : null}
 
@@ -311,14 +335,23 @@ export default function TimeclockPage() {
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {activeEntries.map((entry) => (
-              <div key={entry.id} className="rounded-lg border border-borderSubtle bg-surface p-4 shadow-soft">
-                <h3 className="text-lg font-semibold text-textPrimary">{entry.employee_name}</h3>
+              <div
+                key={entry.id}
+                className="rounded-lg border border-borderSubtle bg-surface p-4 shadow-soft"
+              >
+                <h3 className="text-lg font-semibold text-textPrimary">
+                  {entry.employee_name}
+                </h3>
                 <div className="mt-3 space-y-1 text-sm text-textSecondary">
                   <p>
-                    <span className="font-medium text-textMuted">Clock In:</span> {formatTime(entry.clock_in)}
+                    <span className="font-medium text-textMuted">
+                      Clock In:
+                    </span>{" "}
+                    {formatTime(entry.clock_in)}
                   </p>
                   <p>
-                    <span className="font-medium text-textMuted">Elapsed:</span> {elapsedTimes[entry.id] || "calculating..."}
+                    <span className="font-medium text-textMuted">Elapsed:</span>{" "}
+                    {elapsedTimes[entry.id] || "calculating..."}
                   </p>
                 </div>
               </div>
@@ -329,7 +362,9 @@ export default function TimeclockPage() {
 
       {/* SECTION C: Today&apos;s Punch Log */}
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-textPrimary">Today&apos;s Punch Log</h2>
+        <h2 className="text-lg font-semibold text-textPrimary">
+          Today&apos;s Punch Log
+        </h2>
 
         {error ? <ErrorPanel message={error} /> : null}
 
@@ -350,17 +385,25 @@ export default function TimeclockPage() {
                       <th className="px-4 py-3 font-semibold">Employee</th>
                       <th className="px-4 py-3 font-semibold">Clock In</th>
                       <th className="px-4 py-3 font-semibold">Clock Out</th>
-                      <th className="px-4 py-3 font-semibold text-right">Total Minutes</th>
+                      <th className="px-4 py-3 font-semibold text-right">
+                        Total Minutes
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-borderSubtle">
                     {todayEntries.map((entry, idx) => (
                       <tr
                         key={entry.id}
-                        className={idx % 2 === 0 ? "bg-surface" : "bg-transparent"}
+                        className={
+                          idx % 2 === 0 ? "bg-surface" : "bg-transparent"
+                        }
                       >
-                        <td className="px-4 py-3 font-medium text-textPrimary">{entry.employee_name}</td>
-                        <td className="px-4 py-3 text-textSecondary">{formatTime(entry.clock_in)}</td>
+                        <td className="px-4 py-3 font-medium text-textPrimary">
+                          {entry.employee_name}
+                        </td>
+                        <td className="px-4 py-3 text-textSecondary">
+                          {formatTime(entry.clock_in)}
+                        </td>
                         <td className="px-4 py-3 text-textSecondary">
                           {entry.clock_out ? formatTime(entry.clock_out) : "—"}
                         </td>
@@ -377,20 +420,33 @@ export default function TimeclockPage() {
             {/* Card view (mobile only) */}
             <div className="grid gap-3 md:hidden">
               {todayEntries.map((entry) => (
-                <div key={entry.id} className="rounded-lg border border-borderSubtle bg-surface p-4 shadow-soft">
-                  <h3 className="text-lg font-semibold text-textPrimary">{entry.employee_name}</h3>
+                <div
+                  key={entry.id}
+                  className="rounded-lg border border-borderSubtle bg-surface p-4 shadow-soft"
+                >
+                  <h3 className="text-lg font-semibold text-textPrimary">
+                    {entry.employee_name}
+                  </h3>
                   <dl className="mt-3 space-y-2 text-sm">
                     <div className="flex justify-between">
                       <dt className="text-textMuted">Clock In</dt>
-                      <dd className="text-textPrimary">{formatTime(entry.clock_in)}</dd>
+                      <dd className="text-textPrimary">
+                        {formatTime(entry.clock_in)}
+                      </dd>
                     </div>
                     <div className="flex justify-between">
                       <dt className="text-textMuted">Clock Out</dt>
-                      <dd className="text-textPrimary">{entry.clock_out ? formatTime(entry.clock_out) : "—"}</dd>
+                      <dd className="text-textPrimary">
+                        {entry.clock_out ? formatTime(entry.clock_out) : "—"}
+                      </dd>
                     </div>
                     <div className="flex justify-between border-t border-borderSubtle pt-2">
-                      <dt className="text-textMuted font-medium">Total Minutes</dt>
-                      <dd className="text-textPrimary font-medium">{entry.total_minutes ?? "—"}</dd>
+                      <dt className="text-textMuted font-medium">
+                        Total Minutes
+                      </dt>
+                      <dd className="text-textPrimary font-medium">
+                        {entry.total_minutes ?? "—"}
+                      </dd>
                     </div>
                   </dl>
                 </div>

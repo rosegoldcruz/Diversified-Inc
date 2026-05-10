@@ -80,7 +80,7 @@ export default function TimesheetsPage() {
       } catch (err) {
         if (!cancelled) {
           setError(
-            err instanceof Error ? err.message : "Failed to fetch timesheets"
+            err instanceof Error ? err.message : "Failed to fetch timesheets",
           );
         }
       } finally {
@@ -99,10 +99,10 @@ export default function TimesheetsPage() {
   const currentWeekStart = getCurrentWeekStart();
   const totalTimesheets = timesheets.length;
   const pendingApproval = timesheets.filter(
-    (ts) => ts.status === "submitted"
+    (ts) => ts.status === "submitted",
   ).length;
   const approvedThisWeek = timesheets.filter(
-    (ts) => ts.status === "approved" && ts.week_start === currentWeekStart
+    (ts) => ts.status === "approved" && ts.week_start === currentWeekStart,
   ).length;
 
   return (
@@ -164,7 +164,7 @@ export default function TimesheetsPage() {
                       <td className="px-4 py-3 text-textSecondary">
                         {formatWeekRange(
                           timesheet.week_start,
-                          timesheet.week_end
+                          timesheet.week_end,
                         )}
                       </td>
                       <td className="px-4 py-3 text-right text-textPrimary">
@@ -192,7 +192,9 @@ export default function TimesheetsPage() {
                         {timesheet.total_hours}
                       </td>
                       <td className="px-4 py-3">
-                        <span className={getStatusBadgeClasses(timesheet.status)}>
+                        <span
+                          className={getStatusBadgeClasses(timesheet.status)}
+                        >
                           {timesheet.status.charAt(0).toUpperCase() +
                             timesheet.status.slice(1)}
                         </span>
@@ -218,7 +220,7 @@ export default function TimesheetsPage() {
                     <p className="mt-1 text-xs text-textSecondary">
                       {formatWeekRange(
                         timesheet.week_start,
-                        timesheet.week_end
+                        timesheet.week_end,
                       )}
                     </p>
                   </div>
@@ -230,14 +232,8 @@ export default function TimesheetsPage() {
 
                 <div className="mt-4 space-y-2">
                   <div className="grid grid-cols-5 gap-2 text-xs">
-                    <MobileHourCell
-                      day="Mon"
-                      hours={timesheet.monday_hours}
-                    />
-                    <MobileHourCell
-                      day="Tue"
-                      hours={timesheet.tuesday_hours}
-                    />
+                    <MobileHourCell day="Mon" hours={timesheet.monday_hours} />
+                    <MobileHourCell day="Tue" hours={timesheet.tuesday_hours} />
                     <MobileHourCell
                       day="Wed"
                       hours={timesheet.wednesday_hours}
@@ -246,20 +242,14 @@ export default function TimesheetsPage() {
                       day="Thu"
                       hours={timesheet.thursday_hours}
                     />
-                    <MobileHourCell
-                      day="Fri"
-                      hours={timesheet.friday_hours}
-                    />
+                    <MobileHourCell day="Fri" hours={timesheet.friday_hours} />
                   </div>
                   <div className="grid grid-cols-5 gap-2 text-xs">
                     <MobileHourCell
                       day="Sat"
                       hours={timesheet.saturday_hours}
                     />
-                    <MobileHourCell
-                      day="Sun"
-                      hours={timesheet.sunday_hours}
-                    />
+                    <MobileHourCell day="Sun" hours={timesheet.sunday_hours} />
                   </div>
                 </div>
 
