@@ -37,7 +37,11 @@ export default function EmployeesPage() {
         }
       } catch (loadError) {
         if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : "Failed to load employees");
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : "Failed to load employees",
+          );
         }
       } finally {
         if (!cancelled) {
@@ -56,9 +60,12 @@ export default function EmployeesPage() {
   return (
     <div className="space-y-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">Employees</h1>
+        <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">
+          Employees
+        </h1>
         <p className="max-w-3xl text-sm text-textSecondary">
-          Live employee records from PostgreSQL, including role, department, and contact details.
+          Live employee records from PostgreSQL, including role, department, and
+          contact details.
         </p>
       </header>
 
@@ -76,13 +83,20 @@ export default function EmployeesPage() {
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <h2 className="text-lg font-semibold text-textPrimary">{employee.name}</h2>
-                  <p className="text-sm text-textSecondary">{employee.role || "Role not set"}</p>
+                  <h2 className="text-lg font-semibold text-textPrimary">
+                    {employee.name}
+                  </h2>
+                  <p className="text-sm text-textSecondary">
+                    {employee.role || "Role not set"}
+                  </p>
                 </div>
                 <StatusBadge status={employee.status} />
-                </div>
+              </div>
               <dl className="mt-5 space-y-3 text-sm">
-                <InfoRow label="Department" value={employee.department || "Unassigned"} />
+                <InfoRow
+                  label="Department"
+                  value={employee.department || "Unassigned"}
+                />
                 <InfoRow label="Email" value={employee.email || "No email"} />
                 <InfoRow label="Phone" value={employee.phone || "No phone"} />
               </dl>
@@ -104,14 +118,17 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 function StatusBadge({ status }: { status: string | null }) {
-  const normalized = status?.toLowerCase() === "inactive" ? "inactive" : "active";
+  const normalized =
+    status?.toLowerCase() === "inactive" ? "inactive" : "active";
   const styles =
     normalized === "active"
       ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
       : "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300";
 
   return (
-    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${styles}`}>
+    <span
+      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${styles}`}
+    >
       {normalized}
     </span>
   );

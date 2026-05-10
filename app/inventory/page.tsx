@@ -40,7 +40,11 @@ export default function InventoryPage() {
         }
       } catch (loadError) {
         if (!cancelled) {
-          setError(loadError instanceof Error ? loadError.message : "Failed to load inventory");
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : "Failed to load inventory",
+          );
         }
       } finally {
         if (!cancelled) {
@@ -59,9 +63,12 @@ export default function InventoryPage() {
   return (
     <div className="space-y-6">
       <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">Inventory</h1>
+        <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">
+          Inventory
+        </h1>
         <p className="max-w-3xl text-sm text-textSecondary">
-          Live stock levels, locations, and reorder warnings from PostgreSQL inventory records.
+          Live stock levels, locations, and reorder warnings from PostgreSQL
+          inventory records.
         </p>
       </header>
 
@@ -87,7 +94,9 @@ export default function InventoryPage() {
                 {items.map((item) => {
                   const quantity = item.quantity ?? 0;
                   const reorderThreshold = item.reorder_threshold ?? 0;
-                  const showWarning = item.reorder_threshold !== null && quantity <= reorderThreshold;
+                  const showWarning =
+                    item.reorder_threshold !== null &&
+                    quantity <= reorderThreshold;
 
                   return (
                     <tr
@@ -98,14 +107,29 @@ export default function InventoryPage() {
                       <td className="px-4 py-3 font-medium text-textPrimary">
                         <div className="flex items-center gap-2">
                           <span>{item.item_name}</span>
-                          {showWarning ? <AlertTriangle className="h-4 w-4 text-amber-500" aria-hidden="true" /> : null}
+                          {showWarning ? (
+                            <AlertTriangle
+                              className="h-4 w-4 text-amber-500"
+                              aria-hidden="true"
+                            />
+                          ) : null}
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-textSecondary">{item.category || "Uncategorized"}</td>
-                      <td className="px-4 py-3 text-textSecondary">{quantity}</td>
-                      <td className="px-4 py-3 text-textSecondary">{item.unit || "-"}</td>
-                      <td className="px-4 py-3 text-textSecondary">{item.location || "-"}</td>
-                      <td className="px-4 py-3"><InventoryStatusBadge status={item.status} /></td>
+                      <td className="px-4 py-3 text-textSecondary">
+                        {item.category || "Uncategorized"}
+                      </td>
+                      <td className="px-4 py-3 text-textSecondary">
+                        {quantity}
+                      </td>
+                      <td className="px-4 py-3 text-textSecondary">
+                        {item.unit || "-"}
+                      </td>
+                      <td className="px-4 py-3 text-textSecondary">
+                        {item.location || "-"}
+                      </td>
+                      <td className="px-4 py-3">
+                        <InventoryStatusBadge status={item.status} />
+                      </td>
                     </tr>
                   );
                 })}
@@ -162,13 +186,18 @@ export default function InventoryPage() {
 function InventoryStatusBadge({ status }: { status: string | null }) {
   const normalized = (status || "in_stock").toLowerCase();
   const styles: Record<string, string> = {
-    in_stock: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
-    low_stock: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
-    out_of_stock: "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-300",
+    in_stock:
+      "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
+    low_stock:
+      "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    out_of_stock:
+      "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-300",
   };
 
   return (
-    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${styles[normalized] || styles.in_stock}`}>
+    <span
+      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${styles[normalized] || styles.in_stock}`}
+    >
       {normalized.replaceAll("_", " ")}
     </span>
   );

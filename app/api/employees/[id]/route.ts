@@ -15,20 +15,16 @@ function parseId(id: string) {
   return parsed;
 }
 
-export async function GET(
-  _request: NextRequest,
-  { params }: RouteContext,
-) {
+export async function GET(_request: NextRequest, { params }: RouteContext) {
   const employeeId = parseId(params.id);
   if (!employeeId) {
-    return NextResponse.json(
-      { error: "Invalid employee id" },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: "Invalid employee id" }, { status: 400 });
   }
 
   try {
-    const rows = await query("SELECT * FROM employees WHERE id = $1", [employeeId]);
+    const rows = await query("SELECT * FROM employees WHERE id = $1", [
+      employeeId,
+    ]);
 
     if (rows.length === 0) {
       return NextResponse.json(

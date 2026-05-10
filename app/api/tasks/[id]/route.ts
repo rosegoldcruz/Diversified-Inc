@@ -38,10 +38,7 @@ async function getTaskById(taskId: number) {
   return rows[0] ?? null;
 }
 
-export async function GET(
-  _request: NextRequest,
-  { params }: RouteContext,
-) {
+export async function GET(_request: NextRequest, { params }: RouteContext) {
   const taskId = parseId(params.id);
   if (!taskId) {
     return NextResponse.json({ error: "Invalid task id" }, { status: 400 });
@@ -56,15 +53,13 @@ export async function GET(
 
     return NextResponse.json(task);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to load task";
+    const message =
+      error instanceof Error ? error.message : "Failed to load task";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: RouteContext,
-) {
+export async function PATCH(request: NextRequest, { params }: RouteContext) {
   const taskId = parseId(params.id);
   if (!taskId) {
     return NextResponse.json({ error: "Invalid task id" }, { status: 400 });

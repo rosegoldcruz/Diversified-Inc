@@ -69,7 +69,9 @@ export default function EmployeeDetailPage() {
           ]);
 
         if (!employeeResponse.ok) {
-          throw new Error(`Failed to load employee (${employeeResponse.status})`);
+          throw new Error(
+            `Failed to load employee (${employeeResponse.status})`,
+          );
         }
         if (!tasksResponse.ok) {
           throw new Error(`Failed to load tasks (${tasksResponse.status})`);
@@ -90,8 +92,9 @@ export default function EmployeeDetailPage() {
 
         const filteredTasks = tasksData.filter((task) => {
           const assignedTo = (task.assigned_to_name || "").trim().toLowerCase();
-          const assignedPerson =
-            (task.assigned_person_name || "").trim().toLowerCase();
+          const assignedPerson = (task.assigned_person_name || "")
+            .trim()
+            .toLowerCase();
 
           return assignedTo === employeeName || assignedPerson === employeeName;
         });
@@ -170,8 +173,12 @@ export default function EmployeeDetailPage() {
       <section className="space-y-4 rounded-xl border border-borderSubtle bg-surface p-6 shadow-soft">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-textPrimary">{employee.name}</h1>
-            <p className="mt-1 text-sm text-textSecondary">{employee.role || "Title not set"}</p>
+            <h1 className="text-2xl font-semibold text-textPrimary">
+              {employee.name}
+            </h1>
+            <p className="mt-1 text-sm text-textSecondary">
+              {employee.role || "Title not set"}
+            </p>
           </div>
           <StatusBadge status={employee.status} />
         </div>
@@ -183,17 +190,24 @@ export default function EmployeeDetailPage() {
         ) : null}
 
         <dl className="grid gap-3 rounded-lg border border-borderSubtle bg-bgDark p-4 sm:grid-cols-3">
-          <InfoRow label="Department" value={employee.department || "Not set"} />
+          <InfoRow
+            label="Department"
+            value={employee.department || "Not set"}
+          />
           <InfoRow label="Email" value={employee.email || "Not set"} />
           <InfoRow label="Phone" value={employee.phone || "Not set"} />
         </dl>
       </section>
 
       <section className="rounded-xl border border-borderSubtle bg-surface p-6 shadow-soft">
-        <h2 className="text-lg font-semibold text-textPrimary">Assigned Tasks</h2>
+        <h2 className="text-lg font-semibold text-textPrimary">
+          Assigned Tasks
+        </h2>
         <div className="mt-4 space-y-3">
           {assignedTasks.length === 0 ? (
-            <p className="text-sm text-textSecondary">No assigned tasks found.</p>
+            <p className="text-sm text-textSecondary">
+              No assigned tasks found.
+            </p>
           ) : (
             assignedTasks.map((task) => (
               <article
@@ -214,10 +228,14 @@ export default function EmployeeDetailPage() {
       </section>
 
       <section className="rounded-xl border border-borderSubtle bg-surface p-6 shadow-soft">
-        <h2 className="text-lg font-semibold text-textPrimary">Recent Timeclock</h2>
+        <h2 className="text-lg font-semibold text-textPrimary">
+          Recent Timeclock
+        </h2>
         <div className="mt-4 space-y-3">
           {recentEntries.length === 0 ? (
-            <p className="text-sm text-textSecondary">No recent timeclock entries.</p>
+            <p className="text-sm text-textSecondary">
+              No recent timeclock entries.
+            </p>
           ) : (
             recentEntries.map((entry) => (
               <article
@@ -255,14 +273,17 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 }
 
 function StatusBadge({ status }: { status: string | null }) {
-  const normalized = status?.toLowerCase() === "inactive" ? "inactive" : "active";
+  const normalized =
+    status?.toLowerCase() === "inactive" ? "inactive" : "active";
   const styles =
     normalized === "active"
       ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
       : "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300";
 
   return (
-    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${styles}`}>
+    <span
+      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${styles}`}
+    >
       {normalized}
     </span>
   );

@@ -142,7 +142,9 @@ export default function InventoryDetailPage() {
   const quantity = item.quantity ?? 0;
   const reorderThreshold = item.reorder_threshold;
   const showWarning =
-    reorderThreshold !== null && reorderThreshold !== undefined && quantity <= reorderThreshold;
+    reorderThreshold !== null &&
+    reorderThreshold !== undefined &&
+    quantity <= reorderThreshold;
 
   return (
     <div className="space-y-6">
@@ -156,7 +158,9 @@ export default function InventoryDetailPage() {
 
       <section className="space-y-4 rounded-xl border border-borderSubtle bg-surface p-6 shadow-soft">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <h1 className="text-2xl font-semibold text-textPrimary">{item.item_name}</h1>
+          <h1 className="text-2xl font-semibold text-textPrimary">
+            {item.item_name}
+          </h1>
           <InventoryStatusBadge status={item.status} />
         </div>
 
@@ -227,13 +231,18 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 function InventoryStatusBadge({ status }: { status: string | null }) {
   const normalized = (status || "in_stock").toLowerCase();
   const styles: Record<string, string> = {
-    in_stock: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
-    low_stock: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
-    out_of_stock: "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-300",
+    in_stock:
+      "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
+    low_stock:
+      "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    out_of_stock:
+      "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-300",
   };
 
   return (
-    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${styles[normalized] || styles.in_stock}`}>
+    <span
+      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${styles[normalized] || styles.in_stock}`}
+    >
       {normalized.replaceAll("_", " ")}
     </span>
   );

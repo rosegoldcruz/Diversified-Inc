@@ -1,13 +1,237 @@
+"use client";
 
-export default function Page() {
+import { useState } from "react";
+import {
+  AlertTriangle,
+  Bot,
+  Database,
+  ExternalLink,
+  Settings,
+  Users,
+  Zap,
+} from "lucide-react";
+
+const employees = [
+  { name: "Terry Strasser", role: "Admin" },
+  { name: "Jordan Strasser", role: "Manager" },
+  { name: "Cathy Kraft", role: "Admin" },
+  { name: "Jill Strasser", role: "Manager" },
+  { name: "Marcus Rivera", role: "Employee" },
+  { name: "Callie Brooks", role: "Employee" },
+  { name: "Luis Moreno", role: "Employee" },
+  { name: "Sarah Kim", role: "Employee" },
+  { name: "Derek Washington", role: "Employee" },
+  { name: "Priya Patel", role: "Employee" },
+];
+
+const roleOptions = ["Admin", "Manager", "Employee"];
+
+export default function AdminPage() {
+  const [emailNotifs, setEmailNotifs] = useState(true);
+  const [autoAssign, setAutoAssign] = useState(true);
+  const [timesheetReminder, setTimesheetReminder] = useState(true);
+
   return (
-    <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-400">
-      <h1 className="text-xl md:text-2xl font-semibold text-textPrimary">Admin</h1>
-      <p className="text-sm text-textSecondary max-w-2xl">
-        Control regions, roles, pricing tiers, and global settings for the Diversified OS.
-      </p>
-      <div className="glass-panel border-dashed border-2 border-borderSubtle/80 py-10 flex items-center justify-center text-textSecondary text-sm">
-        <span>Module shell ready. Wire real data, tables, and flows into this view.</span>
+    <div className="space-y-6">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">
+          Admin Settings
+        </h1>
+        <p className="max-w-3xl text-sm text-textSecondary">
+          System configuration, user management, and platform preferences.
+        </p>
+      </header>
+
+      <section className="space-y-4 rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <SectionTitle icon={Users} title="Team & Roles" />
+          <button
+            type="button"
+            disabled
+            title="Coming in next release"
+            className="inline-flex h-10 cursor-not-allowed items-center justify-center rounded-lg bg-navy px-4 text-sm font-semibold text-white opacity-50"
+          >
+            + Add Employee
+          </button>
+        </div>
+
+        <div className="divide-y divide-borderSubtle">
+          {employees.map((employee) => (
+            <div
+              key={employee.name}
+              className="flex flex-col gap-3 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <div>
+                <p className="font-medium text-textPrimary">{employee.name}</p>
+                <p className="text-sm text-textMuted">{employee.role}</p>
+              </div>
+              <select
+                value={employee.role}
+                disabled
+                className="h-10 cursor-not-allowed rounded-md border border-borderSubtle bg-bgDark px-3 text-sm text-textPrimary opacity-50"
+              >
+                {roleOptions.map((role) => (
+                  <option key={role} value={role}>
+                    {role}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="space-y-4 rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft">
+        <SectionTitle icon={Settings} title="System Preferences" />
+        <div className="space-y-3">
+          <ToggleRow
+            label="Email notifications on new requests"
+            enabled={emailNotifs}
+            onToggle={() => setEmailNotifs((value) => !value)}
+          />
+          <ToggleRow
+            label="Auto-assign reviewer based on category"
+            enabled={autoAssign}
+            onToggle={() => setAutoAssign((value) => !value)}
+          />
+          <ToggleRow
+            label="Timesheet reminder - Fridays at 4:00 PM"
+            enabled={timesheetReminder}
+            onToggle={() => setTimesheetReminder((value) => !value)}
+          />
+        </div>
+      </section>
+
+      <section className="space-y-4 rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft">
+        <SectionTitle icon={Zap} title="Integrations" />
+        <div className="space-y-3">
+          <IntegrationRow
+            icon={Zap}
+            name="n8n Automation Platform"
+            badge="Connected"
+            href="https://auto.snrglabs.com"
+          />
+          <IntegrationRow
+            icon={Database}
+            name="NocoDB Database Admin"
+            badge="Connected"
+            href="https://data.snrglabs.com"
+          />
+          <IntegrationRow icon={Bot} name="AEON AI Chat" badge="Active" />
+        </div>
+      </section>
+
+      <section className="space-y-4 rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft">
+        <SectionTitle
+          icon={AlertTriangle}
+          title="Danger Zone"
+          iconClassName="text-red-500"
+        />
+        <p className="text-sm text-textSecondary">
+          Destructive actions are disabled in demo mode.
+        </p>
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <button
+            type="button"
+            disabled
+            className="cursor-not-allowed rounded-lg border border-red-500/30 px-4 py-2 text-sm font-semibold text-red-600 opacity-50 dark:text-red-300"
+          >
+            Reset All Demo Data
+          </button>
+          <button
+            type="button"
+            disabled
+            className="cursor-not-allowed rounded-lg border border-borderSubtle px-4 py-2 text-sm font-semibold text-textSecondary opacity-50"
+          >
+            Export Full Database Backup
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function SectionTitle({
+  icon: Icon,
+  title,
+  iconClassName = "text-accent",
+}: {
+  icon: typeof Users;
+  title: string;
+  iconClassName?: string;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="rounded-lg bg-bgDark p-2">
+        <Icon className={`h-5 w-5 ${iconClassName}`} />
+      </div>
+      <h2 className="text-base font-semibold text-textPrimary">{title}</h2>
+    </div>
+  );
+}
+
+function ToggleRow({
+  label,
+  enabled,
+  onToggle,
+}: {
+  label: string;
+  enabled: boolean;
+  onToggle: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-4 rounded-lg border border-borderSubtle bg-bgDark px-4 py-3">
+      <p className="text-sm font-medium text-textPrimary">{label}</p>
+      <button
+        type="button"
+        onClick={onToggle}
+        className={`relative h-6 w-11 rounded-full transition-colors ${
+          enabled ? "bg-accent" : "bg-borderSubtle"
+        }`}
+        aria-pressed={enabled}
+        aria-label={label}
+      >
+        <span
+          className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-transform ${
+            enabled ? "translate-x-5" : "translate-x-1"
+          }`}
+        />
+      </button>
+    </div>
+  );
+}
+
+function IntegrationRow({
+  icon: Icon,
+  name,
+  badge,
+  href,
+}: {
+  icon: typeof Users;
+  name: string;
+  badge: string;
+  href?: string;
+}) {
+  return (
+    <div className="flex flex-col gap-3 rounded-lg border border-borderSubtle bg-bgDark px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex items-center gap-3">
+        <Icon className="h-5 w-5 text-accent" />
+        <p className="font-medium text-textPrimary">{name}</p>
+      </div>
+      <div className="flex items-center gap-3">
+        <span className="inline-flex rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-300">
+          {badge}
+        </span>
+        {href ? (
+          <a
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 text-sm font-semibold text-accent hover:underline"
+          >
+            Open <ExternalLink className="h-3.5 w-3.5" />
+          </a>
+        ) : null}
       </div>
     </div>
   );

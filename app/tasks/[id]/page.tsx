@@ -69,7 +69,9 @@ export default function TaskDetailPage() {
       } catch (loadError) {
         if (!cancelled) {
           setError(
-            loadError instanceof Error ? loadError.message : "Failed to load task",
+            loadError instanceof Error
+              ? loadError.message
+              : "Failed to load task",
           );
         }
       } finally {
@@ -158,7 +160,9 @@ export default function TaskDetailPage() {
 
       <section className="space-y-4 rounded-xl border border-borderSubtle bg-surface p-6 shadow-soft">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <h1 className="text-2xl font-semibold text-textPrimary">{task.title}</h1>
+          <h1 className="text-2xl font-semibold text-textPrimary">
+            {task.title}
+          </h1>
           <div className="flex flex-wrap gap-2">
             <StatusBadge status={task.status} />
             <PriorityBadge priority={task.priority} />
@@ -172,7 +176,10 @@ export default function TaskDetailPage() {
         ) : null}
 
         <dl className="grid gap-3 rounded-lg border border-borderSubtle bg-bgDark p-4 sm:grid-cols-2">
-          <InfoRow label="Assigned To" value={task.assigned_to_name || "Unassigned"} />
+          <InfoRow
+            label="Assigned To"
+            value={task.assigned_to_name || "Unassigned"}
+          />
           <InfoRow label="Due Date" value={formatDate(task.due_date)} />
           <InfoRow
             label="Department"
@@ -186,7 +193,9 @@ export default function TaskDetailPage() {
             Description
           </h2>
           <p className="mt-2 text-sm text-textSecondary">
-            {task.description || task.notes || "No description or notes available."}
+            {task.description ||
+              task.notes ||
+              "No description or notes available."}
           </p>
         </section>
 

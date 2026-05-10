@@ -197,7 +197,9 @@ function TasksPageContent() {
               <Link key={task.id} href={`/tasks/${task.id}`}>
                 <article className="rounded-lg border border-borderSubtle bg-bgDark p-4">
                   <div className="flex items-start justify-between gap-3">
-                    <h2 className="font-medium text-textPrimary">{task.title}</h2>
+                    <h2 className="font-medium text-textPrimary">
+                      {task.title}
+                    </h2>
                     <TaskPriorityBadge priority={task.priority} />
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">

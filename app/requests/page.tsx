@@ -1,325 +1,330 @@
 "use client";
 
-import { ClipboardCheck, X } from "lucide-react";
-import { useState } from "react";
+import type { ReactNode } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
+import { X } from "lucide-react";
 
+type RequestPriority = "Low" | "Medium" | "High" | "Urgent";
 type RequestStatus =
   | "Submitted"
   | "Under Review"
   | "Approved"
   | "Denied"
   | "Completed";
-type RequestPriority = "Low" | "Medium" | "High" | "Urgent";
 
-type InternalRequest = {
-  id: string;
+type Request = {
+  id: number;
+  request_id: string;
   requester: string;
   category: string;
   priority: RequestPriority;
   status: RequestStatus;
-  submittedDate: string;
-  assignedReviewer: string;
-};
-
-const requests: InternalRequest[] = [
-  {
-    id: "REQ-2026-052",
-    requester: "Callie Brooks",
-    category: "Purchase Order",
-    priority: "High",
-    status: "Under Review",
-    submittedDate: "May 9, 2026",
-    assignedReviewer: "Cathy Reynolds",
-  },
-  {
-    id: "REQ-2026-051",
-    requester: "Jayden Ellis",
-    category: "Vehicle Request",
-    priority: "Medium",
-    status: "Approved",
-    submittedDate: "May 8, 2026",
-    assignedReviewer: "Jordan Taylor",
-  },
-  {
-    id: "REQ-2026-050",
-    requester: "Luis Moreno",
-    category: "IT Access",
-    priority: "Urgent",
-    status: "Submitted",
-    submittedDate: "May 8, 2026",
-    assignedReviewer: "Cathy Reynolds",
-  },
-  {
-    id: "REQ-2026-049",
-    requester: "Sarah Kim",
-    category: "Time Off",
-    priority: "Low",
-    status: "Denied",
-    submittedDate: "May 7, 2026",
-    assignedReviewer: "Jill Anderson",
-  },
-  {
-    id: "REQ-2026-048",
-    requester: "Marcus Lee",
-    category: "Maintenance Request",
-    priority: "High",
-    status: "Under Review",
-    submittedDate: "May 7, 2026",
-    assignedReviewer: "Terry Mitchell",
-  },
-  {
-    id: "REQ-2026-047",
-    requester: "Olivia Turner",
-    category: "Supply Reorder",
-    priority: "Medium",
-    status: "Completed",
-    submittedDate: "May 6, 2026",
-    assignedReviewer: "Jordan Taylor",
-  },
-];
-
-const statusStyles: Record<RequestStatus, string> = {
-  Submitted:
-    "border-blue-500/40 bg-blue-500/10 text-blue-700 dark:text-blue-300",
-  "Under Review":
-    "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-300",
-  Approved:
-    "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
-  Denied: "border-red-500/40 bg-red-500/10 text-red-700 dark:text-red-300",
-  Completed:
-    "border-slate-500/40 bg-slate-500/10 text-slate-700 dark:text-slate-300",
-};
-
-const priorityStyles: Record<RequestPriority, string> = {
-  Low: "bg-bgDark text-textMuted",
-  Medium: "bg-cyber-cyan/10 text-cyber-cyan",
-  High: "bg-cyber-yellow/10 text-cyber-yellow",
-  Urgent: "bg-cyber-red/10 text-cyber-red",
+  submitted_date: string;
+  assigned_reviewer: string | null;
+  description: string | null;
 };
 
 export default function RequestsPage() {
-  const [selectedRequest, setSelectedRequest] =
-    useState<InternalRequest | null>(null);
+  const router = useRouter();
+  const [requests, setRequests] = useState<Request[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
 
-  const activeCount = requests.filter((request) =>
-    ["Submitted", "Under Review"].includes(request.status),
-  ).length;
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadRequests() {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const response = await fetch("/api/requests", { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`Failed to load requests (${response.status})`);
+        }
+
+        const data = (await response.json()) as Request[];
+        if (!cancelled) {
+          setRequests(data);
+        }
+      } catch (loadError) {
+        if (!cancelled) {
+          setError(
+            loadError instanceof Error
+              ? loadError.message
+              : "Failed to load requests",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    loadRequests();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const metrics = useMemo(() => {
+    return {
+      total: requests.length,
+      underReview: requests.filter(
+        (request) => request.status === "Under Review",
+      ).length,
+      approved: requests.filter((request) => request.status === "Approved")
+        .length,
+    };
+  }, [requests]);
+
+  function openRequest(request: Request) {
+    router.prefetch("/requests");
+    setSelectedRequest(request);
+  }
 
   return (
-    <div className="space-y-5 font-sans">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-bold text-navy">Requests</h1>
-          <p className="max-w-2xl text-sm text-textMuted">
-            Track internal requests from submission through review, approval,
-            and completion.
-          </p>
-        </div>
-        <div className="inline-flex h-10 items-center gap-2 rounded-md border border-borderSubtle bg-surface px-3 text-sm font-semibold text-textSecondary shadow-soft">
-          <ClipboardCheck className="h-4 w-4 text-cyber-cyan" />
-          {activeCount} active
-        </div>
-      </div>
+    <div className="space-y-6">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">
+          Requests
+        </h1>
+        <p className="max-w-3xl text-sm text-textSecondary">
+          Internal requests from submission through approval.
+        </p>
+      </header>
 
-      <section className="grid gap-3 sm:grid-cols-3">
-        <SummaryCard label="Total Requests" value={requests.length} />
-        <SummaryCard
-          label="Under Review"
-          value={
-            requests.filter((request) => request.status === "Under Review")
-              .length
-          }
-        />
-        <SummaryCard
-          label="Completed"
-          value={
-            requests.filter((request) => request.status === "Completed").length
-          }
-        />
+      <section className="grid gap-4 sm:grid-cols-3">
+        <StatCard label="Total" value={metrics.total} />
+        <StatCard label="Under Review" value={metrics.underReview} />
+        <StatCard label="Approved" value={metrics.approved} />
       </section>
 
-      <section className="hidden overflow-hidden rounded-lg border border-borderSubtle bg-surface shadow-soft md:block">
-        <div className="overflow-x-auto">
-          <table className="min-w-[980px] w-full text-left text-sm">
-            <thead className="bg-bgDark text-xs uppercase tracking-wide text-textMuted">
-              <tr>
-                <th className="px-4 py-3 font-semibold">Requester</th>
-                <th className="px-4 py-3 font-semibold">Category</th>
-                <th className="px-4 py-3 font-semibold">Priority</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
-                <th className="px-4 py-3 font-semibold">Submitted Date</th>
-                <th className="px-4 py-3 font-semibold">Assigned Reviewer</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-borderSubtle">
-              {requests.map((request) => (
-                <tr
-                  key={request.id}
-                  onClick={() => setSelectedRequest(request)}
-                  className="cursor-pointer transition-colors hover:bg-bgDark"
-                >
-                  <td className="px-4 py-3">
-                    <div className="font-semibold text-textPrimary">
-                      {request.requester}
-                    </div>
-                    <div className="text-xs text-textMuted">{request.id}</div>
-                  </td>
-                  <td className="px-4 py-3 text-textSecondary">
-                    {request.category}
-                  </td>
-                  <td className="px-4 py-3">
-                    <PriorityBadge priority={request.priority} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge status={request.status} />
-                  </td>
-                  <td className="px-4 py-3 text-textSecondary">
-                    {request.submittedDate}
-                  </td>
-                  <td className="px-4 py-3 text-textSecondary">
-                    {request.assignedReviewer}
-                  </td>
+      {error ? <ErrorPanel message={error} /> : null}
+
+      {loading ? (
+        <LoadingPanel label="Loading requests..." />
+      ) : (
+        <section className="overflow-hidden rounded-xl border border-borderSubtle bg-surface shadow-soft">
+          <div className="hidden overflow-x-auto md:block">
+            <table className="min-w-[980px] w-full text-left text-sm">
+              <thead className="bg-bgDark text-xs uppercase tracking-wide text-textMuted">
+                <tr>
+                  <th className="px-4 py-3 font-semibold">Requester</th>
+                  <th className="px-4 py-3 font-semibold">Category</th>
+                  <th className="px-4 py-3 font-semibold">Priority</th>
+                  <th className="px-4 py-3 font-semibold">Status</th>
+                  <th className="px-4 py-3 font-semibold">Submitted</th>
+                  <th className="px-4 py-3 font-semibold">Reviewer</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+              </thead>
+              <tbody className="divide-y divide-borderSubtle">
+                {requests.map((request) => (
+                  <tr
+                    key={request.id}
+                    onClick={() => openRequest(request)}
+                    className="cursor-pointer transition-colors hover:bg-bgDark"
+                  >
+                    <td className="px-4 py-3">
+                      <div className="font-semibold text-textPrimary">
+                        {request.requester}
+                      </div>
+                      <div className="text-xs text-textMuted">
+                        {request.request_id}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-textSecondary">
+                      {request.category}
+                    </td>
+                    <td className="px-4 py-3">
+                      <PriorityBadge priority={request.priority} />
+                    </td>
+                    <td className="px-4 py-3">
+                      <StatusBadge status={request.status} />
+                    </td>
+                    <td className="px-4 py-3 text-textSecondary">
+                      {formatDate(request.submitted_date)}
+                    </td>
+                    <td className="px-4 py-3 text-textSecondary">
+                      {request.assigned_reviewer || "Unassigned"}
+                    </td>
+                  </tr>
+                ))}
 
-      <section className="space-y-3 md:hidden">
-        {requests.map((request) => (
-          <article
-            key={request.id}
-            onClick={() => setSelectedRequest(request)}
-            className="cursor-pointer rounded-lg border border-borderSubtle bg-surface p-4 shadow-soft"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="font-semibold text-textPrimary">
-                  {request.requester}
-                </p>
-                <p className="mt-0.5 text-xs text-textMuted">{request.id}</p>
-              </div>
-              <StatusBadge status={request.status} />
-            </div>
-            <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-              <MobileField label="Category" value={request.category} />
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-textDisabled">
-                  Priority
-                </p>
-                <div className="mt-1">
-                  <PriorityBadge priority={request.priority} />
+                {requests.length === 0 ? (
+                  <tr>
+                    <td
+                      colSpan={6}
+                      className="px-4 py-8 text-center text-sm text-textSecondary"
+                    >
+                      No requests are available.
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+
+          <div className="grid gap-3 p-4 md:hidden">
+            {requests.map((request) => (
+              <article
+                key={request.id}
+                onClick={() => openRequest(request)}
+                className="cursor-pointer rounded-lg border border-borderSubtle bg-bgDark p-4"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="font-semibold text-textPrimary">
+                      {request.requester}
+                    </p>
+                    <p className="mt-0.5 text-xs text-textMuted">
+                      {request.request_id}
+                    </p>
+                  </div>
+                  <StatusBadge status={request.status} />
                 </div>
-              </div>
-              <MobileField label="Submitted" value={request.submittedDate} />
-              <MobileField label="Reviewer" value={request.assignedReviewer} />
-            </div>
-          </article>
-        ))}
-      </section>
+                <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                  <MobileField label="Category" value={request.category} />
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">
+                      Priority
+                    </p>
+                    <div className="mt-1">
+                      <PriorityBadge priority={request.priority} />
+                    </div>
+                  </div>
+                  <MobileField
+                    label="Submitted"
+                    value={formatDate(request.submitted_date)}
+                  />
+                  <MobileField
+                    label="Reviewer"
+                    value={request.assigned_reviewer || "Unassigned"}
+                  />
+                </div>
+              </article>
+            ))}
+
+            {requests.length === 0 ? (
+              <article className="rounded-lg border border-dashed border-borderSubtle bg-bgDark p-6 text-center text-sm text-textSecondary">
+                No requests are available.
+              </article>
+            ) : null}
+          </div>
+        </section>
+      )}
 
       <aside
-        className={`fixed right-0 top-0 h-full w-80 bg-surface border-l border-borderSubtle shadow-lg z-50 transform transition-transform duration-300 ${
+        className={`fixed right-0 top-0 z-50 h-full w-80 border-l border-borderSubtle bg-surface p-6 shadow-lg transition-transform duration-200 ${
           selectedRequest ? "translate-x-0" : "translate-x-full"
         }`}
         aria-hidden={selectedRequest ? "false" : "true"}
       >
-        <div className="flex h-full flex-col p-5">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">
-                {selectedRequest?.id || "Request"}
-              </p>
-              <h2 className="mt-1 text-lg font-semibold text-textPrimary">
-                {selectedRequest?.requester || "Request Details"}
-              </h2>
-              <p className="mt-1 text-sm text-textSecondary">
-                {selectedRequest
-                  ? `${selectedRequest.category} • ${selectedRequest.status}`
-                  : "Select a request to inspect details."}
-              </p>
-            </div>
+        {selectedRequest ? (
+          <div className="flex h-full flex-col">
             <button
               type="button"
               onClick={() => setSelectedRequest(null)}
-              className="rounded-md border border-borderSubtle p-1.5 text-textSecondary transition-colors hover:bg-bgDark hover:text-textPrimary"
+              className="absolute right-4 top-4 rounded-md border border-borderSubtle p-1.5 text-textSecondary transition-colors hover:bg-bgDark hover:text-textPrimary"
               aria-label="Close request details"
             >
               <X className="h-4 w-4" />
             </button>
-          </div>
 
-          {selectedRequest ? (
+            <div className="pr-10">
+              <h2 className="text-lg font-semibold text-textPrimary">
+                {selectedRequest.request_id}
+              </h2>
+              <p className="mt-1 text-sm text-textSecondary">
+                {selectedRequest.requester}
+              </p>
+            </div>
+
             <dl className="mt-6 space-y-4 text-sm">
-              <SlideOverRow label="Request ID" value={selectedRequest.id} />
-              <SlideOverRow
-                label="Requester"
-                value={selectedRequest.requester}
-              />
-              <SlideOverRow
-                label="Category"
-                value={selectedRequest.category}
-              />
+              <SlideOverRow label="Requester" value={selectedRequest.requester} />
+              <SlideOverRow label="Category" value={selectedRequest.category} />
               <SlideOverRow
                 label="Priority"
-                value={selectedRequest.priority}
-              />
-              <SlideOverRow label="Status" value={selectedRequest.status} />
-              <SlideOverRow
-                label="Submitted Date"
-                value={selectedRequest.submittedDate}
+                value={<PriorityBadge priority={selectedRequest.priority} />}
               />
               <SlideOverRow
-                label="Assigned Reviewer"
-                value={selectedRequest.assignedReviewer}
+                label="Status"
+                value={<StatusBadge status={selectedRequest.status} />}
+              />
+              <SlideOverRow
+                label="Submitted"
+                value={formatDate(selectedRequest.submitted_date)}
+              />
+              <SlideOverRow
+                label="Reviewer"
+                value={selectedRequest.assigned_reviewer || "Unassigned"}
               />
             </dl>
-          ) : null}
-        </div>
+
+            <div className="mt-6 border-t border-borderSubtle pt-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">
+                Description
+              </p>
+              <p className="mt-2 text-sm leading-6 text-textSecondary">
+                {selectedRequest.description || "No description provided."}
+              </p>
+            </div>
+          </div>
+        ) : null}
       </aside>
     </div>
   );
 }
 
-function SlideOverRow({ label, value }: { label: string; value: string }) {
+function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="border-b border-borderSubtle pb-3">
-      <dt className="text-xs font-semibold uppercase tracking-wide text-textMuted">
-        {label}
-      </dt>
-      <dd className="mt-1 text-textPrimary">{value}</dd>
-    </div>
-  );
-}
-
-function SummaryCard({ label, value }: { label: string; value: number }) {
-  return (
-    <div className="rounded-lg border border-borderSubtle bg-surface p-4 shadow-soft">
+    <article className="rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft">
       <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">
         {label}
       </p>
-      <p className="mt-2 text-2xl font-bold text-navy">{value}</p>
-    </div>
+      <p className="mt-2 text-3xl font-semibold text-textPrimary">{value}</p>
+    </article>
   );
 }
 
 function PriorityBadge({ priority }: { priority: RequestPriority }) {
-  return (
-    <span
-      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${priorityStyles[priority]}`}
-    >
-      {priority}
-    </span>
-  );
+  const styles: Record<RequestPriority, string> = {
+    Low: "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300",
+    Medium:
+      "border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-300",
+    High: "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    Urgent: "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-300",
+  };
+
+  return <Badge label={priority} className={styles[priority]} />;
 }
 
 function StatusBadge({ status }: { status: RequestStatus }) {
+  const styles: Record<RequestStatus, string> = {
+    Submitted:
+      "border-blue-500/30 bg-blue-500/10 text-blue-600 dark:text-blue-300",
+    "Under Review":
+      "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
+    Approved:
+      "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
+    Denied: "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-300",
+    Completed:
+      "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300",
+  };
+
+  return <Badge label={status} className={styles[status]} />;
+}
+
+function Badge({ label, className }: { label: string; className: string }) {
   return (
     <span
-      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${statusStyles[status]}`}
+      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${className}`}
     >
-      {status}
+      {label}
     </span>
   );
 }
@@ -327,10 +332,46 @@ function StatusBadge({ status }: { status: RequestStatus }) {
 function MobileField({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <p className="text-xs font-semibold uppercase tracking-wide text-textDisabled">
+      <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">
         {label}
       </p>
       <p className="mt-1 text-textSecondary">{value}</p>
     </div>
   );
+}
+
+function SlideOverRow({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="flex items-start justify-between gap-4 border-t border-borderSubtle pt-4 first:border-t-0 first:pt-0">
+      <dt className="text-textMuted">{label}</dt>
+      <dd className="text-right text-textPrimary">{value}</dd>
+    </div>
+  );
+}
+
+function LoadingPanel({ label }: { label: string }) {
+  return (
+    <div className="rounded-xl border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
+      {label}
+    </div>
+  );
+}
+
+function ErrorPanel({ message }: { message: string }) {
+  return (
+    <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-300">
+      {message}
+    </div>
+  );
+}
+
+function formatDate(value: string) {
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return value;
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(parsed);
 }

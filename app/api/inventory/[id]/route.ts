@@ -15,10 +15,7 @@ function parseId(id: string) {
   return parsed;
 }
 
-export async function GET(
-  _request: NextRequest,
-  { params }: RouteContext,
-) {
+export async function GET(_request: NextRequest, { params }: RouteContext) {
   const itemId = parseId(params.id);
   if (!itemId) {
     return NextResponse.json(
@@ -45,10 +42,7 @@ export async function GET(
   }
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: RouteContext,
-) {
+export async function PATCH(request: NextRequest, { params }: RouteContext) {
   const itemId = parseId(params.id);
   if (!itemId) {
     return NextResponse.json(
@@ -156,7 +150,9 @@ export async function PATCH(
     return NextResponse.json(updatedRows[0]);
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : "Failed to update inventory item";
+      error instanceof Error
+        ? error.message
+        : "Failed to update inventory item";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

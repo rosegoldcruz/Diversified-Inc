@@ -30,10 +30,7 @@ async function getWorkOrderById(workOrderId: number) {
   return rows[0] ?? null;
 }
 
-export async function GET(
-  _request: NextRequest,
-  { params }: RouteContext,
-) {
+export async function GET(_request: NextRequest, { params }: RouteContext) {
   const workOrderId = parseId(params.id);
   if (!workOrderId) {
     return NextResponse.json(
@@ -60,10 +57,7 @@ export async function GET(
   }
 }
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: RouteContext,
-) {
+export async function PATCH(request: NextRequest, { params }: RouteContext) {
   const workOrderId = parseId(params.id);
   if (!workOrderId) {
     return NextResponse.json(

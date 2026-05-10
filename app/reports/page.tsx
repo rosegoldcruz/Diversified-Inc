@@ -349,9 +349,7 @@ export default function ReportsPage() {
                     </td>
                   </tr>
                   <tr
-                    onClick={() =>
-                      router.push("/work-orders?status=completed")
-                    }
+                    onClick={() => router.push("/work-orders?status=completed")}
                     className="cursor-pointer transition-colors hover:bg-bgDark"
                   >
                     <td className="px-4 py-3 text-textSecondary">completed</td>

@@ -22,7 +22,8 @@ export async function GET(request: NextRequest) {
     `);
     return NextResponse.json(rows);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to load work orders";
+    const message =
+      error instanceof Error ? error.message : "Failed to load work orders";
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

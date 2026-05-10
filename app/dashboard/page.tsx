@@ -167,7 +167,7 @@ export default function DashboardPage() {
           Dashboard
         </h1>
         <p className="max-w-3xl text-sm text-textSecondary">
-          Live operational snapshot backed directly by PostgreSQL.
+          Your team&apos;s daily command center.
         </p>
       </header>
 
