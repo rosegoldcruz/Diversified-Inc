@@ -46,7 +46,7 @@ const MOBILE_MORE_NAV = [
   { label: "Documents", href: "/documents", icon: FileText },
   { label: "AI Tools", href: "/ai-tools", icon: Bot },
   { label: "Automations", href: "/automations", icon: Zap },
-  { label: "Settings", href: "/settings", icon: Settings },
+  { label: "Admin Settings", href: "/settings", icon: Settings },
 ];
 
 type RouteMotionProfile = {
@@ -117,7 +117,10 @@ export function DashboardShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (prefersReducedMotion) return;
-    if (typeof window !== "undefined" && !window.matchMedia("(min-width: 1024px)").matches) {
+    if (
+      typeof window !== "undefined" &&
+      !window.matchMedia("(min-width: 1024px)").matches
+    ) {
       return;
     }
 
@@ -147,7 +150,12 @@ export function DashboardShell({ children }: { children: ReactNode }) {
         },
       );
     }
-  }, [pathname, prefersReducedMotion, motionProfile.stageDelay, motionProfile.stageDuration]);
+  }, [
+    pathname,
+    prefersReducedMotion,
+    motionProfile.stageDelay,
+    motionProfile.stageDuration,
+  ]);
 
   const toggleSidebar = useCallback(() => {
     setSidebarOpen((open) => !open);
@@ -163,17 +171,37 @@ export function DashboardShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex h-dvh bg-bgDark text-textPrimary">
-      <Sidebar mobileOpen={sidebarOpen} onClose={closeSidebar} desktopCollapsed={desktopCollapsed} />
+      <Sidebar
+        mobileOpen={sidebarOpen}
+        onClose={closeSidebar}
+        desktopCollapsed={desktopCollapsed}
+      />
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
-        <TopBar onMenuToggle={toggleSidebar} onDesktopToggle={toggleDesktopSidebar} desktopCollapsed={desktopCollapsed} />
+        <TopBar
+          onMenuToggle={toggleSidebar}
+          onDesktopToggle={toggleDesktopSidebar}
+          desktopCollapsed={desktopCollapsed}
+        />
         <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-4 pb-28 pt-5 sm:px-5 lg:px-8 lg:pb-6">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={pathname}
               ref={desktopStaggerRef}
-              initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: motionProfile.introY, scale: 0.995 }}
-              animate={prefersReducedMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
-              exit={prefersReducedMotion ? { opacity: 1 } : { opacity: 0, y: motionProfile.outroY, scale: 0.995 }}
+              initial={
+                prefersReducedMotion
+                  ? { opacity: 1 }
+                  : { opacity: 0, y: motionProfile.introY, scale: 0.995 }
+              }
+              animate={
+                prefersReducedMotion
+                  ? { opacity: 1 }
+                  : { opacity: 1, y: 0, scale: 1 }
+              }
+              exit={
+                prefersReducedMotion
+                  ? { opacity: 1 }
+                  : { opacity: 0, y: motionProfile.outroY, scale: 0.995 }
+              }
               transition={
                 prefersReducedMotion
                   ? { duration: 0 }
@@ -189,7 +217,10 @@ export function DashboardShell({ children }: { children: ReactNode }) {
             </motion.div>
           </AnimatePresence>
         </main>
-        <MobileBottomNav pathname={pathname} onMoreClick={() => setMobileSheetOpen(true)} />
+        <MobileBottomNav
+          pathname={pathname}
+          onMoreClick={() => setMobileSheetOpen(true)}
+        />
         <MobileNavigationSheet
           pathname={pathname}
           open={mobileSheetOpen}
@@ -234,7 +265,12 @@ function MobileBottomNav({ pathname, onMoreClick }: MobileBottomNavProps) {
               {active ? (
                 <motion.span
                   layoutId="mobile-nav-active-pill"
-                  transition={{ type: "spring", stiffness: 420, damping: 35, mass: 0.9 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 420,
+                    damping: 35,
+                    mass: 0.9,
+                  }}
                   className="absolute inset-0 rounded-xl bg-navy"
                 />
               ) : null}
@@ -263,7 +299,11 @@ type MobileNavigationSheetProps = {
   onClose: () => void;
 };
 
-function MobileNavigationSheet({ pathname, open, onClose }: MobileNavigationSheetProps) {
+function MobileNavigationSheet({
+  pathname,
+  open,
+  onClose,
+}: MobileNavigationSheetProps) {
   return (
     <AnimatePresence>
       {open ? (
@@ -282,7 +322,12 @@ function MobileNavigationSheet({ pathname, open, onClose }: MobileNavigationShee
             initial={{ y: "100%" }}
             animate={{ y: 0 }}
             exit={{ y: "100%" }}
-            transition={{ type: "spring", stiffness: 330, damping: 34, mass: 0.9 }}
+            transition={{
+              type: "spring",
+              stiffness: 330,
+              damping: 34,
+              mass: 0.9,
+            }}
             className="fixed inset-x-0 bottom-0 z-50 rounded-t-3xl border border-borderSubtle bg-surface px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-3 shadow-cyberLg lg:hidden"
           >
             <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-borderHover" />
