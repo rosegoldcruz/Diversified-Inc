@@ -6,7 +6,8 @@
 
 html,
 body {
-  background: rgb(var(--color-bg-darkest));
+  background: #000;
+  overscroll-behavior: none;
 }
 
 :root {

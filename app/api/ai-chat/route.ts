@@ -5,6 +5,32 @@ import { buildOperationalContext } from "@/app/lib/aiContext";
 export const runtime = "edge";
 export const maxDuration = 30;
 
+type DeepSeekModel = "deepseek-v4-flash" | "deepseek-v4-pro";
+
+type ChatRequestBody = {
+  messages?: UIMessage[];
+  model?: DeepSeekModel | "deepseek-chat" | "deepseek-reasoner" | string;
+};
+
+const MODEL_ALIASES: Record<string, DeepSeekModel> = {
+  "deepseek-v4-flash": "deepseek-v4-flash",
+  "deepseek-v4-pro": "deepseek-v4-pro",
+  // Deprecated model names kept as compatibility aliases only.
+  "deepseek-chat": "deepseek-v4-flash",
+  "deepseek-reasoner": "deepseek-v4-flash",
+};
+
+const ENV_DEFAULT_MODEL =
+  process.env.DEEPSEEK_DEFAULT_MODEL ?? process.env.DEEPSEEK_MODEL;
+
+const DEFAULT_MODEL: DeepSeekModel =
+  MODEL_ALIASES[ENV_DEFAULT_MODEL ?? ""] ?? "deepseek-v4-flash";
+
+function resolveModel(model: ChatRequestBody["model"]): DeepSeekModel {
+  if (!model) return DEFAULT_MODEL;
+  return MODEL_ALIASES[model] ?? DEFAULT_MODEL;
+}
+
 function buildSystemPrompt(): string {
   const context = buildOperationalContext();
 
@@ -33,6 +59,7 @@ WHAT YOU CAN DO
 - Summarize high-priority, overdue, and blocked tasks
 - Identify stalled work orders and flag items needing immediate attention
 - Draft or revise SOPs using a structured internal operations format
+- Analyze uploaded file content (documents, spreadsheets, images, notes) and extract actionable operations insights
 - Triage submitted requests by priority, recommended owner, and next step
 - Create follow-up checklists for open or waiting work orders
 - Prepare leadership-ready daily and weekly operational summaries
@@ -76,7 +103,9 @@ If asked about data not present in the snapshot, clearly state what you can and 
 export async function POST(request: Request) {
   if (!process.env.DEEPSEEK_API_KEY) {
     return new Response(
-      JSON.stringify({ error: "DEEPSEEK_API_KEY is not configured on the server." }),
+      JSON.stringify({
+        error: "DEEPSEEK_API_KEY is not configured on the server.",
+      }),
       {
         status: 500,
         headers: { "Content-Type": "application/json" },
@@ -85,11 +114,25 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { messages } = (await request.json()) as { messages: UIMessage[] };
+    const { messages = [], model } = (await request.json()) as ChatRequestBody;
+    if (!Array.isArray(messages)) {
+      return new Response(
+        JSON.stringify({ error: "Invalid messages payload." }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json" },
+        },
+      );
+    }
+
+    const selectedModel = resolveModel(model);
+
+    // DeepSeek chat/completions is stateless. We explicitly pass full message history
+    // from the client on every request to preserve multi-round conversation context.
     const modelMessages = await convertToModelMessages(messages);
 
     const result = streamText({
-      model: deepseek("deepseek-chat"),
+      model: deepseek(selectedModel),
       system: buildSystemPrompt(),
       messages: modelMessages,
       temperature: 0.4,
@@ -99,7 +142,9 @@ export async function POST(request: Request) {
     return result.toUIMessageStreamResponse();
   } catch (error: unknown) {
     const message =
-      error instanceof Error ? error.message : "Failed to process AI chat request.";
+      error instanceof Error
+        ? error.message
+        : "Failed to process AI chat request.";
 
     return new Response(JSON.stringify({ error: message }), {
       status: 500,
