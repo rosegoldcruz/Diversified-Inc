@@ -10,6 +10,7 @@ import {
 } from "react";
 import {
   Bot,
+  Command,
   FileText,
   Loader2,
   Mic,
@@ -26,33 +27,103 @@ import { AnimatePresence, motion } from "framer-motion";
 
 type ChatModel = "deepseek-v4-flash" | "deepseek-v4-pro";
 
-type SpeechRecognitionInstance = {
-  continuous: boolean;
-  interimResults: boolean;
-  lang: string;
-  onresult: ((event: SpeechRecognitionEvent) => void) | null;
-  onerror: ((event: SpeechRecognitionErrorEvent) => void) | null;
-  onend: (() => void) | null;
-  start: () => void;
-  stop: () => void;
-};
-
-type SpeechRecognitionEvent = {
-  results: ArrayLike<{
-    isFinal: boolean;
-    0: {
-      transcript: string;
-    };
-  }>;
-};
-
-type SpeechRecognitionErrorEvent = {
-  error: string;
-};
-
-type SpeechRecognitionConstructor = new () => SpeechRecognitionInstance;
+type WhisperResult = { text?: string } | string;
+type WhisperTranscriber = (
+  input: Float32Array,
+  options?: Record<string, unknown>,
+) => Promise<WhisperResult>;
 
 const MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024;
+let whisperTranscriberPromise: Promise<WhisperTranscriber> | null = null;
+
+function downsampleTo16k(input: Float32Array, sampleRate: number): Float32Array {
+  if (sampleRate === 16000) return input;
+
+  const ratio = sampleRate / 16000;
+  const targetLength = Math.round(input.length / ratio);
+  const result = new Float32Array(targetLength);
+
+  let outputIndex = 0;
+  let inputOffset = 0;
+
+  while (outputIndex < targetLength) {
+    const nextOffset = Math.round((outputIndex + 1) * ratio);
+    let accumulator = 0;
+    let count = 0;
+
+    for (let index = inputOffset; index < nextOffset && index < input.length; index += 1) {
+      accumulator += input[index];
+      count += 1;
+    }
+
+    result[outputIndex] = count > 0 ? accumulator / count : 0;
+    outputIndex += 1;
+    inputOffset = nextOffset;
+  }
+
+  return result;
+}
+
+async function audioBlobToMono16k(blob: Blob): Promise<Float32Array> {
+  const arrayBuffer = await blob.arrayBuffer();
+  const AudioContextCtor =
+    window.AudioContext ||
+    ((window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext ?? null);
+
+  if (!AudioContextCtor) {
+    throw new Error("AudioContext is not supported in this browser.");
+  }
+
+  const audioContext = new AudioContextCtor();
+  try {
+    const decodedAudio = await audioContext.decodeAudioData(arrayBuffer.slice(0));
+    const monoChannel = decodedAudio.getChannelData(0);
+    return downsampleTo16k(monoChannel, decodedAudio.sampleRate);
+  } finally {
+    await audioContext.close();
+  }
+}
+
+async function getWhisperTranscriber(): Promise<WhisperTranscriber> {
+  if (!whisperTranscriberPromise) {
+    whisperTranscriberPromise = (async () => {
+      const dynamicImport = Function(
+        "modulePath",
+        "return import(modulePath)",
+      ) as (modulePath: string) => Promise<unknown>;
+
+      const transformersModule = (await dynamicImport(
+        "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2",
+      )) as {
+        env: {
+          allowLocalModels: boolean;
+          allowRemoteModels: boolean;
+          useBrowserCache: boolean;
+        };
+        pipeline: (
+          task: string,
+          model: string,
+          options?: Record<string, unknown>,
+        ) => Promise<unknown>;
+      };
+
+      const { env, pipeline } = transformersModule;
+      env.allowLocalModels = false;
+      env.allowRemoteModels = true;
+      env.useBrowserCache = true;
+
+      const transcriber = await pipeline(
+        "automatic-speech-recognition",
+        "Xenova/whisper-tiny.en",
+        { quantized: true },
+      );
+
+      return transcriber as WhisperTranscriber;
+    })();
+  }
+
+  return whisperTranscriberPromise;
+}
 
 function readAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -96,15 +167,20 @@ export default function AiChatPage() {
   const [input, setInput] = useState("");
   const [model, setModel] = useState<ChatModel>("deepseek-v4-flash");
   const [promptSheetOpen, setPromptSheetOpen] = useState(false);
+  const [railPulse, setRailPulse] = useState(false);
   const [pendingFiles, setPendingFiles] = useState<FileUIPart[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
   const [sttError, setSttError] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
   const [sttSupported, setSttSupported] = useState(false);
   const messageViewportRef = useRef<HTMLDivElement>(null);
+  const quickPromptsRailRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const mediaStreamRef = useRef<MediaStream | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
   const { messages, sendMessage, status, error, regenerate, stop } = useChat({
     transport: new DefaultChatTransport({ api: "/api/ai-chat" }),
   });
@@ -112,63 +188,26 @@ export default function AiChatPage() {
   const isLoading = status === "submitted" || status === "streaming";
   const hasMessages = messages.length > 0;
 
-  useEffect(() => {
-    const SpeechRecognitionAPI =
-      (
-        window as unknown as {
-          SpeechRecognition?: SpeechRecognitionConstructor;
-          webkitSpeechRecognition?: SpeechRecognitionConstructor;
-        }
-      ).SpeechRecognition ||
-      (
-        window as unknown as {
-          webkitSpeechRecognition?: SpeechRecognitionConstructor;
-        }
-      ).webkitSpeechRecognition;
-
-    if (!SpeechRecognitionAPI) {
-      setSttSupported(false);
-      return;
+  const stopMediaCapture = () => {
+    mediaRecorderRef.current = null;
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
+      mediaStreamRef.current = null;
     }
+  };
 
-    setSttSupported(true);
-    const recognition = new SpeechRecognitionAPI();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-    recognition.lang = "en-US";
-
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
-      let finalTranscript = "";
-      for (let index = 0; index < event.results.length; index += 1) {
-        const result = event.results[index];
-        if (result.isFinal) {
-          finalTranscript += result[0].transcript;
-        }
-      }
-
-      if (finalTranscript.trim().length > 0) {
-        setInput((current) =>
-          current.trim().length === 0
-            ? finalTranscript.trim()
-            : `${current.trim()} ${finalTranscript.trim()}`,
-        );
-      }
-    };
-
-    recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
-      setSttError(`Speech capture failed: ${event.error}.`);
-      setIsRecording(false);
-    };
-
-    recognition.onend = () => {
-      setIsRecording(false);
-    };
-
-    recognitionRef.current = recognition;
+  useEffect(() => {
+    const mediaCaptureSupported =
+      typeof window !== "undefined" &&
+      "MediaRecorder" in window &&
+      Boolean(navigator.mediaDevices?.getUserMedia);
+    setSttSupported(mediaCaptureSupported);
 
     return () => {
-      recognition.stop();
-      recognitionRef.current = null;
+      if (mediaRecorderRef.current?.state === "recording") {
+        mediaRecorderRef.current.stop();
+      }
+      stopMediaCapture();
     };
   }, []);
 
@@ -242,23 +281,99 @@ export default function AiChatPage() {
     );
   };
 
+  const transcribeRecordedAudio = async (audioBlob: Blob) => {
+    if (audioBlob.size === 0) return;
+
+    setIsTranscribing(true);
+    setSttError(null);
+
+    try {
+      const mono16kAudio = await audioBlobToMono16k(audioBlob);
+      const transcriber = await getWhisperTranscriber();
+      const result = await transcriber(mono16kAudio, {
+        language: "english",
+        task: "transcribe",
+        chunk_length_s: 20,
+        stride_length_s: 5,
+        return_timestamps: false,
+      });
+
+      const transcript =
+        typeof result === "string" ? result.trim() : (result.text ?? "").trim();
+
+      if (!transcript) {
+        setSttError("No clear speech was detected. Try again and speak closer to the mic.");
+        return;
+      }
+
+      setInput((current) =>
+        current.trim().length === 0 ? transcript : `${current.trim()} ${transcript}`,
+      );
+    } catch {
+      setSttError("Local open-source transcription failed. Please try recording again.");
+    } finally {
+      setIsTranscribing(false);
+      composerRef.current?.focus();
+    }
+  };
+
   const toggleRecording = () => {
     setSttError(null);
-    const recognition = recognitionRef.current;
-    if (!recognition) return;
 
     if (isRecording) {
-      recognition.stop();
-      setIsRecording(false);
+      if (mediaRecorderRef.current?.state === "recording") {
+        mediaRecorderRef.current.stop();
+      }
       return;
     }
 
-    try {
-      recognition.start();
-      setIsRecording(true);
-    } catch {
-      setSttError("Speech recognition is already running.");
+    void (async () => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const recorder = new MediaRecorder(stream);
+
+        mediaStreamRef.current = stream;
+        mediaRecorderRef.current = recorder;
+        audioChunksRef.current = [];
+
+        recorder.ondataavailable = (event) => {
+          if (event.data.size > 0) {
+            audioChunksRef.current.push(event.data);
+          }
+        };
+
+        recorder.onerror = () => {
+          setSttError("Microphone capture failed. Check mic permissions and try again.");
+          setIsRecording(false);
+          stopMediaCapture();
+        };
+
+        recorder.onstop = () => {
+          const recordedAudio = new Blob(audioChunksRef.current, {
+            type: "audio/webm",
+          });
+          stopMediaCapture();
+          setIsRecording(false);
+          void transcribeRecordedAudio(recordedAudio);
+        };
+
+        recorder.start(250);
+        setIsRecording(true);
+      } catch {
+        setSttError("Microphone access was blocked. Enable permission and try again.");
+      }
+    })();
+  };
+
+  const handlePromptButtonClick = () => {
+    if (typeof window !== "undefined" && window.innerWidth >= 1280) {
+      quickPromptsRailRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+      setRailPulse(true);
+      window.setTimeout(() => setRailPulse(false), 900);
+      return;
     }
+
+    setPromptSheetOpen(true);
   };
 
   const submitMessage = async (event: FormEvent) => {
@@ -296,13 +411,13 @@ export default function AiChatPage() {
   };
 
   return (
-    <div className="mx-auto grid w-full max-w-7xl gap-6 xl:grid-cols-[minmax(0,1fr)_21rem]">
-      <section className="relative flex min-h-[72dvh] flex-col overflow-hidden rounded-2xl border border-borderSubtle bg-surface shadow-soft">
-        <header className="px-4 pb-3 pt-4 sm:px-5">
-          <h1 className="text-3xl font-bold tracking-tight text-textPrimary">
+    <div className="grid h-[100dvh] w-screen overflow-hidden gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
+      <section className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-[#5A4926]/40 bg-[#05080F] shadow-[0_24px_55px_rgba(0,0,0,0.45)]">
+        <header className="shrink-0 border-b border-[#5A4926]/25 px-4 pb-3 pt-4 sm:px-5">
+          <h1 className="text-3xl font-bold tracking-tight text-[#F5F2E9]">
             AI Chat
           </h1>
-          <p className="mt-1 text-sm text-textMuted/70">
+          <p className="mt-1 text-sm text-[#A4AAB7]">
             AEON — The &ldquo;Advanced Efficient Optimized Network&rdquo; — is
             the SNRG Labs-powered operations assistant built inside Diversified
             Companies OS. Ask for SOP guidance, work order planning, summaries,
@@ -313,7 +428,7 @@ export default function AiChatPage() {
 
         <div
           ref={messageViewportRef}
-          className="flex-1 space-y-3 overflow-y-auto px-4 pb-40 pt-3 sm:px-5 lg:pb-8"
+          className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4 sm:px-5"
         >
           {!hasMessages ? (
             <EmptyState />
@@ -332,8 +447,8 @@ export default function AiChatPage() {
                 className={[
                   "max-w-3xl rounded-2xl px-4 py-3 text-sm",
                   message.role === "user"
-                    ? "ml-auto bg-navy text-white"
-                    : "border border-borderSubtle bg-bgDark text-textPrimary",
+                    ? "ml-auto bg-gradient-to-br from-[#82612A] to-[#B28A44] text-[#0F1117]"
+                    : "border border-[#3B3F4B] bg-[#0F141F] text-[#E8EAF0]",
                 ].join(" ")}
               >
                 <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide opacity-80">
@@ -347,7 +462,7 @@ export default function AiChatPage() {
                     {extractFileParts(message).map((filePart, index) => (
                       <div
                         key={`${filePart.filename ?? "file"}-${index}`}
-                        className="inline-flex items-center gap-2 rounded-lg border border-white/20 bg-black/15 px-2.5 py-1.5 text-xs"
+                        className="inline-flex items-center gap-2 rounded-lg border border-[#6B5530]/45 bg-black/20 px-2.5 py-1.5 text-xs"
                       >
                         <FileText className="h-3.5 w-3.5" />
                         <span>{filePart.filename ?? filePart.mediaType}</span>
@@ -369,7 +484,7 @@ export default function AiChatPage() {
                 damping: 30,
                 mass: 0.85,
               }}
-              className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-borderSubtle bg-bgDark px-3 py-2 text-xs text-textMuted"
+              className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[#5A4926]/45 bg-[#111725] px-3 py-2 text-xs text-[#BBC1CC]"
             >
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
               AEON is thinking...
@@ -377,10 +492,11 @@ export default function AiChatPage() {
           )}
         </div>
 
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-surface to-transparent lg:hidden" />
-
-        <footer className="fixed inset-x-0 bottom-[calc(env(safe-area-inset-bottom)+4.65rem)] z-30 border-t border-borderSubtle bg-surface/95 p-3 backdrop-blur lg:static lg:bottom-auto lg:border-t-0 lg:bg-transparent lg:p-4">
-          <form onSubmit={submitMessage} className="space-y-3">
+        <footer className="shrink-0 border-t border-[#5A4926]/25 bg-[#0A111C]/90 p-3 backdrop-blur-md lg:p-4">
+          <form
+            onSubmit={submitMessage}
+            className="space-y-3 rounded-2xl border border-[#5A4926]/35 bg-[#101929] p-3 focus-within:ring-2 focus-within:ring-yellow-600/50"
+          >
             <input
               ref={fileInputRef}
               type="file"
@@ -391,8 +507,8 @@ export default function AiChatPage() {
             />
 
             {pendingFiles.length > 0 ? (
-              <div className="rounded-xl border border-borderSubtle bg-bgDark p-2.5">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-textMuted">
+              <div className="rounded-xl border border-[#5A4926]/35 bg-[#0B1320] p-2.5">
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#B4BAC6]">
                   Attached Files ({pendingFiles.length})
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -403,19 +519,19 @@ export default function AiChatPage() {
                     return (
                       <div
                         key={`${filePart.filename ?? "pending"}-${index}`}
-                        className="inline-flex items-center gap-2 rounded-lg border border-borderSubtle bg-surface px-2.5 py-1.5 text-xs text-textSecondary"
+                        className="inline-flex items-center gap-2 rounded-lg border border-[#4A3D24]/45 bg-[#131D2C] px-2.5 py-1.5 text-xs text-[#D8DCE5]"
                       >
                         <FileText className="h-3.5 w-3.5" />
                         <span className="max-w-[12rem] truncate">
                           {filePart.filename ?? "Attachment"}
                         </span>
-                        <span className="text-textDisabled">
+                        <span className="text-[#8E96A6]">
                           {formatBytes(approximateBytes)}
                         </span>
                         <button
                           type="button"
                           onClick={() => removePendingFile(index)}
-                          className="inline-flex h-4 w-4 items-center justify-center rounded-full text-textMuted transition-colors hover:text-textPrimary"
+                          className="inline-flex h-4 w-4 items-center justify-center rounded-full text-[#8E96A6] transition-colors hover:text-[#F6F7FA]"
                           aria-label={`Remove ${filePart.filename ?? "attachment"}`}
                         >
                           <X className="h-3 w-3" />
@@ -439,22 +555,22 @@ export default function AiChatPage() {
               }}
               rows={2}
               placeholder="Ask AEON anything, attach files with +, or use the mic for speech-to-text..."
-              className="w-full resize-none rounded-xl border border-borderSubtle bg-bgDark px-3 py-3 text-sm text-textPrimary outline-none transition-colors placeholder:text-textDisabled focus:border-borderFocus focus:ring-2 focus:ring-accent/20"
+              className="w-full resize-none rounded-xl border border-[#5A4926]/30 bg-[#0C1422] px-3 py-3 text-sm text-[#ECEEF4] outline-none transition-colors placeholder:text-[#7E8698] focus:border-[#B28A44]"
             />
             <div className="flex items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
-                  onClick={() => setPromptSheetOpen(true)}
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-borderSubtle bg-bgDark px-3 text-sm font-semibold text-textPrimary"
+                  onClick={handlePromptButtonClick}
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#5A4926]/45 bg-[#0F1726] px-3 text-sm font-semibold text-[#F3EFE3] transition-colors hover:bg-[#152036]"
                 >
-                  <WandSparkles className="h-4 w-4" />
+                  <WandSparkles className="h-4 w-4 text-[#CBA661]" />
                   Prompts
                 </button>
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-borderSubtle bg-bgDark px-3 text-sm font-semibold text-textPrimary"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#5A4926]/45 bg-[#0F1726] px-3 text-sm font-semibold text-[#E9ECF4] transition-colors hover:bg-[#152036]"
                 >
                   <Plus className="h-4 w-4" />
                   File
@@ -462,31 +578,35 @@ export default function AiChatPage() {
                 <button
                   type="button"
                   onClick={toggleRecording}
-                  disabled={!sttSupported}
+                  disabled={!sttSupported || isTranscribing}
                   className={[
                     "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-semibold",
-                    !sttSupported
-                      ? "cursor-not-allowed border-borderSubtle bg-bgDark text-textDisabled"
+                    !sttSupported || isTranscribing
+                      ? "cursor-not-allowed border-[#3B3F4B] bg-[#0F1726] text-[#7E8698]"
                       : isRecording
-                        ? "border-cyber-red bg-cyber-red/10 text-cyber-red"
-                        : "border-borderSubtle bg-bgDark text-textPrimary",
+                        ? "border-[#B97724] bg-[#B97724]/15 text-[#FFCC7A]"
+                        : "border-[#5A4926]/45 bg-[#0F1726] text-[#E9ECF4]",
                   ].join(" ")}
                 >
-                  {isRecording ? (
+                  {isRecording || isTranscribing ? (
                     <MicOff className="h-4 w-4" />
                   ) : (
                     <Mic className="h-4 w-4" />
                   )}
-                  {isRecording ? "Stop Mic" : "Mic"}
+                  {isTranscribing
+                    ? "Transcribing"
+                    : isRecording
+                      ? "Stop Mic"
+                      : "Mic"}
                 </button>
-                <label className="inline-flex min-h-11 items-center justify-center rounded-xl border border-borderSubtle bg-bgDark px-3 text-xs font-semibold text-textSecondary">
+                <label className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#5A4926]/45 bg-[#0F1726] px-3 text-xs font-semibold text-[#AEB5C4]">
                   Model
                   <select
                     value={model}
                     onChange={(event) =>
                       setModel(event.target.value as ChatModel)
                     }
-                    className="ml-2 bg-transparent text-xs text-textPrimary outline-none"
+                    className="ml-2 bg-transparent text-xs text-[#F1F3F8] outline-none"
                   >
                     <option value="deepseek-v4-flash">v4 Flash</option>
                     <option value="deepseek-v4-pro">v4 Pro</option>
@@ -498,7 +618,7 @@ export default function AiChatPage() {
                   <button
                     type="button"
                     onClick={() => void stop()}
-                    className="inline-flex min-h-11 items-center justify-center rounded-xl border border-borderSubtle bg-bgDark px-3 text-sm font-semibold text-textPrimary"
+                    className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#5A4926]/45 bg-[#0F1726] px-3 text-sm font-semibold text-[#F0F2F8]"
                   >
                     Stop
                   </button>
@@ -509,7 +629,7 @@ export default function AiChatPage() {
                     isLoading ||
                     (input.trim().length === 0 && pendingFiles.length === 0)
                   }
-                  className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-navy px-4 text-sm font-semibold text-white transition-colors hover:bg-[#243B63] disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-[#8F6D31] to-[#C29A4E] px-4 text-sm font-semibold text-[#0F1219] transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <Send className="h-3.5 w-3.5" />
                   Send
@@ -545,15 +665,31 @@ export default function AiChatPage() {
         </footer>
       </section>
 
-      <aside className="hidden space-y-3 xl:block">
-        {quickPrompts.map((item) => (
-          <QuickPromptCard
-            key={item.title}
-            title={item.title}
-            prompt={item.prompt}
-            onSelect={(value) => void submitQuickPrompt(value)}
-          />
-        ))}
+      <aside className="hidden h-full w-80 shrink-0 xl:block">
+        <div
+          ref={quickPromptsRailRef}
+          className={[
+            "h-full space-y-3 overflow-y-auto rounded-2xl bg-[#0A111C]/72 p-3 backdrop-blur-md",
+            railPulse
+              ? "ring-2 ring-[#B78F48]/55 shadow-[0_0_0_1px_rgba(183,143,72,0.3)]"
+              : "ring-1 ring-[#3B3F4B]/65",
+          ].join(" ")}
+        >
+          <div className="mb-1 flex items-center gap-2 px-1">
+            <Command className="h-4 w-4 text-[#C39A52]" />
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#D7DCE6]">
+              Quick Prompts
+            </p>
+          </div>
+          {quickPrompts.map((item) => (
+            <QuickPromptCard
+              key={item.title}
+              title={item.title}
+              prompt={item.prompt}
+              onSelect={(value) => void submitQuickPrompt(value)}
+            />
+          ))}
+        </div>
       </aside>
 
       <QuickPromptSheet
@@ -598,16 +734,31 @@ function EmptyState() {
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 320, damping: 28, mass: 0.85 }}
-      className="grid min-h-[20rem] place-items-center rounded-2xl border border-dashed border-borderHover bg-bgDark px-6 py-10 text-center"
+      className="relative grid min-h-[20rem] place-items-center overflow-hidden rounded-2xl bg-[#0D1522] px-6 py-10 text-center"
     >
-      <div>
-        <div className="mx-auto mb-3 inline-flex h-11 w-11 items-center justify-center rounded-full bg-navy/10 text-navy">
+      <motion.div
+        className="pointer-events-none absolute -top-20 h-64 w-64 rounded-full bg-[#BB8D3F]/20 blur-3xl"
+        animate={{ opacity: [0.15, 0.35, 0.15], scale: [0.95, 1.08, 0.95] }}
+        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        className="pointer-events-none absolute bottom-[-30%] h-72 w-72 rounded-full bg-[#4E658D]/25 blur-3xl"
+        animate={{ opacity: [0.25, 0.4, 0.25], scale: [1, 1.12, 1] }}
+        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <div className="relative">
+        <div className="mx-auto mb-3 inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#B48942]/20 text-[#E6BC72]">
           <Bot className="h-5 w-5" />
         </div>
-        <h2 className="text-2xl font-bold tracking-tight text-textPrimary">
+        <motion.h2
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.08, duration: 0.35 }}
+          className="text-2xl font-bold tracking-tight text-[#F6F3EA]"
+        >
           AEON is ready
-        </h2>
-        <p className="mt-2 max-w-md text-sm text-textMuted/70">
+        </motion.h2>
+        <p className="mt-2 max-w-md text-sm text-[#B5BBC8]">
           Ask AEON to summarize tasks, triage requests, draft SOPs, create work
           order follow-up plans, or prepare a leadership update. Use a quick
           prompt on the right to get started.
@@ -625,17 +776,19 @@ type QuickPromptCardProps = {
 
 function QuickPromptCard({ title, prompt, onSelect }: QuickPromptCardProps) {
   return (
-    <button
+    <motion.button
       type="button"
       onClick={() => onSelect(prompt)}
-      className="w-full rounded-xl border border-borderSubtle bg-surface p-4 text-left shadow-soft transition-colors hover:border-borderHover"
+      whileHover={{ scale: 1.03 }}
+      whileTap={{ scale: 0.985 }}
+      className="group w-full rounded-xl bg-slate-800/50 p-4 text-left backdrop-blur-md transition-all duration-200 hover:shadow-[0_0_0_1px_rgba(191,149,73,0.38),0_14px_26px_rgba(0,0,0,0.32)]"
     >
-      <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#E0E6F2]">
         Quick Prompt
       </p>
-      <h3 className="mt-1 text-sm font-semibold text-textPrimary">{title}</h3>
-      <p className="mt-2 text-xs leading-5 text-textMuted/70">{prompt}</p>
-    </button>
+      <h3 className="mt-1 text-sm font-bold text-[#FAFCFF]">{title}</h3>
+      <p className="mt-2 text-xs leading-5 text-[#AAB1C0]">{prompt}</p>
+    </motion.button>
   );
 }
 
@@ -660,7 +813,7 @@ function QuickPromptSheet({
             type="button"
             aria-label="Close quick prompts"
             onClick={onClose}
-            className="fixed inset-0 z-40 bg-black/40 xl:hidden"
+            className="fixed inset-0 z-40 bg-black/45 xl:hidden"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -676,24 +829,24 @@ function QuickPromptSheet({
               damping: 34,
               mass: 0.88,
             }}
-            className="fixed inset-x-0 bottom-0 z-50 rounded-t-3xl border border-borderSubtle bg-surface px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-3 shadow-cyberLg xl:hidden"
+            className="fixed inset-x-0 bottom-0 z-50 rounded-t-3xl border border-[#5A4926]/40 bg-[#060C17] px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-3 shadow-cyberLg xl:hidden"
           >
             <div className="mb-2 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-navy" />
-                <h2 className="text-2xl font-bold tracking-tight text-textPrimary">
+                <Sparkles className="h-4 w-4 text-[#C39A52]" />
+                <h2 className="text-2xl font-bold tracking-tight text-[#F5F2E8]">
                   Quick Prompts
                 </h2>
               </div>
               <button
                 type="button"
                 onClick={onClose}
-                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-borderSubtle bg-bgDark"
+                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-[#5A4926]/40 bg-[#111827]"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <p className="text-sm text-textMuted/70">
+            <p className="text-sm text-[#AEB5C5]">
               Start faster with high-signal prompts built for operations
               workflows.
             </p>
@@ -712,12 +865,12 @@ function QuickPromptSheet({
                     mass: 0.86,
                     delay: index * 0.02,
                   }}
-                  className="w-full rounded-xl border border-borderSubtle bg-bgDark px-3 py-3 text-left"
+                  className="w-full rounded-xl bg-slate-800/50 px-3 py-3 text-left backdrop-blur-md"
                 >
-                  <p className="text-sm font-semibold text-textPrimary">
+                  <p className="text-sm font-bold text-[#F9FBFF]">
                     {item.title}
                   </p>
-                  <p className="mt-1 text-xs leading-5 text-textMuted/70">
+                  <p className="mt-1 text-xs leading-5 text-[#AEB5C5]">
                     {item.prompt}
                   </p>
                 </motion.button>
