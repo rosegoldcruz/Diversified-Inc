@@ -479,10 +479,10 @@ export default function AiChatPage() {
   return (
     <div
       ref={layoutRootRef}
-      className="grid h-[calc(100dvh-11rem)] min-h-0 w-full overflow-hidden gap-4 lg:h-[calc(100dvh-8rem)] xl:grid-cols-[minmax(0,1fr)_20rem]"
+      className="grid h-[calc(100dvh-11rem)] min-h-0 w-full items-stretch overflow-hidden gap-4 lg:h-[calc(100dvh-8rem)] xl:grid-cols-[minmax(0,1fr)_20rem]"
       style={availableHeight ? { height: `${availableHeight}px` } : undefined}
     >
-      <section className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-[#5A4926]/40 bg-[#05080F] shadow-[0_24px_55px_rgba(0,0,0,0.45)]">
+      <section className="relative flex h-full min-h-0 max-h-full flex-col overflow-hidden rounded-2xl border border-[#5A4926]/40 bg-[#05080F] shadow-[0_24px_55px_rgba(0,0,0,0.45)]">
         <header className="shrink-0 border-b border-[#5A4926]/25 px-4 pb-3 pt-4 sm:px-5">
           <h1 className="text-3xl font-bold tracking-tight text-[#F5F2E9]">
             AI Chat
@@ -498,7 +498,7 @@ export default function AiChatPage() {
 
         <div
           ref={messageViewportRef}
-          className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4 sm:px-5"
+          className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4 pb-3 sm:px-5"
         >
           {!hasMessages ? (
             <EmptyState />
@@ -562,7 +562,7 @@ export default function AiChatPage() {
           )}
         </div>
 
-        <footer className="shrink-0 border-t border-[#5A4926]/25 bg-[#0A111C]/90 p-3 backdrop-blur-md lg:p-4">
+        <footer className="sticky bottom-0 z-10 shrink-0 border-t border-[#5A4926]/25 bg-[#0A111C]/95 p-3 backdrop-blur-md lg:p-4">
           <form
             onSubmit={submitMessage}
             className="space-y-3 rounded-2xl border border-[#5A4926]/35 bg-[#101929] p-3 focus-within:ring-2 focus-within:ring-yellow-600/50"
@@ -742,11 +742,11 @@ export default function AiChatPage() {
         </footer>
       </section>
 
-      <aside className="hidden h-full w-80 shrink-0 xl:block">
+      <aside className="hidden h-full min-h-0 w-80 shrink-0 overflow-hidden xl:block">
         <div
           ref={quickPromptsRailRef}
           className={[
-            "h-full space-y-3 overflow-y-auto rounded-2xl bg-[#0A111C]/72 p-3 backdrop-blur-md",
+            "h-full min-h-0 space-y-3 overflow-y-auto rounded-2xl bg-[#0A111C]/72 p-3 backdrop-blur-md",
             railPulse
               ? "ring-2 ring-[#B78F48]/55 shadow-[0_0_0_1px_rgba(183,143,72,0.3)]"
               : "ring-1 ring-[#3B3F4B]/65",
