@@ -3,6 +3,7 @@
 import {
   ChangeEvent,
   FormEvent,
+  KeyboardEvent,
   useEffect,
   useMemo,
   useRef,
@@ -411,8 +412,7 @@ export default function AiChatPage() {
     setPromptSheetOpen(true);
   };
 
-  const submitMessage = async (event: FormEvent) => {
-    event.preventDefault();
+  const sendCurrentMessage = async () => {
     const content = input.trim();
     const hasFiles = pendingFiles.length > 0;
     if ((!hasFiles && content.length === 0) || isLoading) return;
@@ -439,14 +439,26 @@ export default function AiChatPage() {
     setFileError(null);
   };
 
+  const submitMessage = async (event: FormEvent) => {
+    event.preventDefault();
+    await sendCurrentMessage();
+  };
+
   const submitQuickPrompt = async (prompt: string) => {
     if (isLoading) return;
     await sendMessage({ text: prompt }, { body: { model } });
     setPromptSheetOpen(false);
   };
 
+  const handleComposerKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      void sendCurrentMessage();
+    }
+  };
+
   return (
-    <div className="grid h-full min-h-0 w-full overflow-hidden gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
+    <div className="grid h-[calc(100dvh-11rem)] min-h-0 w-full overflow-hidden gap-4 lg:h-[calc(100dvh-8rem)] xl:grid-cols-[minmax(0,1fr)_20rem]">
       <section className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-[#5A4926]/40 bg-[#05080F] shadow-[0_24px_55px_rgba(0,0,0,0.45)]">
         <header className="shrink-0 border-b border-[#5A4926]/25 px-4 pb-3 pt-4 sm:px-5">
           <h1 className="text-3xl font-bold tracking-tight text-[#F5F2E9]">
@@ -582,6 +594,7 @@ export default function AiChatPage() {
               ref={composerRef}
               value={input}
               onChange={(event) => setInput(event.target.value)}
+              onKeyDown={handleComposerKeyDown}
               onFocus={() => {
                 composerRef.current?.scrollIntoView({
                   block: "center",
