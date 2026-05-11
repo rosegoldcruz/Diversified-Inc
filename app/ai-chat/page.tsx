@@ -446,7 +446,7 @@ export default function AiChatPage() {
   };
 
   return (
-    <div className="grid h-[100dvh] w-screen overflow-hidden gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
+    <div className="grid h-full min-h-0 w-full gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
       <section className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-[#5A4926]/40 bg-[#05080F] shadow-[0_24px_55px_rgba(0,0,0,0.45)]">
         <header className="shrink-0 border-b border-[#5A4926]/25 px-4 pb-3 pt-4 sm:px-5">
           <h1 className="text-3xl font-bold tracking-tight text-[#F5F2E9]">
