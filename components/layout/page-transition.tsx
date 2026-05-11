@@ -31,7 +31,7 @@ export function PageTransition({ children }: PageTransitionProps) {
         transition={
           prefersReducedMotion
             ? { duration: 0 }
-            : { duration: 0.45, ease: [0.4, 0, 0.2, 1] }
+            : { duration: 0.15, ease: [0.4, 0, 0.2, 1] }
         }
       >
         {children}
@@ -44,7 +44,7 @@ export function PageTransition({ children }: PageTransitionProps) {
         transition={
           prefersReducedMotion
             ? { duration: 0 }
-            : { duration: 0.45, ease: [0.4, 0, 0.2, 1] }
+            : { duration: 0.15, ease: [0.4, 0, 0.2, 1] }
         }
         style={{
           position: "fixed",
