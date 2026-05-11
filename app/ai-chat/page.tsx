@@ -446,7 +446,7 @@ export default function AiChatPage() {
   };
 
   return (
-    <div className="grid h-full min-h-0 w-full gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
+    <div className="grid h-full min-h-0 w-full overflow-hidden gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
       <section className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-[#5A4926]/40 bg-[#05080F] shadow-[0_24px_55px_rgba(0,0,0,0.45)]">
         <header className="shrink-0 border-b border-[#5A4926]/25 px-4 pb-3 pt-4 sm:px-5">
           <h1 className="text-3xl font-bold tracking-tight text-[#F5F2E9]">
@@ -775,7 +775,7 @@ function EmptyState() {
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 320, damping: 28, mass: 0.85 }}
-      className="relative grid min-h-[20rem] place-items-center overflow-hidden rounded-2xl bg-[#0D1522] px-6 py-10 text-center"
+      className="relative grid min-h-[8.5rem] place-items-center overflow-hidden rounded-2xl bg-[#0D1522] px-6 py-6 text-center sm:min-h-[10rem]"
     >
       <motion.div
         className="pointer-events-none absolute -top-20 h-64 w-64 rounded-full bg-[#BB8D3F]/20 blur-3xl"
