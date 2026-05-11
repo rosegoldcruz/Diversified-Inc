@@ -11,7 +11,7 @@ type TopBarProps = {
 export function TopBar({ onMenuToggle }: TopBarProps) {
   const pathname = usePathname();
   const router = useRouter();
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
   const canGoBack = pathname !== "/";
 
   useEffect(() => {
