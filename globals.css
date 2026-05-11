@@ -4,6 +4,11 @@
 
 @import "./styles/corporate.css";
 
+html,
+body {
+  background: rgb(var(--color-bg-darkest));
+}
+
 :root {
   color-scheme: light;
   --color-background: 255 255 255;
