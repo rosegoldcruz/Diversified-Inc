@@ -36,7 +36,10 @@ type WhisperTranscriber = (
 const MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024;
 let whisperTranscriberPromise: Promise<WhisperTranscriber> | null = null;
 
-function downsampleTo16k(input: Float32Array, sampleRate: number): Float32Array {
+function downsampleTo16k(
+  input: Float32Array,
+  sampleRate: number,
+): Float32Array {
   if (sampleRate === 16000) return input;
 
   const ratio = sampleRate / 16000;
@@ -51,7 +54,11 @@ function downsampleTo16k(input: Float32Array, sampleRate: number): Float32Array 
     let accumulator = 0;
     let count = 0;
 
-    for (let index = inputOffset; index < nextOffset && index < input.length; index += 1) {
+    for (
+      let index = inputOffset;
+      index < nextOffset && index < input.length;
+      index += 1
+    ) {
       accumulator += input[index];
       count += 1;
     }
@@ -68,7 +75,9 @@ async function audioBlobToMono16k(blob: Blob): Promise<Float32Array> {
   const arrayBuffer = await blob.arrayBuffer();
   const AudioContextCtor =
     window.AudioContext ||
-    ((window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext ?? null);
+    ((window as unknown as { webkitAudioContext?: typeof AudioContext })
+      .webkitAudioContext ??
+      null);
 
   if (!AudioContextCtor) {
     throw new Error("AudioContext is not supported in this browser.");
@@ -76,7 +85,9 @@ async function audioBlobToMono16k(blob: Blob): Promise<Float32Array> {
 
   const audioContext = new AudioContextCtor();
   try {
-    const decodedAudio = await audioContext.decodeAudioData(arrayBuffer.slice(0));
+    const decodedAudio = await audioContext.decodeAudioData(
+      arrayBuffer.slice(0),
+    );
     const monoChannel = decodedAudio.getChannelData(0);
     return downsampleTo16k(monoChannel, decodedAudio.sampleRate);
   } finally {
@@ -171,6 +182,7 @@ export default function AiChatPage() {
   const [pendingFiles, setPendingFiles] = useState<FileUIPart[]>([]);
   const [fileError, setFileError] = useState<string | null>(null);
   const [sttError, setSttError] = useState<string | null>(null);
+  const [sttStatus, setSttStatus] = useState<string | null>(null);
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [sttSupported, setSttSupported] = useState(false);
@@ -284,12 +296,19 @@ export default function AiChatPage() {
   const transcribeRecordedAudio = async (audioBlob: Blob) => {
     if (audioBlob.size === 0) return;
 
+    const isModelColdStart = whisperTranscriberPromise === null;
     setIsTranscribing(true);
     setSttError(null);
+    setSttStatus(
+      isModelColdStart
+        ? "Downloading local speech model for first use..."
+        : "Transcribing speech locally...",
+    );
 
     try {
       const mono16kAudio = await audioBlobToMono16k(audioBlob);
       const transcriber = await getWhisperTranscriber();
+      setSttStatus("Transcribing speech locally...");
       const result = await transcriber(mono16kAudio, {
         language: "english",
         task: "transcribe",
@@ -302,23 +321,31 @@ export default function AiChatPage() {
         typeof result === "string" ? result.trim() : (result.text ?? "").trim();
 
       if (!transcript) {
-        setSttError("No clear speech was detected. Try again and speak closer to the mic.");
+        setSttError(
+          "No clear speech was detected. Try again and speak closer to the mic.",
+        );
         return;
       }
 
       setInput((current) =>
-        current.trim().length === 0 ? transcript : `${current.trim()} ${transcript}`,
+        current.trim().length === 0
+          ? transcript
+          : `${current.trim()} ${transcript}`,
       );
     } catch {
-      setSttError("Local open-source transcription failed. Please try recording again.");
+      setSttError(
+        "Local open-source transcription failed. Please try recording again.",
+      );
     } finally {
       setIsTranscribing(false);
+      setSttStatus(null);
       composerRef.current?.focus();
     }
   };
 
   const toggleRecording = () => {
     setSttError(null);
+    setSttStatus(null);
 
     if (isRecording) {
       if (mediaRecorderRef.current?.state === "recording") {
@@ -329,7 +356,9 @@ export default function AiChatPage() {
 
     void (async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
         const recorder = new MediaRecorder(stream);
 
         mediaStreamRef.current = stream;
@@ -343,7 +372,10 @@ export default function AiChatPage() {
         };
 
         recorder.onerror = () => {
-          setSttError("Microphone capture failed. Check mic permissions and try again.");
+          setSttError(
+            "Microphone capture failed. Check mic permissions and try again.",
+          );
+          setSttStatus(null);
           setIsRecording(false);
           stopMediaCapture();
         };
@@ -360,7 +392,10 @@ export default function AiChatPage() {
         recorder.start(250);
         setIsRecording(true);
       } catch {
-        setSttError("Microphone access was blocked. Enable permission and try again.");
+        setSttError(
+          "Microphone access was blocked. Enable permission and try again.",
+        );
+        setSttStatus(null);
       }
     })();
   };
@@ -647,6 +682,12 @@ export default function AiChatPage() {
           {sttError && (
             <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200">
               {sttError}
+            </div>
+          )}
+
+          {sttStatus && !sttError && (
+            <div className="mt-3 rounded-md border border-[#5A4926]/40 bg-[#B48942]/10 px-3 py-2 text-xs text-[#E6C17B]">
+              {sttStatus}
             </div>
           )}
 
