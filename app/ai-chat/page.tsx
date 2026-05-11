@@ -187,6 +187,8 @@ export default function AiChatPage() {
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
   const [sttSupported, setSttSupported] = useState(false);
+  const [availableHeight, setAvailableHeight] = useState<number | null>(null);
+  const layoutRootRef = useRef<HTMLDivElement>(null);
   const messageViewportRef = useRef<HTMLDivElement>(null);
   const quickPromptsRailRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
@@ -221,6 +223,23 @@ export default function AiChatPage() {
         mediaRecorderRef.current.stop();
       }
       stopMediaCapture();
+    };
+  }, []);
+
+  useEffect(() => {
+    const updateAvailableHeight = () => {
+      if (!layoutRootRef.current) return;
+
+      const { top } = layoutRootRef.current.getBoundingClientRect();
+      const nextHeight = Math.max(320, Math.floor(window.innerHeight - top));
+      setAvailableHeight(nextHeight);
+    };
+
+    updateAvailableHeight();
+    window.addEventListener("resize", updateAvailableHeight);
+
+    return () => {
+      window.removeEventListener("resize", updateAvailableHeight);
     };
   }, []);
 
@@ -458,7 +477,11 @@ export default function AiChatPage() {
   };
 
   return (
-    <div className="grid h-[calc(100dvh-11rem)] min-h-0 w-full overflow-hidden gap-4 lg:h-[calc(100dvh-8rem)] xl:grid-cols-[minmax(0,1fr)_20rem]">
+    <div
+      ref={layoutRootRef}
+      className="grid h-[calc(100dvh-11rem)] min-h-0 w-full overflow-hidden gap-4 lg:h-[calc(100dvh-8rem)] xl:grid-cols-[minmax(0,1fr)_20rem]"
+      style={availableHeight ? { height: `${availableHeight}px` } : undefined}
+    >
       <section className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-[#5A4926]/40 bg-[#05080F] shadow-[0_24px_55px_rgba(0,0,0,0.45)]">
         <header className="shrink-0 border-b border-[#5A4926]/25 px-4 pb-3 pt-4 sm:px-5">
           <h1 className="text-3xl font-bold tracking-tight text-[#F5F2E9]">
