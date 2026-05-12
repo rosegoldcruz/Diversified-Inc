@@ -1,6 +1,6 @@
 # Diversified OS — Full Repo Build Prompt
 
-You are working inside the existing project repo named **DiversifiedINC**.
+You are working inside the existing project repo for **Diversified OS**.
 
 You are building **Diversified OS**, also called **Diversified Employee Workspace**.
 
@@ -18,7 +18,7 @@ If Diversified does not adopt it, the product should still be usable by us, reus
 The standard is not “good enough to show.”
 The standard is “usable enough to operate.”
 
-Build real modules, real routes, clean data structures, reusable components, and an architecture that can connect to real PostgreSQL/NocoDB data later.
+Build real modules, real routes, clean data structures, reusable components, and use the existing PostgreSQL/NocoDB direction where the repo already supports it.
 
 ## Core Product Definition
 
@@ -37,16 +37,16 @@ The subject matter is internal business operations.
 
 This is about how a company manages the work happening inside the organization:
 
-* who is doing what
-* what is due
-* what is blocked
-* what requests need attention
-* what SOPs people need to follow
-* what work orders are open
-* what inventory needs visibility
-* what files are connected to work
-* what leadership needs to see
-* what employees need to access when they are not physically at work
+- who is doing what
+- what is due
+- what is blocked
+- what requests need attention
+- what SOPs people need to follow
+- what work orders are open
+- what inventory needs visibility
+- what files are connected to work
+- what leadership needs to see
+- what employees need to access when they are not physically at work
 
 The system should replace scattered internal workflows, messy shared files, disconnected SOPs, manual follow-up, unclear ownership, and fragmented operational visibility with one clean web-based workspace.
 
@@ -91,15 +91,15 @@ This is an internal operations OS.
 
 Design the app around internal company users such as:
 
-* Terry / leadership
-* Cathy / workspace admin
-* Jordan / operations stakeholder
-* Jill / leadership
-* Jayden / team member
-* Callie / team member
-* office staff
-* managers
-* internal employees
+- Terry / leadership
+- Cathy / workspace admin
+- Jordan / operations stakeholder
+- Jill / leadership
+- Jayden / team member
+- Callie / team member
+- office staff
+- managers
+- internal employees
 
 Also keep the product reusable enough that these can later become configurable users, roles, or organizations.
 
@@ -115,32 +115,31 @@ Do not structure this as a Supabase application.
 
 The backend direction is:
 
-* self-hosted PostgreSQL database running on our VPS
-* self-hosted NocoDB running on our VPS as the internal admin/database interface
-* Next.js as the frontend/application layer
-* API routes or server actions for controlled application logic
-* clean separation between UI components and data access
-* mock data isolated so it can be replaced with real Postgres queries later
+- self-hosted PostgreSQL database running on our VPS
+- self-hosted NocoDB running on our VPS as the internal admin/database interface
+- Next.js as the frontend/application layer
+- API routes or server actions for controlled application logic
+- clean separation between UI components and data access
+- mock data isolated so it can be replaced with real Postgres queries later
 
-For the current build stage, use mock data if real credentials or database tables are not present.
-
-Mock data must be isolated. Do not bury data directly inside page components if a shared data layer already exists or can be created cleanly.
+Use mock data only when a module has no existing database route, no existing table, and no established data-access pattern. Do not replace working PostgreSQL-connected modules with mock data.
 
 Preferred structure:
 
-* `/types/workspace.ts`
-* `/lib/mock-data.ts` or the repo’s existing mock data file
-* `/lib/workspace-utils.ts`
-* optional `/lib/data/workspace.ts` for future data access
-* optional `/database/schema.sql` for future Postgres schema planning
+- `/types/workspace.ts`
+- existing API routes and database helpers first
+- `/lib/mock-data.ts` or the repo’s existing mock data file only for modules that are still UI-only
+- `/lib/workspace-utils.ts`
+- optional `/lib/data/workspace.ts` for future data access
+- optional `/database/schema.sql` for future Postgres schema planning
 
 The app should be prepared for:
 
-* PostgreSQL as the source of truth
-* NocoDB as the internal admin/database interface
-* Next.js API routes/server actions as the controlled app layer
-* real CRUD later
-* auth and role-based access later
+- PostgreSQL as the source of truth
+- NocoDB as the internal admin/database interface
+- Next.js API routes/server actions as the controlled app layer
+- real CRUD later
+- auth and role-based access later
 
 Do not build deep backend integration unless existing credentials, schema, and app patterns are already present.
 
@@ -154,14 +153,14 @@ Preserve and improve what exists instead of rebuilding from scratch.
 
 The existing direction includes:
 
-* Diversified OS branding
-* left sidebar
-* grouped sidebar sections
-* top search/filter/header area
-* dark/light mode support
-* card-based dashboard styling
-* internal operations platform feel
-* responsive structure
+- Diversified OS branding
+- left sidebar
+- grouped sidebar sections
+- top search/filter/header area
+- dark/light mode support
+- card-based dashboard styling
+- internal operations platform feel
+- responsive structure
 
 Do not destroy the existing shell.
 Do not replace the layout system unless the current one is broken.
@@ -174,40 +173,40 @@ The sidebar should use this structure:
 
 Workspace:
 
-* Dashboard
-* Tasks
-* Projection Calendar
+- Dashboard
+- Tasks
+- Projection Calendar
 
 Operations:
 
-* Forms Center
-* SOPs
-* Requests
-* Work Orders
-* Employees
-* Inventory
+- Forms Center
+- SOPs
+- Requests
+- Work Orders
+- Employees
+- Inventory
 
 Management:
 
-* Reports
-* Files
+- Reports
+- Files
 
 System:
 
-* Automations
-* Admin Settings
+- Automations
+- Admin Settings
 
 Requests should remain if it serves as the admin/review queue for forms and internal submissions.
 
 The relationship should be:
 
-* Forms Center = where employees access and submit forms
-* Requests = where submitted internal requests are reviewed and tracked
-* Work Orders = operational execution items that require ownership, status, and follow-up
-* SOPs = procedures and process documentation
-* Files = supporting documents connected to work
-* Employees = people, roles, workload, and visibility
-* Inventory = operational items/assets/materials needing visibility
+- Forms Center = where employees access and submit forms
+- Requests = where submitted internal requests are reviewed and tracked
+- Work Orders = operational execution items that require ownership, status, and follow-up
+- SOPs = procedures and process documentation
+- Files = supporting documents connected to work
+- Employees = people, roles, workload, and visibility
+- Inventory = operational items/assets/materials needing visibility
 
 Every sidebar item must route somewhere useful.
 No dead links.
@@ -225,25 +224,25 @@ Main command center for daily internal execution.
 
 Must include:
 
-* welcome/header area
-* today’s priorities
-* assigned tasks
-* upcoming projected work blocks
-* pending requests
-* open work orders
-* SOPs needing review if available
-* inventory alerts if available
-* leadership visibility cards
-* quick actions
-* mobile-responsive layout
+- welcome/header area
+- today’s priorities
+- assigned tasks
+- upcoming projected work blocks
+- pending requests
+- open work orders
+- SOPs needing review if available
+- inventory alerts if available
+- leadership visibility cards
+- quick actions
+- mobile-responsive layout
 
 The dashboard should answer:
 
-* What needs attention today?
-* What is late?
-* What is blocked?
-* What is waiting for review?
-* What is assigned to the team?
+- What needs attention today?
+- What is late?
+- What is blocked?
+- What is waiting for review?
+- What is assigned to the team?
 
 ## 2. Tasks
 
@@ -255,31 +254,31 @@ Internal task management.
 
 Must include:
 
-* task list, cards, or table
-* status
-* priority
-* assigned user
-* due date
-* progress indicator
-* category
-* filters for status/person/priority
-* create task UI placeholder if real create flow is not ready
-* update status UI placeholder if real update flow is not ready
+- task list, cards, or table
+- status
+- priority
+- assigned user
+- due date
+- progress indicator
+- category
+- filters for status/person/priority
+- create task UI placeholder if real create flow is not ready
+- update status UI placeholder if real update flow is not ready
 
 Task statuses:
 
-* Not Started
-* In Progress
-* Waiting
-* Complete
-* Blocked
+- Not Started
+- In Progress
+- Waiting
+- Complete
+- Blocked
 
 Priorities:
 
-* Low
-* Normal
-* High
-* Urgent
+- Low
+- Normal
+- High
+- Urgent
 
 The tasks page should feel like a real daily execution board.
 
@@ -297,21 +296,21 @@ It should show where internal work is expected to happen across the day/week.
 
 Must include:
 
-* weekly layout or time-block view
-* task-linked blocks
-* meeting blocks
-* admin/planning blocks
-* follow-up/review blocks
-* assigned users
-* mobile-friendly stacked view
+- weekly layout or time-block view
+- task-linked blocks
+- meeting blocks
+- admin/planning blocks
+- follow-up/review blocks
+- assigned users
+- mobile-friendly stacked view
 
 Block types:
 
-* Task Work
-* Meeting
-* Admin
-* Follow-Up
-* Review
+- Task Work
+- Meeting
+- Admin
+- Follow-Up
+- Review
 
 ## 4. Forms Center
 
@@ -323,21 +322,21 @@ Employee-facing internal forms hub.
 
 Must include:
 
-* available internal forms
-* form category
-* description
-* active/inactive status
-* submit/request action
-* recent submissions if available
+- available internal forms
+- form category
+- description
+- active/inactive status
+- submit/request action
+- recent submissions if available
 
 Example forms:
 
-* Time Off Request
-* Purchase Request
-* Maintenance Request
-* HR / Employee Request
-* IT / Access Request
-* General Internal Request
+- Time Off Request
+- Purchase Request
+- Maintenance Request
+- HR / Employee Request
+- IT / Access Request
+- General Internal Request
 
 Forms Center is where employees start a submission.
 
@@ -359,47 +358,47 @@ This is operational knowledge.
 
 Must include:
 
-* SOP library
-* search input
-* category filter
-* department filter
-* status filter
-* SOP cards or table
-* owner/responsible role
-* last updated date
-* review date if available
-* related files/forms/tasks/work orders if available
-* recently updated section
-* empty state for filters
+- SOP library
+- search input
+- category filter
+- department filter
+- status filter
+- SOP cards or table
+- owner/responsible role
+- last updated date
+- review date if available
+- related files/forms/tasks/work orders if available
+- recently updated section
+- empty state for filters
 
 SOP statuses:
 
-* Draft
-* Active
-* Needs Review
-* Archived
+- Draft
+- Active
+- Needs Review
+- Archived
 
 Example SOP categories:
 
-* Office Procedures
-* Field Operations
-* Safety
-* HR / Employee
-* Inventory
-* Work Orders
-* Customer Follow-Up
-* Billing / Admin
+- Office Procedures
+- Field Operations
+- Safety
+- HR / Employee
+- Inventory
+- Work Orders
+- Customer Follow-Up
+- Billing / Admin
 
 Example SOPs:
 
-* New Employee Onboarding Checklist
-* Work Order Intake Process
-* Inventory Reorder Procedure
-* Time Off Request Procedure
-* File Upload Naming Standard
-* End-of-Day Task Update Procedure
-* Escalating Blocked Work
-* Weekly Leadership Report Prep
+- New Employee Onboarding Checklist
+- Work Order Intake Process
+- Inventory Reorder Procedure
+- Time Off Request Procedure
+- File Upload Naming Standard
+- End-of-Day Task Update Procedure
+- Escalating Blocked Work
+- Weekly Leadership Report Prep
 
 ## 6. Requests
 
@@ -413,23 +412,23 @@ Requests should act as the admin/manager review queue connected to Forms Center 
 
 Must include:
 
-* request list
-* requester
-* category
-* priority
-* status
-* submitted date
-* assigned reviewer
-* related form if available
-* detail drawer/card area if already consistent with repo patterns
+- request list
+- requester
+- category
+- priority
+- status
+- submitted date
+- assigned reviewer
+- related form if available
+- detail drawer/card area if already consistent with repo patterns
 
 Request statuses:
 
-* Submitted
-* Under Review
-* Approved
-* Denied
-* Completed
+- Submitted
+- Under Review
+- Approved
+- Denied
+- Completed
 
 Do not confuse Requests with Work Orders.
 
@@ -448,26 +447,26 @@ Work Orders are structured internal work items that need ownership, priority, st
 
 Must include:
 
-* work order list/cards/table
-* title
-* description
-* status
-* priority
-* assigned owner/team
-* due date or scheduled date
-* related SOP if useful
-* related files if useful
-* category/type
-* filters/search
+- work order list/cards/table
+- title
+- description
+- status
+- priority
+- assigned owner/team
+- due date or scheduled date
+- related SOP if useful
+- related files if useful
+- category/type
+- filters/search
 
 Work order statuses may include:
 
-* Open
-* Scheduled
-* In Progress
-* Waiting
-* Complete
-* Canceled
+- Open
+- Scheduled
+- In Progress
+- Waiting
+- Complete
+- Canceled
 
 ## 8. Employees
 
@@ -479,14 +478,14 @@ Employee directory and workload visibility.
 
 Must include:
 
-* employee directory
-* role
-* department
-* active status
-* assigned task count
-* current workload
-* contact placeholder
-* leadership/admin visibility layout
+- employee directory
+- role
+- department
+- active status
+- assigned task count
+- current workload
+- contact placeholder
+- leadership/admin visibility layout
 
 This page should make the OS feel like a real company system, not just a task board.
 
@@ -500,14 +499,14 @@ Internal inventory visibility.
 
 Must include:
 
-* item list/cards/table
-* item category
-* current quantity/status
-* assigned location
-* last updated date
-* reorder/status indicator
-* filters/search
-* operational internal-use layout
+- item list/cards/table
+- item category
+- current quantity/status
+- assigned location
+- last updated date
+- reorder/status indicator
+- filters/search
+- operational internal-use layout
 
 Inventory does not need to be a full ERP yet.
 It needs to establish visibility and structure.
@@ -522,26 +521,26 @@ Leadership visibility.
 
 Must include:
 
-* tasks by status
-* tasks by person
-* overdue items
-* request volume
-* work order volume/status
-* completed work this week
-* blocked work
-* SOPs needing review if available
-* inventory alerts if available
-* stat cards and/or simple charts
+- tasks by status
+- tasks by person
+- overdue items
+- request volume
+- work order volume/status
+- completed work this week
+- blocked work
+- SOPs needing review if available
+- inventory alerts if available
+- stat cards and/or simple charts
 
 Reports should answer:
 
-* Who has what?
-* What is late?
-* What is blocked?
-* What got completed this week?
-* What requests are building up?
-* What work orders are open?
-* What needs leadership attention?
+- Who has what?
+- What is late?
+- What is blocked?
+- What got completed this week?
+- What requests are building up?
+- What work orders are open?
+- What needs leadership attention?
 
 ## 11. Files
 
@@ -555,13 +554,13 @@ Files should connect to work instead of becoming another dump folder.
 
 Must include:
 
-* upload placeholder if real upload is not ready
-* file cards or table
-* category
-* uploaded by
-* date
-* linked task/request/work order/SOP if useful
-* search/filter UI
+- upload placeholder if real upload is not ready
+- file cards or table
+- category
+- uploaded by
+- date
+- linked task/request/work order/SOP if useful
+- search/filter UI
 
 ## 12. Automations
 
@@ -577,11 +576,11 @@ Show realistic automation rule cards/placeholders if needed.
 
 Examples:
 
-* Notify admin when a form is submitted
-* Flag overdue tasks
-* Remind owner when SOP needs review
-* Create follow-up task when request is approved
-* Alert when inventory drops below reorder threshold
+- Notify admin when a form is submitted
+- Flag overdue tasks
+- Remind owner when SOP needs review
+- Create follow-up task when request is approved
+- Alert when inventory drops below reorder threshold
 
 ## 13. Admin Settings
 
@@ -593,23 +592,23 @@ Workspace configuration.
 
 Must include:
 
-* users/team members
-* roles
-* departments
-* task categories
-* form categories
-* request types
-* work order types
-* inventory categories
-* SOP categories
-* system preferences placeholders
+- users/team members
+- roles
+- departments
+- task categories
+- form categories
+- request types
+- work order types
+- inventory categories
+- SOP categories
+- system preferences placeholders
 
 Roles:
 
-* Leadership
-* Admin
-* Manager
-* Employee
+- Leadership
+- Admin
+- Manager
+- Employee
 
 ## Shared Components
 
@@ -617,27 +616,27 @@ Create or reuse components where appropriate.
 
 Suggested components:
 
-* `AppShell`
-* `Sidebar`
-* `MobileNav`
-* `Header`
-* `StatCard`
-* `TaskCard`
-* `RequestCard`
-* `WorkOrderCard`
-* `TimeBlockCard`
-* `FormCard`
-* `SopCard`
-* `EmployeeCard`
-* `InventoryItemCard`
-* `FileCard`
-* `StatusBadge`
-* `PriorityBadge`
-* `EmptyState`
-* `SectionHeader`
-* `FilterBar`
-* `UserAvatar`
-* `ProgressBar`
+- `AppShell`
+- `Sidebar`
+- `MobileNav`
+- `Header`
+- `StatCard`
+- `TaskCard`
+- `RequestCard`
+- `WorkOrderCard`
+- `TimeBlockCard`
+- `FormCard`
+- `SopCard`
+- `EmployeeCard`
+- `InventoryItemCard`
+- `FileCard`
+- `StatusBadge`
+- `PriorityBadge`
+- `EmptyState`
+- `SectionHeader`
+- `FilterBar`
+- `UserAvatar`
+- `ProgressBar`
 
 Do not overbuild.
 Keep components clean, reusable, and consistent with the existing repo style.
@@ -654,136 +653,136 @@ Core models should include:
 
 ### User
 
-* `id`
-* `name`
-* `role`
-* `email`
-* `department`
-* `avatarUrl` optional
-* `active`
+- `id`
+- `name`
+- `role`
+- `email`
+- `department`
+- `avatarUrl` optional
+- `active`
 
 ### Task
 
-* `id`
-* `title`
-* `description`
-* `status`
-* `priority`
-* `assignedTo`
-* `createdBy`
-* `dueDate`
-* `progress`
-* `category`
-* `linkedRequestId` optional
-* `linkedWorkOrderId` optional
-* `linkedSopId` optional
-* `linkedFileIds` optional
-* `createdAt`
-* `updatedAt`
+- `id`
+- `title`
+- `description`
+- `status`
+- `priority`
+- `assignedTo`
+- `createdBy`
+- `dueDate`
+- `progress`
+- `category`
+- `linkedRequestId` optional
+- `linkedWorkOrderId` optional
+- `linkedSopId` optional
+- `linkedFileIds` optional
+- `createdAt`
+- `updatedAt`
 
 ### TimeBlock
 
-* `id`
-* `title`
-* `type`
-* `assignedTo`
-* `startTime`
-* `endTime`
-* `linkedTaskId` optional
-* `linkedWorkOrderId` optional
-* `notes` optional
+- `id`
+- `title`
+- `type`
+- `assignedTo`
+- `startTime`
+- `endTime`
+- `linkedTaskId` optional
+- `linkedWorkOrderId` optional
+- `notes` optional
 
 ### InternalForm
 
-* `id`
-* `name`
-* `description`
-* `category`
-* `active`
-* `fields`
+- `id`
+- `name`
+- `description`
+- `category`
+- `active`
+- `fields`
 
 ### InternalRequest
 
-* `id`
-* `title`
-* `description`
-* `requester`
-* `category`
-* `priority`
-* `status`
-* `assignedReviewer`
-* `submittedAt`
-* `updatedAt`
-* `linkedFormId` optional
-* `linkedTaskId` optional
+- `id`
+- `title`
+- `description`
+- `requester`
+- `category`
+- `priority`
+- `status`
+- `assignedReviewer`
+- `submittedAt`
+- `updatedAt`
+- `linkedFormId` optional
+- `linkedTaskId` optional
 
 ### SOP
 
-* `id`
-* `title`
-* `description`
-* `category`
-* `department`
-* `owner`
-* `status`
-* `lastUpdated`
-* `reviewDate` optional
-* `relatedFileIds` optional
-* `relatedFormIds` optional
-* `relatedTaskIds` optional
-* `relatedWorkOrderIds` optional
+- `id`
+- `title`
+- `description`
+- `category`
+- `department`
+- `owner`
+- `status`
+- `lastUpdated`
+- `reviewDate` optional
+- `relatedFileIds` optional
+- `relatedFormIds` optional
+- `relatedTaskIds` optional
+- `relatedWorkOrderIds` optional
 
 ### WorkOrder
 
-* `id`
-* `title`
-* `description`
-* `status`
-* `priority`
-* `assignedTo`
-* `category`
-* `dueDate` optional
-* `scheduledDate` optional
-* `linkedSopId` optional
-* `linkedTaskIds` optional
-* `linkedFileIds` optional
-* `createdAt`
-* `updatedAt`
+- `id`
+- `title`
+- `description`
+- `status`
+- `priority`
+- `assignedTo`
+- `category`
+- `dueDate` optional
+- `scheduledDate` optional
+- `linkedSopId` optional
+- `linkedTaskIds` optional
+- `linkedFileIds` optional
+- `createdAt`
+- `updatedAt`
 
 ### InventoryItem
 
-* `id`
-* `name`
-* `category`
-* `quantity`
-* `unit` optional
-* `status`
-* `location`
-* `reorderPoint` optional
-* `lastUpdated`
-* `notes` optional
+- `id`
+- `name`
+- `category`
+- `quantity`
+- `unit` optional
+- `status`
+- `location`
+- `reorderPoint` optional
+- `lastUpdated`
+- `notes` optional
 
 ### WorkspaceFile
 
-* `id`
-* `name`
-* `category`
-* `uploadedBy`
-* `uploadedAt`
-* `size`
-* `url` placeholder
-* `linkedTaskId` optional
-* `linkedRequestId` optional
-* `linkedWorkOrderId` optional
-* `linkedSopId` optional
+- `id`
+- `name`
+- `category`
+- `uploadedBy`
+- `uploadedAt`
+- `size`
+- `url` placeholder
+- `linkedTaskId` optional
+- `linkedRequestId` optional
+- `linkedWorkOrderId` optional
+- `linkedSopId` optional
 
 ### ReportMetric
 
-* `id`
-* `label`
-* `value`
-* `trend` optional
-* `description` optional
+- `id`
+- `label`
+- `value`
+- `trend` optional
+- `description` optional
 
 ## Mock Data
 
@@ -797,16 +796,16 @@ If the repo already uses something like `/app/lib/mockData.ts`, follow that patt
 
 Mock data should include:
 
-* team members matching Diversified users
-* realistic internal tasks
-* realistic internal requests
-* realistic work orders
-* realistic SOPs
-* realistic inventory items
-* realistic time blocks
-* realistic forms
-* realistic files
-* realistic report metrics
+- team members matching Diversified users
+- realistic internal tasks
+- realistic internal requests
+- realistic work orders
+- realistic SOPs
+- realistic inventory items
+- realistic time blocks
+- realistic forms
+- realistic files
+- realistic report metrics
 
 Do not use lorem ipsum.
 Do not use generic fake nonsense.
@@ -822,14 +821,14 @@ Or follow the repo’s existing utility pattern.
 
 Suggested utilities:
 
-* status label formatting
-* priority label formatting
-* status color class mapping
-* priority color class mapping
-* date formatting
-* progress formatting
-* simple filtering helpers
-* related resource count helpers if useful
+- status label formatting
+- priority label formatting
+- status color class mapping
+- priority color class mapping
+- date formatting
+- progress formatting
+- simple filtering helpers
+- related resource count helpers if useful
 
 ## Design Requirements
 
@@ -837,20 +836,20 @@ The app must feel like a real internal operations system.
 
 Design style:
 
-* modern internal SaaS feel
-* desktop-first but mobile-friendly
-* responsive sidebar
-* clean cards
-* soft shadows
-* rounded corners
-* clear hierarchy
-* professional spacing
-* readable typography
-* dark/light mode compatibility
-* no clutter
-* no childish colors
-* no fake stock-photo corporate look
-* no cheesy marketing sections
+- modern internal SaaS feel
+- desktop-first but mobile-friendly
+- responsive sidebar
+- clean cards
+- soft shadows
+- rounded corners
+- clear hierarchy
+- professional spacing
+- readable typography
+- dark/light mode compatibility
+- no clutter
+- no childish colors
+- no fake stock-photo corporate look
+- no cheesy marketing sections
 
 Every screen should feel operational and useful.
 
@@ -880,84 +879,78 @@ Follow these rules exactly:
 20. Keep the product focused on internal operations and employee execution.
 21. Build for reuse beyond Diversified where possible.
 
-## Future PostgreSQL / NocoDB Direction
+## PostgreSQL / NocoDB Direction
 
-The long-term backend is self-hosted infrastructure.
+The backend direction is self-hosted PostgreSQL with NocoDB for admin/database visibility.
 
-Likely PostgreSQL tables:
+Before adding or changing tables, inspect the existing schema and API routes.
 
-* `organizations`
-* `users`
-* `roles`
-* `departments`
-* `tasks`
-* `time_blocks`
-* `internal_forms`
-* `form_submissions`
-* `internal_requests`
-* `work_orders`
-* `inventory_items`
-* `workspace_files`
-* `sops`
-* `sop_categories`
-* `task_comments`
-* `request_comments`
-* `work_order_comments`
-* `automation_rules`
-* `activity_log`
+Possible/current PostgreSQL tables may include:
+
+- `organizations`
+- `users`
+- `roles`
+- `departments`
+- `tasks`
+- `time_blocks`
+- `internal_forms`
+- `form_submissions`
+- `internal_requests`
+- `work_orders`
+- `inventory_items`
+- `workspace_files`
+- `sops`
+- `sop_categories`
+- `task_comments`
+- `request_comments`
+- `work_order_comments`
+- `automation_rules`
+- `activity_log`
 
 NocoDB should be treated as the internal database/admin interface for managing records where appropriate.
 
 Next.js should remain the application layer controlling the user experience, routing, UI, and app-specific logic.
 
-Do not force database integration before the app is ready.
-But do not structure the UI in a way that makes database integration painful later.
+Do not force database integration for purely scaffolded modules before inspecting the repo.
+But when a module already has PostgreSQL routes, preserve and extend the existing database-backed pattern.
 
 ## Build Priority
 
 Build in this order when deciding what to work on next:
 
-1. Preserve/fix shell and navigation
-2. Make every sidebar route real
-3. Dashboard
-4. Tasks
-5. SOPs
-6. Forms Center and Requests relationship
-7. Work Orders
-8. Employees
-9. Inventory
-10. Files
-11. Reports
-12. Automations
-13. Admin Settings
-14. Shared data models
-15. Postgres schema planning
-16. NocoDB table mapping
-17. Real CRUD
-18. Auth and roles
+1. Finish Forms backend, submissions, and Forms → Requests relationship
+2. Fix Admin real data, roles, departments, settings, and disabled/demo controls
+3. Strengthen Calendar database/write actions and projection workflow
+4. Add missing write actions across core modules
+5. Build Reports API for internal operations reporting
+6. Add Auth, sessions, and role-based access
+7. Verify and finish Files upload/download/attachment behavior
+8. Wire n8n hooks for internal workflow events
+9. Add Outlook/Microsoft 365 sync foundation if explicitly scoped
+10. Polish mobile/PWA behavior
 
 ## Deliverable Standard
 
 The deliverable is a real working internal operations app foundation with:
 
-* complete sidebar navigation
-* useful routes
-* reusable layout
-* shared components
-* shared TypeScript types
-* isolated mock data
-* utility functions
-* polished dashboard UI
-* task management UI
-* SOP/knowledge base UI
-* forms/request workflow UI
-* work order UI
-* employee visibility UI
-* inventory visibility UI
-* files UI
-* reports UI
-* automations foundation UI
-* admin settings UI
+- complete sidebar navigation
+- useful routes
+- reusable layout
+- shared components
+- shared TypeScript types
+- isolated mock data only where backend wiring does not exist yet
+- utility functions
+- polished dashboard UI
+- task management UI
+- SOP/knowledge base UI
+- forms/request workflow UI
+- work order UI
+- employee visibility UI
+- inventory visibility UI
+- files UI
+- reports UI
+- automations foundation UI
+- admin settings UI
 
 Do not claim something is implemented if it is only a placeholder.
 
@@ -988,11 +981,12 @@ This is not just a client walkthrough.
 Build the actual repo files.
 Make the routes render.
 Make the UI coherent.
-Use mock data where backend credentials are missing.
+Use mock data only for modules that are still UI-only or not yet backed by existing API/database patterns.
 Keep the architecture ready for PostgreSQL and NocoDB.
 Do not ask for unnecessary confirmation.
 Do not add Supabase.
 Do not invent CRM features.
+Do not invent sales, lead, call center, customer portal, invoicing, ad reporting, or external marketing automation features.
 Do not drift into unrelated modules.
 
 Ship the real Diversified OS foundation.
