@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { Mail, Phone, Users } from "lucide-react";
+import { Envelope, Phone, Users } from "phosphor-react";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { FadeContent } from "@/components/ui/FadeContent";
@@ -137,12 +137,12 @@ export default function EmployeesPage() {
                   value={employee.department || "Unassigned"}
                 />
                 <InfoRow
-                  icon={<Mail className="h-3.5 w-3.5" />}
+                  icon={<Envelope className="h-3.5 w-3.5" weight="regular" />}
                   label="Email"
                   value={employee.email || "No email"}
                 />
                 <InfoRow
-                  icon={<Phone className="h-3.5 w-3.5" />}
+                  icon={<Phone className="h-3.5 w-3.5" weight="regular" />}
                   label="Phone"
                   value={employee.phone || "No phone"}
                 />
@@ -160,7 +160,7 @@ function Metric({ label, value }: { label: string; value: number }) {
     <Card padding="sm" className="min-w-40">
       <div className="flex items-center gap-3">
         <div className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50/90 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
-          <Users className="h-4 w-4" />
+          <Users className="h-4 w-4" weight="duotone" />
         </div>
         <div>
           <p className="text-xs font-medium text-textMuted">{label}</p>

@@ -1,13 +1,13 @@
 import Link from "next/link";
 import {
-  CalendarDays,
-  CheckCircle2,
+  Calendar,
+  CheckCircle,
   CheckSquare,
-  ClipboardList,
+  ClipboardText,
   FileText,
-  FolderKanban,
+  Briefcase,
   Users,
-} from "lucide-react";
+} from "phosphor-react";
 import { KpiCard } from "@/components/ui/KpiCard";
 
 const dashboardCards = [
@@ -16,50 +16,50 @@ const dashboardCards = [
     value: 24,
     delta: "4 added today",
     variant: "blue" as const,
-    icon: <CheckSquare className="h-5 w-5" />,
+    icon: <CheckSquare className="h-5 w-5" weight="duotone" />,
   },
   {
     label: "Due Today",
     value: 7,
     delta: "Needs review",
     variant: "warning" as const,
-    icon: <CalendarDays className="h-5 w-5" />,
+    icon: <Calendar className="h-5 w-5" weight="duotone" />,
   },
   {
     label: "Overdue",
     value: 3,
     delta: "Action required",
     variant: "danger" as const,
-    icon: <FileText className="h-5 w-5" />,
+    icon: <FileText className="h-5 w-5" weight="duotone" />,
   },
   {
     label: "Assigned To Me",
     value: 11,
     delta: "2 due this week",
     variant: "blue" as const,
-    icon: <CheckCircle2 className="h-5 w-5" />,
+    icon: <CheckCircle className="h-5 w-5" weight="duotone" />,
   },
   {
     label: "Forms Submitted This Week",
     value: 18,
     delta: "+6 vs last week",
     variant: "success" as const,
-    icon: <ClipboardList className="h-5 w-5" />,
+    icon: <ClipboardText className="h-5 w-5" weight="duotone" />,
   },
   {
     label: "Team Members Active",
     value: 9,
     delta: "of 12 total",
     variant: "blue" as const,
-    icon: <Users className="h-5 w-5" />,
+    icon: <Users className="h-5 w-5" weight="duotone" />,
   },
 ];
 
 const quickLinks = [
   { label: "Tasks", href: "/tasks", icon: CheckSquare },
-  { label: "Projection Calendar", href: "/calendar", icon: CalendarDays },
-  { label: "Forms Center", href: "/forms", icon: ClipboardList },
-  { label: "Work Orders", href: "/work-orders", icon: FolderKanban },
+  { label: "Projection Calendar", href: "/calendar", icon: Calendar },
+  { label: "Forms Center", href: "/forms", icon: ClipboardText },
+  { label: "Work Orders", href: "/work-orders", icon: Briefcase },
 ];
 
 export function OperationsDashboard() {
@@ -105,7 +105,7 @@ export function OperationsDashboard() {
                 className="group flex min-h-20 items-center gap-3 rounded-md border border-borderSubtle bg-white px-4 py-3 text-left transition-colors hover:border-navy hover:bg-bgDark"
               >
                 <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-[#EFF6FF] text-accent group-hover:bg-navy group-hover:text-white">
-                  <Icon className="h-5 w-5" />
+                  <Icon className="h-5 w-5" weight="duotone" />
                 </span>
                 <span className="text-sm font-semibold text-textPrimary">
                   {link.label}

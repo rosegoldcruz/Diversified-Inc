@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { X } from "lucide-react";
+import { X } from "phosphor-react";
 import { FadeContent } from "@/components/ui/FadeContent";
 import { ShinyText } from "@/components/ui/ShinyText";
 
@@ -252,7 +252,7 @@ export default function RequestsPage() {
               className="absolute right-4 top-4 rounded-md border border-borderSubtle p-1.5 text-textSecondary transition-colors hover:bg-bgDark hover:text-textPrimary"
               aria-label="Close request details"
             >
-              <X className="h-4 w-4" />
+              <X className="h-4 w-4" weight="bold" />
             </button>
 
             <div className="pr-10">

@@ -10,18 +10,18 @@ import {
   useState,
 } from "react";
 import {
-  Bot,
   Command,
   FileText,
-  Loader2,
-  Mic,
-  MicOff,
+  MagicWand,
+  Microphone,
+  MicrophoneSlash,
+  PaperPlaneRight,
   Plus,
-  Send,
-  Sparkles,
-  WandSparkles,
+  Robot,
+  Sparkle,
+  SpinnerGap,
   X,
-} from "lucide-react";
+} from "phosphor-react";
 import { DefaultChatTransport, type FileUIPart } from "ai";
 import { useChat } from "@ai-sdk/react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -534,7 +534,7 @@ export default function AiChatPage() {
                         key={`${filePart.filename ?? "file"}-${index}`}
                         className="inline-flex items-center gap-2 rounded-md border border-borderSubtle bg-surface px-2.5 py-1.5 text-xs"
                       >
-                        <FileText className="h-3.5 w-3.5" />
+                        <FileText className="h-3.5 w-3.5" weight="duotone" />
                         <span>{filePart.filename ?? filePart.mediaType}</span>
                       </div>
                     ))}
@@ -556,7 +556,7 @@ export default function AiChatPage() {
               }}
               className="inline-flex min-h-11 items-center gap-2 rounded-md border border-borderSubtle bg-bgDark px-3 py-2 text-xs text-textSecondary"
             >
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              <SpinnerGap className="h-3.5 w-3.5 animate-spin" weight="bold" />
               AEON is thinking...
             </motion.div>
           )}
@@ -591,7 +591,7 @@ export default function AiChatPage() {
                         key={`${filePart.filename ?? "pending"}-${index}`}
                         className="inline-flex items-center gap-2 rounded-md border border-borderSubtle bg-bgDark px-2.5 py-1.5 text-xs text-textPrimary"
                       >
-                        <FileText className="h-3.5 w-3.5" />
+                        <FileText className="h-3.5 w-3.5" weight="duotone" />
                         <span className="max-w-[12rem] truncate">
                           {filePart.filename ?? "Attachment"}
                         </span>
@@ -604,7 +604,7 @@ export default function AiChatPage() {
                           className="inline-flex h-4 w-4 items-center justify-center rounded-md text-textMuted transition-colors hover:text-textPrimary"
                           aria-label={`Remove ${filePart.filename ?? "attachment"}`}
                         >
-                          <X className="h-3 w-3" />
+                          <X className="h-3 w-3" weight="bold" />
                         </button>
                       </div>
                     );
@@ -635,7 +635,7 @@ export default function AiChatPage() {
                   onClick={handlePromptButtonClick}
                   className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-borderSubtle bg-surface px-3 text-sm font-medium text-textPrimary transition-colors hover:bg-bgDark"
                 >
-                  <WandSparkles className="h-4 w-4 text-accent" />
+                  <MagicWand className="h-4 w-4 text-accent" weight="duotone" />
                   Prompts
                 </button>
                 <button
@@ -643,7 +643,7 @@ export default function AiChatPage() {
                   onClick={() => fileInputRef.current?.click()}
                   className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-borderSubtle bg-surface px-3 text-sm font-medium text-textPrimary transition-colors hover:bg-bgDark"
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-4 w-4" weight="bold" />
                   File
                 </button>
                 <button
@@ -660,9 +660,9 @@ export default function AiChatPage() {
                   ].join(" ")}
                 >
                   {isRecording || isTranscribing ? (
-                    <MicOff className="h-4 w-4" />
+                    <MicrophoneSlash className="h-4 w-4" weight="duotone" />
                   ) : (
-                    <Mic className="h-4 w-4" />
+                    <Microphone className="h-4 w-4" weight="duotone" />
                   )}
                   {isTranscribing
                     ? "Transcribing"
@@ -702,7 +702,7 @@ export default function AiChatPage() {
                   }
                   className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-md border border-accent bg-accent px-4 text-sm font-semibold text-white transition-colors hover:bg-accentSoft disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  <Send className="h-3.5 w-3.5" />
+                  <PaperPlaneRight className="h-3.5 w-3.5" weight="fill" />
                   Send
                 </button>
               </div>
@@ -751,7 +751,7 @@ export default function AiChatPage() {
           ].join(" ")}
         >
           <div className="mb-1 flex items-center gap-2 px-1">
-            <Command className="h-4 w-4 text-accent" />
+            <Command className="h-4 w-4 text-accent" weight="duotone" />
             <p className="text-xs font-medium uppercase tracking-wide text-textMuted">
               Quick Prompts
             </p>
@@ -813,7 +813,7 @@ function EmptyState() {
     >
       <div className="relative">
         <div className="mx-auto mb-3 inline-flex h-11 w-11 items-center justify-center rounded-md bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
-          <Bot className="h-5 w-5" />
+          <Robot className="h-5 w-5" weight="duotone" />
         </div>
         <motion.h2
           initial={{ opacity: 0, y: 8 }}
@@ -898,7 +898,7 @@ function QuickPromptSheet({
           >
             <div className="mb-2 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-accent" />
+                <Sparkle className="h-4 w-4 text-accent" weight="duotone" />
                 <h2 className="text-2xl font-semibold tracking-normal text-textPrimary">
                   Quick Prompts
                 </h2>
@@ -908,7 +908,7 @@ function QuickPromptSheet({
                 onClick={onClose}
                 className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-borderSubtle bg-surface text-textSecondary transition-colors hover:bg-bgDark hover:text-textPrimary"
               >
-                <X className="h-4 w-4" />
+                <X className="h-4 w-4" weight="bold" />
               </button>
             </div>
             <p className="text-sm text-textSecondary">

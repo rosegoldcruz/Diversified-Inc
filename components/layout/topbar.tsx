@@ -2,7 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Search, Bell, Filter, Menu, ArrowLeft, Moon, Sun } from "lucide-react";
+import {
+  ArrowLeft,
+  Bell,
+  Funnel,
+  List,
+  MagnifyingGlass,
+  Moon,
+  Sun,
+} from "phosphor-react";
 
 type TopBarProps = {
   onMenuToggle: () => void;
@@ -38,7 +46,7 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
             aria-label="Go back"
             title="Back"
           >
-            <ArrowLeft className="h-4 w-4" />
+            <ArrowLeft className="h-4 w-4" weight="bold" />
           </button>
         )}
         <button
@@ -47,10 +55,13 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
           className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/30 bg-white/55 text-textMuted shadow-glass backdrop-blur-2xl transition-all hover:-translate-y-px hover:border-white/50 hover:bg-white/80 hover:text-textPrimary dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 lg:hidden"
           aria-label="Open navigation"
         >
-          <Menu className="h-4 w-4" />
+          <List className="h-4 w-4" weight="bold" />
         </button>
         <div className="relative max-w-xl min-w-0 flex-1">
-          <Search className="pointer-events-none absolute left-3.5 top-2.5 h-4 w-4 text-textDisabled" />
+          <MagnifyingGlass
+            className="pointer-events-none absolute left-3.5 top-2.5 h-4 w-4 text-textDisabled"
+            weight="regular"
+          />
           <input
             className="h-10 w-full rounded-xl border border-white/30 bg-white/55 pl-10 pr-3 text-sm text-textPrimary shadow-[inset_0_1px_0_rgba(255,255,255,0.42)] outline-none backdrop-blur-2xl transition-all placeholder:text-textDisabled focus:border-white/60 focus:bg-white/80 focus:ring-4 focus:ring-white/25 dark:border-white/10 dark:bg-white/5 dark:focus:bg-white/10"
             placeholder="Search tasks, work orders, files…"
@@ -61,7 +72,7 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
         </div>
 
         <button className="hidden h-10 items-center gap-1.5 rounded-xl border border-white/30 bg-white/55 px-3 text-xs font-medium text-textSecondary shadow-glass backdrop-blur-2xl transition-all hover:-translate-y-px hover:border-white/50 hover:bg-white/80 hover:text-textPrimary dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 sm:inline-flex">
-          <Filter className="h-3.5 w-3.5" />
+          <Funnel className="h-3.5 w-3.5" weight="regular" />
           <span>Filters</span>
         </button>
       </div>
@@ -76,15 +87,15 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
           title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
         >
           {theme === "dark" ? (
-            <Sun className="h-4 w-4" />
+            <Sun className="h-4 w-4" weight="duotone" />
           ) : (
-            <Moon className="h-4 w-4" />
+            <Moon className="h-4 w-4" weight="duotone" />
           )}
         </button>
 
         {/* Notifications */}
         <button className="relative inline-flex h-9 w-9 items-center justify-center rounded-xl border border-white/30 bg-white/55 text-textMuted shadow-glass backdrop-blur-2xl transition-all hover:-translate-y-px hover:border-white/50 hover:bg-white/80 hover:text-textPrimary dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10">
-          <Bell className="h-4 w-4" />
+          <Bell className="h-4 w-4" weight="duotone" />
           <span className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-red-500 ring-2 ring-surface" />
         </button>
 

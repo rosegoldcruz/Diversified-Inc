@@ -1,112 +1,112 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { Save, Settings, Palette, Plug, ToggleLeft, Shield } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { ShinyText } from "@/components/ui/ShinyText"
+import { useEffect, useState } from "react";
+import { FloppyDisk, Palette, Plug, ToggleLeft } from "phosphor-react";
+import { Button } from "@/components/ui/button";
+import { ShinyText } from "@/components/ui/ShinyText";
 
 type BrandingSettings = {
-  company_name?: string
-  logo_url?: string
-  primary_color?: string
-  secondary_color?: string
-  accent_color?: string
-  font_family?: string
-}
+  company_name?: string;
+  logo_url?: string;
+  primary_color?: string;
+  secondary_color?: string;
+  accent_color?: string;
+  font_family?: string;
+};
 
 type Integration = {
-  id: number
-  integration_key: string
-  integration_name: string
-  integration_type: string
-  status: string
-  is_active: boolean
-}
+  id: number;
+  integration_key: string;
+  integration_name: string;
+  integration_type: string;
+  status: string;
+  is_active: boolean;
+};
 
 type FeatureFlag = {
-  id: number
-  flag_key: string
-  flag_name: string
-  is_enabled: boolean
-  rollout_percentage: number
-}
+  id: number;
+  flag_key: string;
+  flag_name: string;
+  is_enabled: boolean;
+  rollout_percentage: number;
+};
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000"
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
 
 export default function SystemSettingsPage() {
-  const [activeTab, setActiveTab] = useState("branding")
-  const [branding, setBranding] = useState<BrandingSettings>({})
-  const [integrations, setIntegrations] = useState<Integration[]>([])
-  const [featureFlags, setFeatureFlags] = useState<FeatureFlag[]>([])
-  const [loading, setLoading] = useState(false)
-  const [saving, setSaving] = useState(false)
+  const [activeTab, setActiveTab] = useState("branding");
+  const [branding, setBranding] = useState<BrandingSettings>({});
+  const [integrations, setIntegrations] = useState<Integration[]>([]);
+  const [featureFlags, setFeatureFlags] = useState<FeatureFlag[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (activeTab === "branding") loadBranding()
-    else if (activeTab === "integrations") loadIntegrations()
-    else if (activeTab === "features") loadFeatureFlags()
-  }, [activeTab])
+    if (activeTab === "branding") loadBranding();
+    else if (activeTab === "integrations") loadIntegrations();
+    else if (activeTab === "features") loadFeatureFlags();
+  }, [activeTab]);
 
   async function loadBranding() {
     try {
-      setLoading(true)
-      const res = await fetch(`${API_BASE}/settings/branding/current`)
+      setLoading(true);
+      const res = await fetch(`${API_BASE}/settings/branding/current`);
       if (res.ok) {
-        const data = await res.json()
-        setBranding(data)
+        const data = await res.json();
+        setBranding(data);
       }
     } catch (err) {
-      console.error("Failed to load branding:", err)
+      console.error("Failed to load branding:", err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   async function saveBranding() {
     try {
-      setSaving(true)
+      setSaving(true);
       const res = await fetch(`${API_BASE}/settings/branding`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(branding),
-      })
+      });
       if (res.ok) {
-        alert("Branding settings saved!")
+        alert("Branding settings saved!");
       }
     } catch (err) {
-      console.error("Failed to save branding:", err)
+      console.error("Failed to save branding:", err);
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
   }
 
   async function loadIntegrations() {
     try {
-      setLoading(true)
-      const res = await fetch(`${API_BASE}/settings/integrations`)
+      setLoading(true);
+      const res = await fetch(`${API_BASE}/settings/integrations`);
       if (res.ok) {
-        const data = await res.json()
-        setIntegrations(data)
+        const data = await res.json();
+        setIntegrations(data);
       }
     } catch (err) {
-      console.error("Failed to load integrations:", err)
+      console.error("Failed to load integrations:", err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   async function loadFeatureFlags() {
     try {
-      setLoading(true)
-      const res = await fetch(`${API_BASE}/settings/feature-flags`)
+      setLoading(true);
+      const res = await fetch(`${API_BASE}/settings/feature-flags`);
       if (res.ok) {
-        const data = await res.json()
-        setFeatureFlags(data)
+        const data = await res.json();
+        setFeatureFlags(data);
       }
     } catch (err) {
-      console.error("Failed to load feature flags:", err)
+      console.error("Failed to load feature flags:", err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
@@ -120,12 +120,12 @@ export default function SystemSettingsPage() {
           flag_name: flagKey,
           is_enabled: !currentValue,
         }),
-      })
+      });
       if (res.ok) {
-        await loadFeatureFlags()
+        await loadFeatureFlags();
       }
     } catch (err) {
-      console.error("Failed to toggle feature flag:", err)
+      console.error("Failed to toggle feature flag:", err);
     }
   }
 
@@ -151,7 +151,7 @@ export default function SystemSettingsPage() {
               : "text-neutral-400 hover:text-white"
           }`}
         >
-          <Palette className="w-4 h-4 inline-block mr-2" />
+          <Palette className="w-4 h-4 inline-block mr-2" weight="duotone" />
           Branding
         </button>
         <button
@@ -162,7 +162,7 @@ export default function SystemSettingsPage() {
               : "text-neutral-400 hover:text-white"
           }`}
         >
-          <Plug className="w-4 h-4 inline-block mr-2" />
+          <Plug className="w-4 h-4 inline-block mr-2" weight="duotone" />
           Integrations
         </button>
         <button
@@ -173,7 +173,7 @@ export default function SystemSettingsPage() {
               : "text-neutral-400 hover:text-white"
           }`}
         >
-          <ToggleLeft className="w-4 h-4 inline-block mr-2" />
+          <ToggleLeft className="w-4 h-4 inline-block mr-2" weight="duotone" />
           Feature Flags
         </button>
       </div>
@@ -189,7 +189,9 @@ export default function SystemSettingsPage() {
               <input
                 type="text"
                 value={branding.company_name || ""}
-                onChange={(e) => setBranding({ ...branding, company_name: e.target.value })}
+                onChange={(e) =>
+                  setBranding({ ...branding, company_name: e.target.value })
+                }
                 className="w-full rounded-md border border-neutral-700 bg-neutral-950 px-4 py-2 text-white"
                 placeholder="Diversified Inc"
               />
@@ -204,13 +206,23 @@ export default function SystemSettingsPage() {
                   <input
                     type="color"
                     value={branding.primary_color || "#3b82f6"}
-                    onChange={(e) => setBranding({ ...branding, primary_color: e.target.value })}
+                    onChange={(e) =>
+                      setBranding({
+                        ...branding,
+                        primary_color: e.target.value,
+                      })
+                    }
                     className="w-12 h-10 rounded border border-neutral-700"
                   />
                   <input
                     type="text"
                     value={branding.primary_color || "#3b82f6"}
-                    onChange={(e) => setBranding({ ...branding, primary_color: e.target.value })}
+                    onChange={(e) =>
+                      setBranding({
+                        ...branding,
+                        primary_color: e.target.value,
+                      })
+                    }
                     className="flex-1 rounded-md border border-neutral-700 bg-neutral-950 px-4 py-2 text-white"
                   />
                 </div>
@@ -224,13 +236,23 @@ export default function SystemSettingsPage() {
                   <input
                     type="color"
                     value={branding.secondary_color || "#10b981"}
-                    onChange={(e) => setBranding({ ...branding, secondary_color: e.target.value })}
+                    onChange={(e) =>
+                      setBranding({
+                        ...branding,
+                        secondary_color: e.target.value,
+                      })
+                    }
                     className="w-12 h-10 rounded border border-neutral-700"
                   />
                   <input
                     type="text"
                     value={branding.secondary_color || "#10b981"}
-                    onChange={(e) => setBranding({ ...branding, secondary_color: e.target.value })}
+                    onChange={(e) =>
+                      setBranding({
+                        ...branding,
+                        secondary_color: e.target.value,
+                      })
+                    }
                     className="flex-1 rounded-md border border-neutral-700 bg-neutral-950 px-4 py-2 text-white"
                   />
                 </div>
@@ -244,13 +266,17 @@ export default function SystemSettingsPage() {
                   <input
                     type="color"
                     value={branding.accent_color || "#f59e0b"}
-                    onChange={(e) => setBranding({ ...branding, accent_color: e.target.value })}
+                    onChange={(e) =>
+                      setBranding({ ...branding, accent_color: e.target.value })
+                    }
                     className="w-12 h-10 rounded border border-neutral-700"
                   />
                   <input
                     type="text"
                     value={branding.accent_color || "#f59e0b"}
-                    onChange={(e) => setBranding({ ...branding, accent_color: e.target.value })}
+                    onChange={(e) =>
+                      setBranding({ ...branding, accent_color: e.target.value })
+                    }
                     className="flex-1 rounded-md border border-neutral-700 bg-neutral-950 px-4 py-2 text-white"
                   />
                 </div>
@@ -263,7 +289,9 @@ export default function SystemSettingsPage() {
               </label>
               <select
                 value={branding.font_family || "Inter"}
-                onChange={(e) => setBranding({ ...branding, font_family: e.target.value })}
+                onChange={(e) =>
+                  setBranding({ ...branding, font_family: e.target.value })
+                }
                 className="w-full rounded-md border border-neutral-700 bg-neutral-950 px-4 py-2 text-white"
               >
                 <option value="Inter">Inter</option>
@@ -275,8 +303,12 @@ export default function SystemSettingsPage() {
             </div>
 
             <div className="pt-4">
-              <Button onClick={saveBranding} disabled={saving} className="bg-blue-600 hover:bg-blue-700">
-                <Save className="w-4 h-4 mr-2" />
+              <Button
+                onClick={saveBranding}
+                disabled={saving}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <FloppyDisk className="w-4 h-4 mr-2" weight="bold" />
                 {saving ? "Saving..." : "Save Branding"}
               </Button>
             </div>
@@ -288,11 +320,18 @@ export default function SystemSettingsPage() {
       {activeTab === "integrations" && (
         <div className="space-y-4">
           {loading ? (
-            <p className="text-center text-neutral-400 py-8">Loading integrations...</p>
+            <p className="text-center text-neutral-400 py-8">
+              Loading integrations...
+            </p>
           ) : integrations.length === 0 ? (
             <div className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-12 text-center">
-              <Plug className="w-16 h-16 text-neutral-700 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-white mb-2">No Integrations Configured</h3>
+              <Plug
+                className="w-16 h-16 text-neutral-700 mx-auto mb-4"
+                weight="duotone"
+              />
+              <h3 className="text-lg font-semibold text-white mb-2">
+                No Integrations Configured
+              </h3>
               <p className="text-sm text-neutral-400">
                 Connect third-party services to enhance your workflow
               </p>
@@ -305,10 +344,14 @@ export default function SystemSettingsPage() {
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <Plug className="w-8 h-8 text-blue-400" />
+                    <Plug className="w-8 h-8 text-blue-400" weight="duotone" />
                     <div>
-                      <h3 className="font-medium text-white">{integration.integration_name}</h3>
-                      <p className="text-xs text-neutral-500 capitalize">{integration.integration_type}</p>
+                      <h3 className="font-medium text-white">
+                        {integration.integration_name}
+                      </h3>
+                      <p className="text-xs text-neutral-500 capitalize">
+                        {integration.integration_type}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
@@ -336,7 +379,9 @@ export default function SystemSettingsPage() {
       {activeTab === "features" && (
         <div className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-6">
           {loading ? (
-            <p className="text-center text-neutral-400">Loading feature flags...</p>
+            <p className="text-center text-neutral-400">
+              Loading feature flags...
+            </p>
           ) : (
             <div className="space-y-3">
               {featureFlags.map((flag) => (
@@ -349,7 +394,9 @@ export default function SystemSettingsPage() {
                     <p className="text-xs text-neutral-500">{flag.flag_key}</p>
                   </div>
                   <button
-                    onClick={() => toggleFeatureFlag(flag.flag_key, flag.is_enabled)}
+                    onClick={() =>
+                      toggleFeatureFlag(flag.flag_key, flag.is_enabled)
+                    }
                     className={`w-12 h-6 rounded-full transition relative ${
                       flag.is_enabled ? "bg-blue-600" : "bg-neutral-700"
                     }`}
@@ -363,12 +410,14 @@ export default function SystemSettingsPage() {
                 </div>
               ))}
               {featureFlags.length === 0 && (
-                <p className="text-center text-neutral-500 py-8">No feature flags configured</p>
+                <p className="text-center text-neutral-500 py-8">
+                  No feature flags configured
+                </p>
               )}
             </div>
           )}
         </div>
       )}
     </div>
-  )
+  );
 }

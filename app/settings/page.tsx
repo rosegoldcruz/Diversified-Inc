@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CreditCard, Bell, Settings, Shield } from "lucide-react";
+import { Bell, CreditCard, GearSix, ShieldCheck } from "phosphor-react";
 import { FadeContent } from "@/components/ui/FadeContent";
 import { ShinyText } from "@/components/ui/ShinyText";
 
@@ -60,7 +60,7 @@ const SETTINGS_SECTIONS = [
     iconBg: "bg-amber-50 dark:bg-amber-500/10",
   },
   {
-    icon: Settings,
+    icon: GearSix,
     title: "System Config",
     description: "Branding, integrations, feature flags, and system settings",
     href: "/settings/system",
@@ -69,7 +69,7 @@ const SETTINGS_SECTIONS = [
     iconBg: "bg-slate-50 dark:bg-slate-500/10",
   },
   {
-    icon: Shield,
+    icon: ShieldCheck,
     title: "Security & Audit",
     description: "API keys, two-factor auth, and system access controls",
     href: "/settings/system",
@@ -82,7 +82,13 @@ const SETTINGS_SECTIONS = [
 export default function SettingsPage() {
   return (
     <div className="space-y-8">
-      <FadeContent as="section" blur={true} duration={800} delay={50} className="space-y-2">
+      <FadeContent
+        as="section"
+        blur={true}
+        duration={800}
+        delay={50}
+        className="space-y-2"
+      >
         <h1 className="text-3xl font-semibold tracking-normal text-textPrimary">
           <ShinyText>Settings</ShinyText>
         </h1>
@@ -91,14 +97,26 @@ export default function SettingsPage() {
         </p>
       </FadeContent>
 
-      <FadeContent as="section" blur={true} duration={800} delay={90} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <FadeContent
+        as="section"
+        blur={true}
+        duration={800}
+        delay={90}
+        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+      >
         <KpiCard label="Plan" value="Pro" variant="cyan" />
         <KpiCard label="Users" value="8" variant="green" />
         <KpiCard label="Integrations" value="3" variant="yellow" />
         <KpiCard label="API Keys" value="2 active" variant="magenta" />
       </FadeContent>
 
-      <FadeContent as="section" blur={true} duration={800} delay={120} className="grid gap-4 sm:grid-cols-2">
+      <FadeContent
+        as="section"
+        blur={true}
+        duration={800}
+        delay={120}
+        className="grid gap-4 sm:grid-cols-2"
+      >
         {SETTINGS_SECTIONS.map((section) => {
           const Icon = section.icon;
           return (
@@ -108,7 +126,10 @@ export default function SettingsPage() {
                   <div
                     className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md border ${section.border} ${section.iconBg}`}
                   >
-                    <Icon className={`h-5 w-5 ${section.accent}`} />
+                    <Icon
+                      className={`h-5 w-5 ${section.accent}`}
+                      weight="duotone"
+                    />
                   </div>
                   <div>
                     <h2 className="text-base font-semibold text-textPrimary">

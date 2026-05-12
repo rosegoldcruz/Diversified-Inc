@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle } from "lucide-react";
+import { Warning } from "phosphor-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { FadeContent } from "@/components/ui/FadeContent";
@@ -122,8 +122,9 @@ export default function InventoryPage() {
                         <div className="flex items-center gap-2">
                           <span>{item.item_name}</span>
                           {showWarning ? (
-                            <AlertTriangle
+                            <Warning
                               className="h-4 w-4 text-amber-500"
+                              weight="duotone"
                               aria-hidden="true"
                             />
                           ) : null}
@@ -174,8 +175,9 @@ export default function InventoryPage() {
                       </p>
                     </div>
                     {showWarning ? (
-                      <AlertTriangle
+                      <Warning
                         className="mt-0.5 h-4 w-4 text-amber-500"
+                        weight="duotone"
                         aria-hidden="true"
                       />
                     ) : null}

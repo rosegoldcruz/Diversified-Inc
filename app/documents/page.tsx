@@ -113,7 +113,13 @@ export default function DocumentsPage() {
 
   return (
     <div className="space-y-8">
-      <FadeContent as="section" blur={true} duration={800} delay={50} className="space-y-2">
+      <FadeContent
+        as="section"
+        blur={true}
+        duration={800}
+        delay={50}
+        className="space-y-2"
+      >
         <h1 className="text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
           <ShinyText>Documents</ShinyText>
         </h1>
@@ -123,13 +129,25 @@ export default function DocumentsPage() {
         </p>
       </FadeContent>
 
-      <FadeContent as="section" blur={true} duration={800} delay={90} className="grid gap-3 sm:grid-cols-3">
+      <FadeContent
+        as="section"
+        blur={true}
+        duration={800}
+        delay={90}
+        className="grid gap-3 sm:grid-cols-3"
+      >
         <SummaryCard label="Signed" value={signedCount} />
         <SummaryCard label="Pending" value={pendingCount} />
         <SummaryCard label="Draft" value={draftCount} />
       </FadeContent>
 
-      <FadeContent as="section" blur={true} duration={800} delay={120} className="glass-surface overflow-hidden">
+      <FadeContent
+        as="section"
+        blur={true}
+        duration={800}
+        delay={120}
+        className="glass-surface overflow-hidden"
+      >
         <div className="overflow-x-auto">
           <table className="min-w-[920px] w-full text-left text-sm">
             <thead className="bg-white/35 text-xs uppercase tracking-wide text-textMuted dark:bg-white/5">

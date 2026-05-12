@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import {
-  AlertTriangle,
-  Bot,
+  Warning,
+  Robot,
   Database,
-  ExternalLink,
-  Settings,
+  ArrowSquareOut,
+  GearSix,
   Users,
-  Zap,
-} from "lucide-react";
+  Lightning,
+} from "phosphor-react";
 import { FadeContent } from "@/components/ui/FadeContent";
 import { ShinyText } from "@/components/ui/ShinyText";
 
@@ -90,7 +90,7 @@ export default function AdminPage() {
       </section>
 
       <section className="space-y-5 rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl">
-        <SectionTitle icon={Settings} title="System Preferences" />
+        <SectionTitle icon={GearSix} title="System Preferences" />
         <div className="space-y-3">
           <ToggleRow
             label="Email notifications on new requests"
@@ -111,10 +111,10 @@ export default function AdminPage() {
       </section>
 
       <section className="space-y-5 rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl">
-        <SectionTitle icon={Zap} title="Integrations" />
+        <SectionTitle icon={Lightning} title="Integrations" />
         <div className="space-y-3">
           <IntegrationRow
-            icon={Zap}
+            icon={Lightning}
             name="n8n Automation Platform"
             badge="Connected"
             href="https://auto.snrglabs.com"
@@ -125,13 +125,13 @@ export default function AdminPage() {
             badge="Connected"
             href="https://data.snrglabs.com"
           />
-          <IntegrationRow icon={Bot} name="AEON AI Chat" badge="Active" />
+          <IntegrationRow icon={Robot} name="AEON AI Chat" badge="Active" />
         </div>
       </section>
 
       <section className="space-y-5 rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl">
         <SectionTitle
-          icon={AlertTriangle}
+          icon={Warning}
           title="Danger Zone"
           iconClassName="text-red-500"
         />
@@ -171,7 +171,7 @@ function SectionTitle({
   return (
     <div className="flex items-center gap-2">
       <div className="rounded-lg bg-bgDark p-2">
-        <Icon className={`h-5 w-5 ${iconClassName}`} />
+        <Icon className={`h-5 w-5 ${iconClassName}`} weight="duotone" />
       </div>
       <h2 className="text-base font-semibold text-textPrimary">{title}</h2>
     </div>
@@ -223,7 +223,7 @@ function IntegrationRow({
   return (
     <div className="flex flex-col gap-3 rounded-lg border border-borderSubtle bg-bgDark px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
       <div className="flex items-center gap-3">
-        <Icon className="h-5 w-5 text-accent" />
+        <Icon className="h-5 w-5 text-accent" weight="duotone" />
         <p className="font-medium text-textPrimary">{name}</p>
       </div>
       <div className="flex items-center gap-3">
@@ -237,7 +237,7 @@ function IntegrationRow({
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1 text-sm font-semibold text-accent hover:underline"
           >
-            Open <ExternalLink className="h-3.5 w-3.5" />
+            Open <ArrowSquareOut className="h-3.5 w-3.5" weight="bold" />
           </a>
         ) : null}
       </div>

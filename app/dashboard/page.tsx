@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
-  ClipboardList,
+  ClipboardText,
   Wrench,
-  AlertTriangle,
+  Warning,
   Users,
-  Flame,
-  Ban,
-} from "lucide-react";
+  Fire,
+  Prohibit,
+} from "phosphor-react";
 import { FadeContent } from "@/components/ui/FadeContent";
 import { ShinyText } from "@/components/ui/ShinyText";
 
@@ -121,7 +121,7 @@ export default function DashboardPage() {
     {
       label: "Total Tasks",
       value: stats.total_tasks,
-      icon: ClipboardList,
+      icon: ClipboardText,
       color: "text-sky-500",
       href: "/tasks",
     },
@@ -135,7 +135,7 @@ export default function DashboardPage() {
     {
       label: "Low Stock Items",
       value: stats.low_stock_items,
-      icon: AlertTriangle,
+      icon: Warning,
       color: "text-amber-500",
       href: "/inventory?status=low_stock",
     },
@@ -149,14 +149,14 @@ export default function DashboardPage() {
     {
       label: "High Priority Tasks",
       value: stats.high_priority_tasks,
-      icon: Flame,
+      icon: Fire,
       color: "text-red-500",
       href: "/tasks?priority=high",
     },
     {
       label: "Blocked Tasks",
       value: stats.blocked_tasks,
-      icon: Ban,
+      icon: Prohibit,
       color: "text-red-500",
       href: "/tasks?status=blocked",
     },
@@ -201,7 +201,10 @@ export default function DashboardPage() {
                   className="glass-surface glass-surface-hover block cursor-pointer p-6"
                 >
                   <div className="flex items-center gap-2.5">
-                    <Icon className={`h-5 w-5 ${card.color}`} />
+                    <Icon
+                      className={`h-5 w-5 ${card.color}`}
+                      weight="duotone"
+                    />
                     <p className="text-xs font-medium uppercase tracking-wide text-textMuted">
                       {card.label}
                     </p>

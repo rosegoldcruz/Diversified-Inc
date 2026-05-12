@@ -4,35 +4,42 @@ import type { ComponentType } from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
+  Gauge,
   CheckSquare,
-  CalendarDays,
-  ClipboardList,
-  ClipboardCheck,
+  Calendar,
+  ClipboardText,
+  Clipboard,
   BookOpen,
-  FolderKanban,
+  Briefcase,
   Users,
   Clock,
   CalendarCheck,
-  Boxes,
-  BarChart3,
+  Package,
+  ChartBar,
   FolderOpen,
   FileText,
-  MessageCircle,
-  Bot,
-  Zap,
-  Settings,
+  ChatCircle,
+  Robot,
+  Lightning,
+  GearSix,
   X,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+  CaretLeft,
+  CaretRight,
+} from "phosphor-react";
 import { GlassIcons } from "@/components/ui/GlassIcons";
 import { SidebarItem } from "@/components/ui/SidebarItem";
+
+type IconWeight = "thin" | "light" | "regular" | "bold" | "fill" | "duotone";
+type PhosphorIcon = ComponentType<{
+  className?: string;
+  size?: number | string;
+  weight?: IconWeight;
+}>;
 
 type NavItem = {
   label: string;
   href: string;
-  icon: ComponentType<{ className?: string }>;
+  icon: PhosphorIcon;
 };
 
 type NavGroup = {
@@ -44,39 +51,39 @@ const NAV_GROUPS: NavGroup[] = [
   {
     label: "Workspace",
     items: [
-      { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+      { label: "Dashboard", href: "/dashboard", icon: Gauge },
       { label: "Tasks", href: "/tasks", icon: CheckSquare },
-      { label: "Projection Calendar", href: "/calendar", icon: CalendarDays },
+      { label: "Projection Calendar", href: "/calendar", icon: Calendar },
     ],
   },
   {
     label: "Operations",
     items: [
-      { label: "Forms Center", href: "/forms", icon: ClipboardList },
-      { label: "Work Orders", href: "/work-orders", icon: FolderKanban },
+      { label: "Forms Center", href: "/forms", icon: ClipboardText },
+      { label: "Work Orders", href: "/work-orders", icon: Briefcase },
       { label: "Employees", href: "/employees", icon: Users },
       { label: "Timeclock", href: "/timeclock", icon: Clock },
       { label: "Timesheets", href: "/timesheets", icon: CalendarCheck },
       { label: "SOPs", href: "/sops", icon: BookOpen },
-      { label: "Requests", href: "/requests", icon: ClipboardCheck },
+      { label: "Requests", href: "/requests", icon: Clipboard },
       { label: "Documents", href: "/documents", icon: FileText },
     ],
   },
   {
     label: "Management",
     items: [
-      { label: "Inventory", href: "/inventory", icon: Boxes },
-      { label: "Reports", href: "/reports", icon: BarChart3 },
+      { label: "Inventory", href: "/inventory", icon: Package },
+      { label: "Reports", href: "/reports", icon: ChartBar },
       { label: "Files", href: "/files", icon: FolderOpen },
     ],
   },
   {
     label: "System",
     items: [
-      { label: "AI Chat", href: "/ai-chat", icon: MessageCircle },
-      { label: "AI Tools", href: "/ai-tools", icon: Bot },
-      { label: "Automations", href: "/automations", icon: Zap },
-      { label: "Admin Settings", href: "/settings", icon: Settings },
+      { label: "AI Chat", href: "/ai-chat", icon: ChatCircle },
+      { label: "AI Tools", href: "/ai-tools", icon: Robot },
+      { label: "Automations", href: "/automations", icon: Lightning },
+      { label: "Admin Settings", href: "/settings", icon: GearSix },
     ],
   },
 ];
@@ -136,9 +143,9 @@ export function Sidebar({
             title={desktopCollapsed ? "Expand sidebar" : "Collapse sidebar"}
           >
             {desktopCollapsed ? (
-              <ChevronRight className="h-4 w-4" />
+              <CaretRight className="h-4 w-4" weight="bold" />
             ) : (
-              <ChevronLeft className="h-4 w-4" />
+              <CaretLeft className="h-4 w-4" weight="bold" />
             )}
           </button>
           <button
@@ -147,7 +154,7 @@ export function Sidebar({
             className="absolute right-5 top-5 inline-flex h-8 w-8 items-center justify-center rounded-xl bg-black/35 text-white backdrop-blur transition-colors hover:bg-black/55 lg:hidden"
             aria-label="Close navigation"
           >
-            <X className="h-4 w-4" />
+            <X className="h-4 w-4" weight="bold" />
           </button>
         </div>
 
@@ -199,7 +206,7 @@ export function Sidebar({
           <GlassIcons
             items={[
               { label: "Tasks", href: "/tasks", icon: CheckSquare },
-              { label: "Reports", href: "/reports", icon: BarChart3 },
+              { label: "Reports", href: "/reports", icon: ChartBar },
             ]}
             className="grid-cols-2"
           />

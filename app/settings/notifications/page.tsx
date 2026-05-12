@@ -1,38 +1,38 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { Bell, Mail, MessageSquare, Smartphone } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { ShinyText } from "@/components/ui/ShinyText"
+import { useEffect, useState } from "react";
+import { Bell, DeviceMobile, Envelope } from "phosphor-react";
+import { Button } from "@/components/ui/button";
+import { ShinyText } from "@/components/ui/ShinyText";
 
 type Preference = {
-  id: number
-  user_id: number
-  user_type: string
-  channel: string
-  notification_type: string
-  is_enabled: boolean
-}
+  id: number;
+  user_id: number;
+  user_type: string;
+  channel: string;
+  notification_type: string;
+  is_enabled: boolean;
+};
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000"
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
 
 // Mock user - in production, get from auth context
-const USER_ID = 1
-const USER_TYPE = "homeowner"
+const USER_ID = 1;
+const USER_TYPE = "homeowner";
 
 const CHANNEL_ICONS: Record<string, any> = {
-  email: Mail,
-  sms: Smartphone,
+  email: Envelope,
+  sms: DeviceMobile,
   in_app: Bell,
   push: Bell,
-}
+};
 
 const CHANNEL_LABELS: Record<string, string> = {
   email: "Email",
   sms: "SMS/Text",
   in_app: "In-App",
   push: "Push Notifications",
-}
+};
 
 const NOTIFICATION_TYPE_LABELS: Record<string, string> = {
   quote_ready: "Quote Ready",
@@ -44,54 +44,58 @@ const NOTIFICATION_TYPE_LABELS: Record<string, string> = {
   signature_required: "Signature Required",
   message_received: "Message Received",
   system_alert: "System Alert",
-}
+};
 
 export default function NotificationPreferencesPage() {
-  const [preferences, setPreferences] = useState<Preference[]>([])
-  const [channels, setChannels] = useState<string[]>([])
-  const [notificationTypes, setNotificationTypes] = useState<string[]>([])
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
+  const [preferences, setPreferences] = useState<Preference[]>([]);
+  const [channels, setChannels] = useState<string[]>([]);
+  const [notificationTypes, setNotificationTypes] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    loadData()
-  }, [])
+    loadData();
+  }, []);
 
   async function loadData() {
     try {
-      setLoading(true)
+      setLoading(true);
 
       // Load available channels
-      const channelsRes = await fetch(`${API_BASE}/notifications/channels`)
+      const channelsRes = await fetch(`${API_BASE}/notifications/channels`);
       if (channelsRes.ok) {
-        const channelsData = await channelsRes.json()
-        setChannels(channelsData)
+        const channelsData = await channelsRes.json();
+        setChannels(channelsData);
       }
 
       // Load notification types
-      const typesRes = await fetch(`${API_BASE}/notifications/types`)
+      const typesRes = await fetch(`${API_BASE}/notifications/types`);
       if (typesRes.ok) {
-        const typesData = await typesRes.json()
-        setNotificationTypes(typesData)
+        const typesData = await typesRes.json();
+        setNotificationTypes(typesData);
       }
 
       // Load user preferences
       const prefsRes = await fetch(
-        `${API_BASE}/notifications/preferences/${USER_ID}/${USER_TYPE}`
-      )
+        `${API_BASE}/notifications/preferences/${USER_ID}/${USER_TYPE}`,
+      );
       if (prefsRes.ok) {
-        const prefsData = await prefsRes.json()
-        setPreferences(prefsData)
+        const prefsData = await prefsRes.json();
+        setPreferences(prefsData);
       }
     } catch (err) {
-      console.error("Failed to load preferences:", err)
+      console.error("Failed to load preferences:", err);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
-  async function togglePreference(channel: string, notificationType: string, currentValue: boolean) {
-    setSaving(true)
+  async function togglePreference(
+    channel: string,
+    notificationType: string,
+    currentValue: boolean,
+  ) {
+    setSaving(true);
     try {
       const res = await fetch(`${API_BASE}/notifications/preferences`, {
         method: "POST",
@@ -103,23 +107,26 @@ export default function NotificationPreferencesPage() {
           notification_type: notificationType,
           is_enabled: !currentValue,
         }),
-      })
+      });
 
       if (res.ok) {
-        await loadData()
+        await loadData();
       }
     } catch (err) {
-      console.error("Failed to update preference:", err)
+      console.error("Failed to update preference:", err);
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
   }
 
-  function getPreferenceValue(channel: string, notificationType: string): boolean {
+  function getPreferenceValue(
+    channel: string,
+    notificationType: string,
+  ): boolean {
     const pref = preferences.find(
-      (p) => p.channel === channel && p.notification_type === notificationType
-    )
-    return pref ? pref.is_enabled : true // Default to enabled
+      (p) => p.channel === channel && p.notification_type === notificationType,
+    );
+    return pref ? pref.is_enabled : true; // Default to enabled
   }
 
   if (loading) {
@@ -127,7 +134,7 @@ export default function NotificationPreferencesPage() {
       <div className="flex items-center justify-center p-12">
         <p className="text-neutral-400">Loading preferences...</p>
       </div>
-    )
+    );
   }
 
   return (
@@ -145,14 +152,14 @@ export default function NotificationPreferencesPage() {
       {/* Channel Overview */}
       <div className="grid gap-4 md:grid-cols-3">
         {channels.map((channel) => {
-          const Icon = CHANNEL_ICONS[channel] || Bell
+          const Icon = CHANNEL_ICONS[channel] || Bell;
           return (
             <div
               key={channel}
               className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-4"
             >
               <div className="flex items-center gap-3 mb-2">
-                <Icon className="w-5 h-5 text-blue-400" />
+                <Icon className="w-5 h-5 text-blue-400" weight="duotone" />
                 <h3 className="font-medium text-white">
                   {CHANNEL_LABELS[channel] || channel}
                 </h3>
@@ -164,7 +171,7 @@ export default function NotificationPreferencesPage() {
                 {channel === "push" && "Browser push notifications"}
               </p>
             </div>
-          )
+          );
         })}
       </div>
 
@@ -181,8 +188,13 @@ export default function NotificationPreferencesPage() {
                   <th key={channel} className="p-4 text-center">
                     <div className="flex flex-col items-center gap-1">
                       {(() => {
-                        const Icon = CHANNEL_ICONS[channel] || Bell
-                        return <Icon className="w-4 h-4 text-neutral-400" />
+                        const Icon = CHANNEL_ICONS[channel] || Bell;
+                        return (
+                          <Icon
+                            className="w-4 h-4 text-neutral-400"
+                            weight="regular"
+                          />
+                        );
                       })()}
                       <span className="text-xs text-neutral-400">
                         {CHANNEL_LABELS[channel] || channel}
@@ -196,7 +208,11 @@ export default function NotificationPreferencesPage() {
               {notificationTypes.map((type, idx) => (
                 <tr
                   key={type}
-                  className={idx !== notificationTypes.length - 1 ? "border-b border-neutral-800" : ""}
+                  className={
+                    idx !== notificationTypes.length - 1
+                      ? "border-b border-neutral-800"
+                      : ""
+                  }
                 >
                   <td className="p-4">
                     <p className="text-sm font-medium text-white">
@@ -204,7 +220,7 @@ export default function NotificationPreferencesPage() {
                     </p>
                   </td>
                   {channels.map((channel) => {
-                    const isEnabled = getPreferenceValue(channel, type)
+                    const isEnabled = getPreferenceValue(channel, type);
                     return (
                       <td key={channel} className="p-4 text-center">
                         <button
@@ -213,9 +229,7 @@ export default function NotificationPreferencesPage() {
                           }
                           disabled={saving}
                           className={`w-10 h-6 rounded-full transition relative ${
-                            isEnabled
-                              ? "bg-blue-600"
-                              : "bg-neutral-700"
+                            isEnabled ? "bg-blue-600" : "bg-neutral-700"
                           }`}
                         >
                           <div
@@ -225,7 +239,7 @@ export default function NotificationPreferencesPage() {
                           />
                         </button>
                       </td>
-                    )
+                    );
                   })}
                 </tr>
               ))}
@@ -237,10 +251,11 @@ export default function NotificationPreferencesPage() {
       {/* Info Box */}
       <div className="rounded-lg border border-blue-900/50 bg-blue-950/20 p-4">
         <p className="text-sm text-neutral-300">
-          <strong className="text-blue-300">Note:</strong> Email and SMS notifications
-          may have additional delivery charges. In-app notifications are always free.
+          <strong className="text-blue-300">Note:</strong> Email and SMS
+          notifications may have additional delivery charges. In-app
+          notifications are always free.
         </p>
       </div>
     </div>
-  )
+  );
 }

@@ -3,7 +3,7 @@
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Mail, Phone, Users } from "lucide-react";
+import { ArrowLeft, Envelope, Phone, Users } from "phosphor-react";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 
@@ -155,7 +155,7 @@ export default function EmployeeDetailPage() {
           onClick={() => router.back()}
           className="inline-flex items-center gap-2 text-sm font-medium text-textSecondary transition-colors hover:text-textPrimary"
         >
-          <ArrowLeft className="h-4 w-4" />
+          <ArrowLeft className="h-4 w-4" weight="bold" />
           Back to Employees
         </button>
         <p className="text-sm text-red-700 dark:text-red-300">
@@ -172,7 +172,7 @@ export default function EmployeeDetailPage() {
         onClick={() => router.back()}
         className="inline-flex items-center gap-2 text-sm font-medium text-textSecondary transition-colors hover:text-textPrimary"
       >
-        <ArrowLeft className="h-4 w-4" />
+        <ArrowLeft className="h-4 w-4" weight="bold" />
         Back to Employees
       </button>
 
@@ -205,17 +205,17 @@ export default function EmployeeDetailPage() {
 
         <dl className="grid gap-4 rounded-xl border border-borderSubtle bg-bgDark/80 p-5 sm:grid-cols-3">
           <InfoRow
-            icon={<Users className="h-4 w-4" />}
+            icon={<Users className="h-4 w-4" weight="duotone" />}
             label="Department"
             value={employee.department || "Not set"}
           />
           <InfoRow
-            icon={<Mail className="h-4 w-4" />}
+            icon={<Envelope className="h-4 w-4" weight="regular" />}
             label="Email"
             value={employee.email || "Not set"}
           />
           <InfoRow
-            icon={<Phone className="h-4 w-4" />}
+            icon={<Phone className="h-4 w-4" weight="regular" />}
             label="Phone"
             value={employee.phone || "Not set"}
           />

@@ -2,10 +2,17 @@ import type { ComponentType } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
+type IconWeight = "thin" | "light" | "regular" | "bold" | "fill" | "duotone";
+type PhosphorIcon = ComponentType<{
+  className?: string;
+  size?: number | string;
+  weight?: IconWeight;
+}>;
+
 type SidebarItemProps = {
   label: string;
   href: string;
-  icon: ComponentType<{ className?: string }>;
+  icon: PhosphorIcon;
   active?: boolean;
   collapsed?: boolean;
   onClick?: () => void;
@@ -35,7 +42,7 @@ export function SidebarItem({
       {active ? (
         <span className="absolute left-1 top-2 h-[calc(100%-1rem)] w-0.5 rounded-full bg-accent" />
       ) : null}
-      <Icon className="h-4 w-4 shrink-0" />
+      <Icon className="h-4 w-4 shrink-0" weight={active ? "fill" : "regular"} />
       <span className={cn("truncate", collapsed && "lg:hidden")}>{label}</span>
     </Link>
   );

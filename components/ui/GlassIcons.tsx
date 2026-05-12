@@ -2,10 +2,17 @@ import type { ComponentType } from "react";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
 
+type IconWeight = "thin" | "light" | "regular" | "bold" | "fill" | "duotone";
+type PhosphorIcon = ComponentType<{
+  className?: string;
+  size?: number | string;
+  weight?: IconWeight;
+}>;
+
 type GlassIconItem = {
   label: string;
   href?: string;
-  icon: ComponentType<{ className?: string }>;
+  icon: PhosphorIcon;
   active?: boolean;
   onClick?: () => void;
 };
@@ -23,7 +30,7 @@ export function GlassIcons({ items, className }: GlassIconsProps) {
         const content = (
           <>
             <span className="grid h-9 w-9 place-items-center rounded-xl border border-white/30 bg-white/60 text-accent shadow-glass backdrop-blur-2xl dark:border-white/10 dark:bg-white/10 dark:text-blue-300">
-              <Icon className="h-4 w-4" />
+              <Icon className="h-4 w-4" weight="duotone" />
             </span>
             <span className="min-w-0 truncate text-xs font-medium text-textSecondary">
               {item.label}

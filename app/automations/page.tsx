@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle, ArrowRightCircle, Clock, Zap } from "lucide-react";
+import { ArrowCircleRight, Clock, Lightning, Warning } from "phosphor-react";
 import { FadeContent } from "@/components/ui/FadeContent";
 import { ShinyText } from "@/components/ui/ShinyText";
 
@@ -10,7 +10,7 @@ const automations = [
       "Triggers an alert when a work order status changes to In Progress or Completed.",
     status: "Active",
     meta: "Last run: Continuous",
-    icon: Zap,
+    icon: Lightning,
     iconClassName: "text-accent",
   },
   {
@@ -19,7 +19,7 @@ const automations = [
       "Monitors inventory nightly and sends an alert when any item falls below its reorder threshold.",
     status: "Active",
     meta: "Last run: Daily at 11:00 PM",
-    icon: AlertTriangle,
+    icon: Warning,
     iconClassName: "text-amber-500",
   },
   {
@@ -37,7 +37,7 @@ const automations = [
       "When a new internal request is submitted, routes it to the assigned reviewer with a summary notification.",
     status: "Scheduled",
     meta: "Last run: Pending activation",
-    icon: ArrowRightCircle,
+    icon: ArrowCircleRight,
     iconClassName: "text-amber-500",
   },
 ];
@@ -86,7 +86,10 @@ export default function AutomationsPage() {
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="rounded-xl border border-white/30 bg-white/45 p-2 shadow-glass backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
-                  <Icon className={`h-5 w-5 ${automation.iconClassName}`} />
+                  <Icon
+                    className={`h-5 w-5 ${automation.iconClassName}`}
+                    weight="duotone"
+                  />
                 </div>
                 <StatusBadge status={automation.status} />
               </div>

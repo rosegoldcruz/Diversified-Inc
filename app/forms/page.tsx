@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
-import { ClipboardList, FileText, Plus, Upload } from "lucide-react";
+import { ClipboardText, FileText, Plus, UploadSimple } from "phosphor-react";
 import { FadeContent } from "@/components/ui/FadeContent";
 import { ShinyText } from "@/components/ui/ShinyText";
 
@@ -192,7 +192,7 @@ export default function FormsCenterPage() {
       >
         <aside className="glass-surface p-4">
           <div className="mb-3 flex items-center gap-2 px-2 text-sm font-semibold text-textPrimary">
-            <ClipboardList className="h-4 w-4" />
+            <ClipboardText className="h-4 w-4" weight="duotone" />
             Forms
           </div>
           <div className="space-y-2">
@@ -287,7 +287,7 @@ export default function FormsCenterPage() {
               type="submit"
               className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/30 bg-accent/90 px-5 text-sm font-semibold text-white shadow-glass ring-1 ring-white/20 backdrop-blur-2xl transition-all hover:-translate-y-px hover:border-white/50 hover:bg-accent hover:shadow-glassHover"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-4 w-4" weight="bold" />
               Submit
             </button>
           </form>
@@ -302,7 +302,7 @@ export default function FormsCenterPage() {
         className="glass-surface overflow-hidden"
       >
         <div className="flex items-center gap-2 border-b border-white/30 px-6 py-5 dark:border-white/10">
-          <FileText className="h-4 w-4 text-accent" />
+          <FileText className="h-4 w-4 text-accent" weight="duotone" />
           <h2 className="text-sm font-semibold text-textPrimary">
             Trackable Records
           </h2>
@@ -491,7 +491,7 @@ function FileField({ label }: { label: string }) {
         {label}
       </span>
       <span className="flex min-h-11 items-center gap-2 rounded-xl border border-dashed border-borderHover bg-bgDark/80 px-3 py-2 text-sm text-textMuted">
-        <Upload className="h-4 w-4" />
+        <UploadSimple className="h-4 w-4" weight="regular" />
         <input type="file" multiple className="w-full text-sm" />
       </span>
     </label>

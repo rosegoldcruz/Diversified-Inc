@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Archive, FileText, Image } from "lucide-react";
+import { Archive, FileText, Image } from "phosphor-react";
 import { FadeContent } from "@/components/ui/FadeContent";
 import { ShinyText } from "@/components/ui/ShinyText";
 
@@ -203,7 +203,10 @@ export default function FilesPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <Icon className="h-4 w-4 shrink-0 text-accent" />
+                          <Icon
+                            className="h-4 w-4 shrink-0 text-accent"
+                            weight="duotone"
+                          />
                           <span className="font-medium text-textPrimary">
                             {file.file_name}
                           </span>
@@ -246,7 +249,10 @@ export default function FilesPage() {
                 <article key={file.id} className="glass-surface p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-start gap-2">
-                      <Icon className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
+                      <Icon
+                        className="mt-0.5 h-4 w-4 shrink-0 text-accent"
+                        weight="duotone"
+                      />
                       <div className="min-w-0">
                         <h2 className="break-words font-medium text-textPrimary">
                           {file.file_name}

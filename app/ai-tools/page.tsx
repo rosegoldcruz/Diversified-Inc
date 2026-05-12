@@ -1,10 +1,17 @@
 "use client";
 
 import { useState } from "react";
-import type { LucideIcon } from "lucide-react";
-import { ClipboardList, FileText, Mail, Shield } from "lucide-react";
+import type { ComponentType } from "react";
+import { ClipboardText, Envelope, FileText, ShieldCheck } from "phosphor-react";
 import { FadeContent } from "@/components/ui/FadeContent";
 import { ShinyText } from "@/components/ui/ShinyText";
+
+type IconWeight = "thin" | "light" | "regular" | "bold" | "fill" | "duotone";
+type PhosphorIcon = ComponentType<{
+  className?: string;
+  size?: number | string;
+  weight?: IconWeight;
+}>;
 
 type ToolConfig = {
   title: string;
@@ -12,7 +19,7 @@ type ToolConfig = {
   placeholder: string;
   buttonLabel: string;
   systemPrompt: string;
-  icon: LucideIcon;
+  icon: PhosphorIcon;
 };
 
 const tools: ToolConfig[] = [
@@ -32,7 +39,7 @@ const tools: ToolConfig[] = [
       "Describe job status and we'll draft a professional follow-up for the client.",
     placeholder: "Describe the job status, delays, next steps...",
     buttonLabel: "Draft Email ->",
-    icon: Mail,
+    icon: Envelope,
     systemPrompt:
       "You are a professional communications assistant for Diversified Inc. Write a concise, professional client follow-up email based on the job update provided. Keep it under 150 words. Professional but warm tone. Plain text only.",
   },
@@ -43,7 +50,7 @@ const tools: ToolConfig[] = [
     placeholder:
       "Job address, scope, materials confirmed, special instructions...",
     buttonLabel: "Generate Brief ->",
-    icon: ClipboardList,
+    icon: ClipboardText,
     systemPrompt:
       "You are a field operations coordinator for Diversified Inc. Generate a one-page installer brief from the job details provided. Include: Job Address, Scope Summary, Materials On-Site, Special Instructions, Contact on Site. Plain text format.",
   },
@@ -54,7 +61,7 @@ const tools: ToolConfig[] = [
     placeholder:
       "Describe the incident: what happened, when, who was involved...",
     buttonLabel: "Draft Report ->",
-    icon: Shield,
+    icon: ShieldCheck,
     systemPrompt:
       "You are a safety and compliance assistant for Diversified Inc. Draft a formal incident report from the description. Include: Date/Time, Persons Involved, Description of Incident, Immediate Actions Taken, Recommended Follow-Up. Plain text format.",
   },
@@ -153,7 +160,7 @@ function ToolCard({ tool }: { tool: ToolConfig }) {
   return (
     <article className="space-y-4 rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl">
       <div className="flex items-center gap-2">
-        <Icon className="h-5 w-5 text-accent" />
+        <Icon className="h-5 w-5 text-accent" weight="duotone" />
         <h2 className="text-base font-semibold text-textPrimary">
           {tool.title}
         </h2>

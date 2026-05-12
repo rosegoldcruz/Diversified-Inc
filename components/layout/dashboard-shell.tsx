@@ -5,48 +5,48 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  LayoutDashboard,
+  Gauge,
   CheckSquare,
-  FolderKanban,
-  MessageCircle,
-  MoreHorizontal,
-  CalendarDays,
-  ClipboardList,
+  Briefcase,
+  ChatCircle,
+  DotsThree,
+  Calendar,
+  ClipboardText,
   Users,
-  Boxes,
-  BarChart3,
+  Package,
+  ChartBar,
   FolderOpen,
   BookOpen,
-  ClipboardCheck,
+  Clipboard,
   FileText,
-  Bot,
-  Zap,
-  Settings,
-} from "lucide-react";
+  Robot,
+  Lightning,
+  GearSix,
+} from "phosphor-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Sidebar } from "./sidebar";
 import { TopBar } from "./topbar";
 
 const MOBILE_PRIMARY_NAV = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+  { label: "Dashboard", href: "/dashboard", icon: Gauge },
   { label: "Tasks", href: "/tasks", icon: CheckSquare },
-  { label: "Work Orders", href: "/work-orders", icon: FolderKanban },
-  { label: "AI Chat", href: "/ai-chat", icon: MessageCircle },
+  { label: "Work Orders", href: "/work-orders", icon: Briefcase },
+  { label: "AI Chat", href: "/ai-chat", icon: ChatCircle },
 ];
 
 const MOBILE_MORE_NAV = [
-  { label: "Projection Calendar", href: "/calendar", icon: CalendarDays },
-  { label: "Forms", href: "/forms", icon: ClipboardList },
+  { label: "Projection Calendar", href: "/calendar", icon: Calendar },
+  { label: "Forms", href: "/forms", icon: ClipboardText },
   { label: "Employees", href: "/employees", icon: Users },
-  { label: "Inventory", href: "/inventory", icon: Boxes },
-  { label: "Reports", href: "/reports", icon: BarChart3 },
+  { label: "Inventory", href: "/inventory", icon: Package },
+  { label: "Reports", href: "/reports", icon: ChartBar },
   { label: "Files", href: "/files", icon: FolderOpen },
   { label: "SOPs", href: "/sops", icon: BookOpen },
-  { label: "Requests", href: "/requests", icon: ClipboardCheck },
+  { label: "Requests", href: "/requests", icon: Clipboard },
   { label: "Documents", href: "/documents", icon: FileText },
-  { label: "AI Tools", href: "/ai-tools", icon: Bot },
-  { label: "Automations", href: "/automations", icon: Zap },
-  { label: "Admin Settings", href: "/settings", icon: Settings },
+  { label: "AI Tools", href: "/ai-tools", icon: Robot },
+  { label: "Automations", href: "/automations", icon: Lightning },
+  { label: "Admin Settings", href: "/settings", icon: GearSix },
 ];
 
 export function DashboardShell({ children }: { children: ReactNode }) {
@@ -137,7 +137,10 @@ function MobileBottomNav({ pathname, onMoreClick }: MobileBottomNavProps) {
                   className="absolute inset-0 rounded-xl border border-white/35 bg-white/80 shadow-glass backdrop-blur-2xl dark:border-white/10 dark:bg-white/10"
                 />
               ) : null}
-              <Icon className="relative z-10 h-4 w-4" />
+              <Icon
+                className="relative z-10 h-4 w-4"
+                weight={active ? "fill" : "regular"}
+              />
               <span className="relative z-10">{item.label}</span>
             </Link>
           );
@@ -148,7 +151,7 @@ function MobileBottomNav({ pathname, onMoreClick }: MobileBottomNavProps) {
           className="flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl px-2 text-[10px] font-medium text-textMuted transition-colors hover:bg-white/55 hover:text-textPrimary dark:hover:bg-white/5"
           aria-label="Open full navigation"
         >
-          <MoreHorizontal className="h-4 w-4" />
+          <DotsThree className="h-4 w-4" weight="bold" />
           <span>More</span>
         </button>
       </motion.div>
@@ -214,7 +217,10 @@ function MobileNavigationSheet({
                         : "border-white/25 bg-white/35 text-textPrimary dark:border-white/10 dark:bg-white/5",
                     ].join(" ")}
                   >
-                    <Icon className="h-4 w-4" />
+                    <Icon
+                      className="h-4 w-4"
+                      weight={active ? "fill" : "regular"}
+                    />
                     <span>{item.label}</span>
                   </Link>
                 );
