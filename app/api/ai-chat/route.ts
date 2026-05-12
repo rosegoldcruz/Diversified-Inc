@@ -7,10 +7,20 @@ export const maxDuration = 30;
 
 type DeepSeekModel = "deepseek-v4-flash" | "deepseek-v4-pro";
 
+type AttachmentContext = {
+  fileName: string;
+  mimeType: string;
+  size: number;
+  extractedText: string;
+};
+
 type ChatRequestBody = {
   messages?: UIMessage[];
   model?: DeepSeekModel | "deepseek-chat" | "deepseek-reasoner" | string;
+  attachmentsContext?: AttachmentContext[];
 };
+
+const MAX_FILE_CONTEXT_CHARS = 40_000;
 
 const MODEL_ALIASES: Record<string, DeepSeekModel> = {
   "deepseek-v4-flash": "deepseek-v4-flash",
@@ -31,8 +41,50 @@ function resolveModel(model: ChatRequestBody["model"]): DeepSeekModel {
   return MODEL_ALIASES[model] ?? DEFAULT_MODEL;
 }
 
-function buildSystemPrompt(): string {
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function buildUploadedFileContext(
+  attachmentsContext: AttachmentContext[] = [],
+): string {
+  const readableAttachments = attachmentsContext.filter(
+    (attachment) => attachment.extractedText?.trim().length > 0,
+  );
+
+  if (readableAttachments.length === 0) return "";
+
+  const fileBlocks = readableAttachments
+    .map((attachment) => {
+      const text = attachment.extractedText.trim();
+      const wasTruncated = text.length > MAX_FILE_CONTEXT_CHARS;
+      const extractedText = wasTruncated
+        ? `${text.slice(0, MAX_FILE_CONTEXT_CHARS)}\n\n[Content truncated after ${MAX_FILE_CONTEXT_CHARS.toLocaleString()} characters.]`
+        : text;
+
+      return `File: ${attachment.fileName}\nType: ${attachment.mimeType || "unknown"}\nSize: ${formatBytes(attachment.size)}\nExtracted text:\n---\n${extractedText}\n---`;
+    })
+    .join("\n\n");
+
+  return `
+---
+UPLOADED FILE CONTEXT
+
+The user has uploaded readable file content in this chat. Treat this content as current conversation data. When the user asks about "this candidate", "this resume", "the file", "what I uploaded", or similar references, answer from the uploaded file content below. Do not say there is no uploaded file when this section is present.
+
+For resumes, summarize candidate fit, strengths, risks or gaps, possible role match, interview questions, and a recommended next step.
+
+${fileBlocks}
+---`;
+}
+
+function buildSystemPrompt(
+  attachmentsContext: AttachmentContext[] = [],
+): string {
   const context = buildOperationalContext();
+  const uploadedFileContext = buildUploadedFileContext(attachmentsContext);
 
   return `You are AEON — Advanced Efficient Optimized Network.
 
@@ -95,6 +147,7 @@ CURRENT OPERATIONAL CONTEXT
 The following is a live snapshot of Diversified OS data as of today. Use it to provide accurate, context-aware answers.
 
 ${context}
+${uploadedFileContext}
 ---
 
 If asked about data not present in the snapshot, clearly state what you can and cannot see, and direct the user to the relevant Diversified OS module.`;
@@ -114,7 +167,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { messages = [], model } = (await request.json()) as ChatRequestBody;
+    const {
+      messages = [],
+      model,
+      attachmentsContext = [],
+    } = (await request.json()) as ChatRequestBody;
     if (!Array.isArray(messages)) {
       return new Response(
         JSON.stringify({ error: "Invalid messages payload." }),
@@ -133,7 +190,7 @@ export async function POST(request: Request) {
 
     const result = streamText({
       model: deepseek(selectedModel),
-      system: buildSystemPrompt(),
+      system: buildSystemPrompt(attachmentsContext),
       messages: modelMessages,
       temperature: 0.4,
       maxOutputTokens: 1200,

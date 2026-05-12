@@ -28,113 +28,142 @@ import { AnimatePresence, motion } from "framer-motion";
 
 type ChatModel = "deepseek-v4-flash" | "deepseek-v4-pro";
 
-type WhisperResult = { text?: string } | string;
-type WhisperTranscriber = (
-  input: Float32Array,
-  options?: Record<string, unknown>,
-) => Promise<WhisperResult>;
+type AttachmentStatus = "queued" | "processing" | "ready" | "error";
+
+type AttachmentContext = {
+  fileName: string;
+  mimeType: string;
+  size: number;
+  extractedText: string;
+};
+
+type ChatAttachment = {
+  id: string;
+  file: File;
+  name: string;
+  type: string;
+  size: number;
+  extractedText?: string;
+  error?: string;
+  status: AttachmentStatus;
+};
+
+type SpeechRecognitionResultLike = {
+  0: { transcript: string };
+  isFinal: boolean;
+};
+
+type SpeechRecognitionEventLike = {
+  resultIndex: number;
+  results: ArrayLike<SpeechRecognitionResultLike>;
+};
+
+type SpeechRecognitionErrorEventLike = {
+  error: string;
+};
+
+type SpeechRecognitionLike = {
+  continuous: boolean;
+  interimResults: boolean;
+  lang: string;
+  start: () => void;
+  stop: () => void;
+  abort: () => void;
+  onresult: ((event: SpeechRecognitionEventLike) => void) | null;
+  onerror: ((event: SpeechRecognitionErrorEventLike) => void) | null;
+  onend: (() => void) | null;
+};
+
+type SpeechRecognitionConstructor = new () => SpeechRecognitionLike;
+
+type SpeechRecognitionWindow = Window & {
+  SpeechRecognition?: SpeechRecognitionConstructor;
+  webkitSpeechRecognition?: SpeechRecognitionConstructor;
+};
 
 const MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024;
-let whisperTranscriberPromise: Promise<WhisperTranscriber> | null = null;
+const MAX_ATTACHMENT_CONTEXT_CHARS = 40_000;
 
-function downsampleTo16k(
-  input: Float32Array,
-  sampleRate: number,
-): Float32Array {
-  if (sampleRate === 16000) return input;
+const TEXT_LIKE_EXTENSIONS = new Set(["txt", "md", "csv", "json", "log"]);
+const TEXT_LIKE_MIME_PREFIXES = ["text/"];
+const TEXT_LIKE_MIME_TYPES = new Set([
+  "application/json",
+  "application/csv",
+  "text/csv",
+  "text/markdown",
+]);
 
-  const ratio = sampleRate / 16000;
-  const targetLength = Math.round(input.length / ratio);
-  const result = new Float32Array(targetLength);
-
-  let outputIndex = 0;
-  let inputOffset = 0;
-
-  while (outputIndex < targetLength) {
-    const nextOffset = Math.round((outputIndex + 1) * ratio);
-    let accumulator = 0;
-    let count = 0;
-
-    for (
-      let index = inputOffset;
-      index < nextOffset && index < input.length;
-      index += 1
-    ) {
-      accumulator += input[index];
-      count += 1;
-    }
-
-    result[outputIndex] = count > 0 ? accumulator / count : 0;
-    outputIndex += 1;
-    inputOffset = nextOffset;
-  }
-
-  return result;
+function getFileExtension(fileName: string): string {
+  return fileName.split(".").pop()?.toLowerCase() ?? "";
 }
 
-async function audioBlobToMono16k(blob: Blob): Promise<Float32Array> {
-  const arrayBuffer = await blob.arrayBuffer();
-  const AudioContextCtor =
-    window.AudioContext ||
-    ((window as unknown as { webkitAudioContext?: typeof AudioContext })
-      .webkitAudioContext ??
-      null);
-
-  if (!AudioContextCtor) {
-    throw new Error("AudioContext is not supported in this browser.");
-  }
-
-  const audioContext = new AudioContextCtor();
-  try {
-    const decodedAudio = await audioContext.decodeAudioData(
-      arrayBuffer.slice(0),
-    );
-    const monoChannel = decodedAudio.getChannelData(0);
-    return downsampleTo16k(monoChannel, decodedAudio.sampleRate);
-  } finally {
-    await audioContext.close();
-  }
+function isTextLikeFile(file: File): boolean {
+  const extension = getFileExtension(file.name);
+  return (
+    TEXT_LIKE_EXTENSIONS.has(extension) ||
+    TEXT_LIKE_MIME_TYPES.has(file.type) ||
+    TEXT_LIKE_MIME_PREFIXES.some((prefix) => file.type.startsWith(prefix))
+  );
 }
 
-async function getWhisperTranscriber(): Promise<WhisperTranscriber> {
-  if (!whisperTranscriberPromise) {
-    whisperTranscriberPromise = (async () => {
-      const dynamicImport = Function(
-        "modulePath",
-        "return import(modulePath)",
-      ) as (modulePath: string) => Promise<unknown>;
+function isServerExtractableFile(file: File): boolean {
+  const extension = getFileExtension(file.name);
+  return (
+    extension === "pdf" ||
+    extension === "doc" ||
+    extension === "docx" ||
+    file.type === "application/pdf" ||
+    file.type ===
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document" ||
+    file.type === "application/msword"
+  );
+}
 
-      const transformersModule = (await dynamicImport(
-        "https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.2",
-      )) as {
-        env: {
-          allowLocalModels: boolean;
-          allowRemoteModels: boolean;
-          useBrowserCache: boolean;
-        };
-        pipeline: (
-          task: string,
-          model: string,
-          options?: Record<string, unknown>,
-        ) => Promise<unknown>;
-      };
+function truncateAttachmentText(text: string): string {
+  if (text.length <= MAX_ATTACHMENT_CONTEXT_CHARS) return text;
+  return `${text.slice(0, MAX_ATTACHMENT_CONTEXT_CHARS)}\n\n[Content truncated after ${MAX_ATTACHMENT_CONTEXT_CHARS.toLocaleString()} characters.]`;
+}
 
-      const { env, pipeline } = transformersModule;
-      env.allowLocalModels = false;
-      env.allowRemoteModels = true;
-      env.useBrowserCache = true;
+function getSpeechRecognition(): SpeechRecognitionConstructor | null {
+  if (typeof window === "undefined") return null;
+  const speechWindow = window as SpeechRecognitionWindow;
+  return (
+    speechWindow.SpeechRecognition ??
+    speechWindow.webkitSpeechRecognition ??
+    null
+  );
+}
 
-      const transcriber = await pipeline(
-        "automatic-speech-recognition",
-        "Xenova/whisper-tiny.en",
-        { quantized: true },
-      );
+function appendTranscript(current: string, transcript: string): string {
+  const cleanedTranscript = transcript.trim();
+  if (!cleanedTranscript) return current;
+  return current.trim().length === 0
+    ? cleanedTranscript
+    : `${current.trim()} ${cleanedTranscript}`;
+}
 
-      return transcriber as WhisperTranscriber;
-    })();
+function mapSpeechError(errorCode: string): string {
+  if (
+    errorCode === "not-allowed" ||
+    errorCode === "service-not-allowed" ||
+    errorCode === "permission-denied"
+  ) {
+    return "Microphone permission was denied. Enable mic access in the browser and try again.";
   }
 
-  return whisperTranscriberPromise;
+  if (errorCode === "no-speech") {
+    return "No clear speech was detected. Try again and speak closer to the mic.";
+  }
+
+  if (errorCode === "audio-capture") {
+    return "No microphone was found. Connect a microphone and try again.";
+  }
+
+  if (errorCode === "network") {
+    return "Mic transcription could not connect. Please try again or type your message.";
+  }
+
+  return "Mic transcription failed. Please try again or type your message.";
 }
 
 function readAsDataUrl(file: File): Promise<string> {
@@ -146,27 +175,65 @@ function readAsDataUrl(file: File): Promise<string> {
   });
 }
 
-async function toFileUIParts(files: FileList): Promise<FileUIPart[]> {
+async function toFileUIParts(files: ChatAttachment[]): Promise<FileUIPart[]> {
   const parts: FileUIPart[] = [];
 
-  for (const file of Array.from(files)) {
-    if (file.size > MAX_FILE_SIZE_BYTES) {
-      throw new Error(
-        `${file.name} is larger than 8MB. Please upload a smaller file.`,
-      );
-    }
-
-    const mediaType = file.type || "application/octet-stream";
-    const url = await readAsDataUrl(file);
+  for (const attachment of files) {
+    const mediaType = attachment.type || "application/octet-stream";
+    const url = await readAsDataUrl(attachment.file);
     parts.push({
       type: "file",
       mediaType,
-      filename: file.name,
+      filename: attachment.name,
       url,
     });
   }
 
   return parts;
+}
+
+async function extractTextFromAttachment(file: File): Promise<string> {
+  if (file.size > MAX_FILE_SIZE_BYTES) {
+    throw new Error(
+      `${file.name} is larger than 8MB. Please upload a smaller file.`,
+    );
+  }
+
+  if (isTextLikeFile(file)) {
+    return truncateAttachmentText(await file.text());
+  }
+
+  if (!isServerExtractableFile(file)) {
+    throw new Error(
+      `${file.name} is not a supported readable file. Attach a PDF, TXT, MD, CSV, DOC, or DOCX file.`,
+    );
+  }
+
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch("/api/ai-chat/extract-file", {
+    method: "POST",
+    body: formData,
+  });
+
+  const payload = (await response.json()) as {
+    extractedText?: string;
+    error?: string;
+  };
+
+  if (!response.ok) {
+    throw new Error(
+      payload.error ?? `Failed to extract text from ${file.name}.`,
+    );
+  }
+
+  const extractedText = (payload.extractedText ?? "").trim();
+  if (!extractedText) {
+    throw new Error(`No readable text was found in ${file.name}.`);
+  }
+
+  return truncateAttachmentText(extractedText);
 }
 
 function formatBytes(bytes: number): string {
@@ -180,12 +247,15 @@ export default function AiChatPage() {
   const [model, setModel] = useState<ChatModel>("deepseek-v4-flash");
   const [promptSheetOpen, setPromptSheetOpen] = useState(false);
   const [railPulse, setRailPulse] = useState(false);
-  const [pendingFiles, setPendingFiles] = useState<FileUIPart[]>([]);
+  const [pendingFiles, setPendingFiles] = useState<ChatAttachment[]>([]);
+  const [conversationFileContexts, setConversationFileContexts] = useState<
+    AttachmentContext[]
+  >([]);
   const [fileError, setFileError] = useState<string | null>(null);
   const [sttError, setSttError] = useState<string | null>(null);
   const [sttStatus, setSttStatus] = useState<string | null>(null);
+  const [interimTranscript, setInterimTranscript] = useState("");
   const [isRecording, setIsRecording] = useState(false);
-  const [isTranscribing, setIsTranscribing] = useState(false);
   const [sttSupported, setSttSupported] = useState(false);
   const [availableHeight, setAvailableHeight] = useState<number | null>(null);
   const layoutRootRef = useRef<HTMLDivElement>(null);
@@ -193,36 +263,29 @@ export default function AiChatPage() {
   const quickPromptsRailRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
-  const mediaStreamRef = useRef<MediaStream | null>(null);
-  const audioChunksRef = useRef<Blob[]>([]);
+  const recognitionRef = useRef<SpeechRecognitionLike | null>(null);
+  const lastInterimTranscriptRef = useRef("");
+  const speechErrorRef = useRef(false);
+  const receivedSpeechRef = useRef(false);
   const { messages, sendMessage, status, error, regenerate, stop } = useChat({
     transport: new DefaultChatTransport({ api: "/api/ai-chat" }),
   });
 
   const isLoading = status === "submitted" || status === "streaming";
   const hasMessages = messages.length > 0;
-
-  const stopMediaCapture = () => {
-    mediaRecorderRef.current = null;
-    if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach((track) => track.stop());
-      mediaStreamRef.current = null;
-    }
-  };
+  const attachmentsProcessing = pendingFiles.some(
+    (file) => file.status === "queued" || file.status === "processing",
+  );
+  const hasAttachmentErrors = pendingFiles.some(
+    (file) => file.status === "error",
+  );
 
   useEffect(() => {
-    const mediaCaptureSupported =
-      typeof window !== "undefined" &&
-      "MediaRecorder" in window &&
-      Boolean(navigator.mediaDevices?.getUserMedia);
-    setSttSupported(mediaCaptureSupported);
+    setSttSupported(Boolean(getSpeechRecognition()));
 
     return () => {
-      if (mediaRecorderRef.current?.state === "recording") {
-        mediaRecorderRef.current.stop();
-      }
-      stopMediaCapture();
+      recognitionRef.current?.abort();
+      recognitionRef.current = null;
     };
   }, []);
 
@@ -294,130 +357,165 @@ export default function AiChatPage() {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
-    try {
-      const converted = await toFileUIParts(files);
-      setPendingFiles((current) => [...current, ...converted]);
-      setFileError(null);
-    } catch (error: unknown) {
-      setFileError(
-        error instanceof Error ? error.message : "Failed to process files.",
-      );
-    } finally {
-      event.target.value = "";
-    }
-  };
+    const attachments: ChatAttachment[] = Array.from(files).map((file) => ({
+      id: `${file.name}-${file.size}-${file.lastModified}-${crypto.randomUUID()}`,
+      file,
+      name: file.name,
+      type: file.type || "application/octet-stream",
+      size: file.size,
+      status: "queued",
+    }));
 
-  const removePendingFile = (indexToRemove: number) => {
-    setPendingFiles((current) =>
-      current.filter((_, index) => index !== indexToRemove),
-    );
-  };
+    setPendingFiles((current) => [...current, ...attachments]);
+    setFileError(null);
+    event.target.value = "";
 
-  const transcribeRecordedAudio = async (audioBlob: Blob) => {
-    if (audioBlob.size === 0) return;
-
-    const isModelColdStart = whisperTranscriberPromise === null;
-    setIsTranscribing(true);
-    setSttError(null);
-    setSttStatus(
-      isModelColdStart
-        ? "Downloading local speech model for first use..."
-        : "Transcribing speech locally...",
-    );
-
-    try {
-      const mono16kAudio = await audioBlobToMono16k(audioBlob);
-      const transcriber = await getWhisperTranscriber();
-      setSttStatus("Transcribing speech locally...");
-      const result = await transcriber(mono16kAudio, {
-        language: "english",
-        task: "transcribe",
-        chunk_length_s: 20,
-        stride_length_s: 5,
-        return_timestamps: false,
-      });
-
-      const transcript =
-        typeof result === "string" ? result.trim() : (result.text ?? "").trim();
-
-      if (!transcript) {
-        setSttError(
-          "No clear speech was detected. Try again and speak closer to the mic.",
+    await Promise.all(
+      attachments.map(async (attachment) => {
+        setPendingFiles((current) =>
+          current.map((file) =>
+            file.id === attachment.id
+              ? { ...file, status: "processing", error: undefined }
+              : file,
+          ),
         );
-        return;
-      }
 
-      setInput((current) =>
-        current.trim().length === 0
-          ? transcript
-          : `${current.trim()} ${transcript}`,
-      );
-    } catch {
-      setSttError(
-        "Local open-source transcription failed. Please try recording again.",
-      );
-    } finally {
-      setIsTranscribing(false);
-      setSttStatus(null);
-      composerRef.current?.focus();
-    }
+        try {
+          const extractedText = await extractTextFromAttachment(
+            attachment.file,
+          );
+          setPendingFiles((current) =>
+            current.map((file) =>
+              file.id === attachment.id
+                ? { ...file, extractedText, status: "ready", error: undefined }
+                : file,
+            ),
+          );
+        } catch (error: unknown) {
+          const message =
+            error instanceof Error
+              ? error.message
+              : `Failed to extract text from ${attachment.name}.`;
+          setPendingFiles((current) =>
+            current.map((file) =>
+              file.id === attachment.id
+                ? { ...file, status: "error", error: message }
+                : file,
+            ),
+          );
+          setFileError(message);
+        }
+      }),
+    );
+  };
+
+  const removePendingFile = (attachmentId: string) => {
+    setPendingFiles((current) =>
+      current.filter((attachment) => attachment.id !== attachmentId),
+    );
+    setFileError(null);
   };
 
   const toggleRecording = () => {
     setSttError(null);
     setSttStatus(null);
+    setInterimTranscript("");
 
     if (isRecording) {
-      if (mediaRecorderRef.current?.state === "recording") {
-        mediaRecorderRef.current.stop();
-      }
+      recognitionRef.current?.stop();
       return;
     }
 
-    void (async () => {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
-        });
-        const recorder = new MediaRecorder(stream);
+    const SpeechRecognition = getSpeechRecognition();
+    if (!SpeechRecognition) {
+      setSttError(
+        "Mic transcription is not supported in this browser. Please type your message.",
+      );
+      setSttSupported(false);
+      return;
+    }
 
-        mediaStreamRef.current = stream;
-        mediaRecorderRef.current = recorder;
-        audioChunksRef.current = [];
+    const recognition = new SpeechRecognition();
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = "en-US";
+    recognitionRef.current = recognition;
+    lastInterimTranscriptRef.current = "";
+    speechErrorRef.current = false;
+    receivedSpeechRef.current = false;
 
-        recorder.ondataavailable = (event) => {
-          if (event.data.size > 0) {
-            audioChunksRef.current.push(event.data);
-          }
-        };
+    recognition.onresult = (event) => {
+      let finalTranscript = "";
+      let nextInterimTranscript = "";
 
-        recorder.onerror = () => {
-          setSttError(
-            "Microphone capture failed. Check mic permissions and try again.",
-          );
-          setSttStatus(null);
-          setIsRecording(false);
-          stopMediaCapture();
-        };
-
-        recorder.onstop = () => {
-          const recordedAudio = new Blob(audioChunksRef.current, {
-            type: "audio/webm",
-          });
-          stopMediaCapture();
-          setIsRecording(false);
-          void transcribeRecordedAudio(recordedAudio);
-        };
-
-        recorder.start(250);
-        setIsRecording(true);
-      } catch {
-        setSttError(
-          "Microphone access was blocked. Enable permission and try again.",
-        );
-        setSttStatus(null);
+      for (
+        let index = event.resultIndex;
+        index < event.results.length;
+        index += 1
+      ) {
+        const result = event.results[index];
+        const transcript = result[0]?.transcript ?? "";
+        if (result.isFinal) {
+          finalTranscript += transcript;
+        } else {
+          nextInterimTranscript += transcript;
+        }
       }
-    })();
+
+      if (finalTranscript.trim()) {
+        receivedSpeechRef.current = true;
+        setInput((current) => appendTranscript(current, finalTranscript));
+        setInterimTranscript("");
+        lastInterimTranscriptRef.current = "";
+      } else {
+        setInterimTranscript(nextInterimTranscript.trim());
+        lastInterimTranscriptRef.current = nextInterimTranscript.trim();
+      }
+    };
+
+    recognition.onerror = (event) => {
+      speechErrorRef.current = true;
+      setSttError(mapSpeechError(event.error));
+      setSttStatus(null);
+      setInterimTranscript("");
+      setIsRecording(false);
+    };
+
+    recognition.onend = () => {
+      const fallbackTranscript = lastInterimTranscriptRef.current.trim();
+      if (
+        !receivedSpeechRef.current &&
+        fallbackTranscript &&
+        !speechErrorRef.current
+      ) {
+        setInput((current) => appendTranscript(current, fallbackTranscript));
+        receivedSpeechRef.current = true;
+      }
+
+      if (!receivedSpeechRef.current && !speechErrorRef.current) {
+        setSttError(
+          "No clear speech was detected. Try again and speak closer to the mic.",
+        );
+      }
+
+      setSttStatus(null);
+      setInterimTranscript("");
+      setIsRecording(false);
+      recognitionRef.current = null;
+      composerRef.current?.focus();
+    };
+
+    try {
+      recognition.start();
+      setIsRecording(true);
+      setSttStatus("Listening...");
+    } catch {
+      setSttError(
+        "Mic transcription failed to start. Please try again or type your message.",
+      );
+      setIsRecording(false);
+      recognitionRef.current = null;
+    }
   };
 
   const handlePromptButtonClick = () => {
@@ -434,23 +532,57 @@ export default function AiChatPage() {
   const sendCurrentMessage = async () => {
     const content = input.trim();
     const hasFiles = pendingFiles.length > 0;
-    if ((!hasFiles && content.length === 0) || isLoading) return;
+    if (
+      (!hasFiles && content.length === 0) ||
+      isLoading ||
+      attachmentsProcessing ||
+      hasAttachmentErrors
+    ) {
+      return;
+    }
+
+    const readyAttachments = pendingFiles.filter(
+      (file) => file.status === "ready" && file.extractedText,
+    );
+    const currentAttachmentContext: AttachmentContext[] = readyAttachments.map(
+      (file) => ({
+        fileName: file.name,
+        mimeType: file.type || "application/octet-stream",
+        size: file.size,
+        extractedText: file.extractedText ?? "",
+      }),
+    );
+    const attachmentsContext = [
+      ...conversationFileContexts,
+      ...currentAttachmentContext,
+    ];
+    const body = { model, attachmentsContext };
+    const fileParts =
+      readyAttachments.length > 0 ? await toFileUIParts(readyAttachments) : [];
 
     if (content.length > 0) {
       await sendMessage(
         {
           text: content,
-          files: hasFiles ? pendingFiles : undefined,
+          files: fileParts.length > 0 ? fileParts : undefined,
         },
-        { body: { model } },
+        { body },
       );
     } else {
       await sendMessage(
         {
-          files: pendingFiles,
+          text: "Please analyze the attached file content.",
+          files: fileParts,
         },
-        { body: { model } },
+        { body },
       );
+    }
+
+    if (currentAttachmentContext.length > 0) {
+      setConversationFileContexts((current) => [
+        ...current,
+        ...currentAttachmentContext,
+      ]);
     }
 
     setInput("");
@@ -465,7 +597,10 @@ export default function AiChatPage() {
 
   const submitQuickPrompt = async (prompt: string) => {
     if (isLoading) return;
-    await sendMessage({ text: prompt }, { body: { model } });
+    await sendMessage(
+      { text: prompt },
+      { body: { model, attachmentsContext: conversationFileContexts } },
+    );
     setPromptSheetOpen(false);
   };
 
@@ -573,7 +708,7 @@ export default function AiChatPage() {
               className="hidden"
               multiple
               onChange={handleFileSelection}
-              accept=".pdf,.txt,.md,.csv,.json,.doc,.docx,.xlsx,.xls,.png,.jpg,.jpeg,.webp"
+              accept=".pdf,.txt,.md,.csv,.json,.doc,.docx"
             />
 
             {pendingFiles.length > 0 ? (
@@ -582,34 +717,57 @@ export default function AiChatPage() {
                   Attached Files ({pendingFiles.length})
                 </p>
                 <div className="flex flex-wrap gap-2">
-                  {pendingFiles.map((filePart, index) => {
-                    const approximateBytes = Math.round(
-                      filePart.url.length * 0.75,
-                    );
+                  {pendingFiles.map((attachment) => {
                     return (
                       <div
-                        key={`${filePart.filename ?? "pending"}-${index}`}
-                        className="inline-flex items-center gap-2 rounded-md border border-borderSubtle bg-bgDark px-2.5 py-1.5 text-xs text-textPrimary"
+                        key={attachment.id}
+                        className={[
+                          "inline-flex max-w-full items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs",
+                          attachment.status === "error"
+                            ? "border-amber-400/40 bg-amber-500/10 text-amber-200"
+                            : "border-borderSubtle bg-bgDark text-textPrimary",
+                        ].join(" ")}
                       >
                         <FileText className="h-3.5 w-3.5" weight="duotone" />
                         <span className="max-w-[12rem] truncate">
-                          {filePart.filename ?? "Attachment"}
+                          {attachment.name}
                         </span>
                         <span className="text-textMuted">
-                          {formatBytes(approximateBytes)}
+                          {formatBytes(attachment.size)}
+                        </span>
+                        <span className="text-textMuted">
+                          {attachment.status === "processing"
+                            ? "Reading"
+                            : attachment.status === "ready"
+                              ? "Ready"
+                              : attachment.status === "error"
+                                ? "Error"
+                                : "Queued"}
                         </span>
                         <button
                           type="button"
-                          onClick={() => removePendingFile(index)}
+                          onClick={() => removePendingFile(attachment.id)}
                           className="inline-flex h-4 w-4 items-center justify-center rounded-md text-textMuted transition-colors hover:text-textPrimary"
-                          aria-label={`Remove ${filePart.filename ?? "attachment"}`}
+                          aria-label={`Remove ${attachment.name}`}
                         >
                           <X className="h-3 w-3" weight="bold" />
                         </button>
+                        {attachment.error ? (
+                          <span className="sr-only">{attachment.error}</span>
+                        ) : null}
                       </div>
                     );
                   })}
                 </div>
+                {pendingFiles.some((attachment) => attachment.error) ? (
+                  <div className="mt-2 space-y-1 text-xs text-amber-200">
+                    {pendingFiles
+                      .filter((attachment) => attachment.error)
+                      .map((attachment) => (
+                        <p key={`${attachment.id}-error`}>{attachment.error}</p>
+                      ))}
+                  </div>
+                ) : null}
               </div>
             ) : null}
 
@@ -649,26 +807,21 @@ export default function AiChatPage() {
                 <button
                   type="button"
                   onClick={toggleRecording}
-                  disabled={!sttSupported || isTranscribing}
                   className={[
                     "inline-flex min-h-11 items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium",
-                    !sttSupported || isTranscribing
-                      ? "cursor-not-allowed border-borderSubtle bg-bgDark text-textDisabled"
+                    !sttSupported
+                      ? "border-borderSubtle bg-bgDark text-textDisabled"
                       : isRecording
                         ? "border-red-200 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300"
                         : "border-borderSubtle bg-surface text-textPrimary",
                   ].join(" ")}
                 >
-                  {isRecording || isTranscribing ? (
+                  {isRecording ? (
                     <MicrophoneSlash className="h-4 w-4" weight="duotone" />
                   ) : (
                     <Microphone className="h-4 w-4" weight="duotone" />
                   )}
-                  {isTranscribing
-                    ? "Transcribing"
-                    : isRecording
-                      ? "Stop Mic"
-                      : "Mic"}
+                  {isRecording ? "Stop Mic" : "Mic"}
                 </button>
                 <label className="inline-flex min-h-11 items-center justify-center rounded-md border border-borderSubtle bg-surface px-3 text-xs font-medium text-textSecondary">
                   Model
@@ -698,6 +851,8 @@ export default function AiChatPage() {
                   type="submit"
                   disabled={
                     isLoading ||
+                    attachmentsProcessing ||
+                    hasAttachmentErrors ||
                     (input.trim().length === 0 && pendingFiles.length === 0)
                   }
                   className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-md border border-accent bg-accent px-4 text-sm font-semibold text-white transition-colors hover:bg-accentSoft disabled:cursor-not-allowed disabled:opacity-60"
@@ -723,7 +878,9 @@ export default function AiChatPage() {
 
           {sttStatus && !sttError && (
             <div className="mt-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300">
-              {sttStatus}
+              {interimTranscript
+                ? `${sttStatus} ${interimTranscript}`
+                : sttStatus}
             </div>
           )}
 
