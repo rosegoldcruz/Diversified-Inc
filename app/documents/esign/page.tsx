@@ -3,10 +3,10 @@
 import { useEffect, useState, useRef } from "react";
 import {
   FileText,
-  FileSignature,
   CheckCircle,
   Clock,
-  History,
+  ClockCounterClockwise,
+  PenNib,
 } from "phosphor-react";
 import { Button } from "@/components/ui/button";
 import { ShinyText } from "@/components/ui/ShinyText";
@@ -274,7 +274,7 @@ export default function DocumentESignPage() {
       {/* Signatures */}
       <div className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-4">
         <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-          <FileSignature className="w-5 h-5" weight="duotone" />
+          <PenNib className="w-5 h-5" weight="duotone" />
           Signatures
         </h2>
         <div className="space-y-3">
@@ -352,7 +352,7 @@ export default function DocumentESignPage() {
       {versions.length > 0 && (
         <div className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-4">
           <h2 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-            <History className="w-5 h-5" weight="duotone" />
+            <ClockCounterClockwise className="w-5 h-5" weight="duotone" />
             Version History
           </h2>
           <div className="space-y-2">

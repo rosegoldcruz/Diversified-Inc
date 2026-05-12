@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowCircleRight, Clock, Lightning, Warning } from "phosphor-react";
 import { FadeContent } from "@/components/ui/FadeContent";

@@ -1,3 +1,5 @@
+"use client";
+
 /**
  * LiveIndicator - Shows real-time connection status
  */
