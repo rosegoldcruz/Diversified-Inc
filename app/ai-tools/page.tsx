@@ -137,7 +137,7 @@ function ToolCard({ tool }: { tool: ToolConfig }) {
   }
 
   return (
-    <article className="space-y-3 rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft">
+    <article className="space-y-4 rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl">
       <div className="flex items-center gap-2">
         <Icon className="h-5 w-5 text-accent" />
         <h2 className="text-base font-semibold text-textPrimary">

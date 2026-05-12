@@ -134,7 +134,7 @@ export default function TimesheetsPage() {
         <LoadingPanel label="Loading timesheets..." />
       ) : (
         <>
-          <section className="hidden overflow-hidden rounded-lg border border-borderSubtle bg-surface shadow-soft md:block">
+          <section className="hidden overflow-hidden rounded-xl border border-borderSubtle bg-surface/95 shadow-soft backdrop-blur-xl md:block">
             <div className="overflow-x-auto">
               <table className="min-w-[1400px] w-full text-left text-sm">
                 <thead className="bg-navy text-xs uppercase tracking-wide text-white">
@@ -216,7 +216,7 @@ export default function TimesheetsPage() {
             {timesheets.map((timesheet) => (
               <article
                 key={timesheet.id}
-                className="rounded-lg border border-borderSubtle bg-surface p-4 shadow-soft"
+                className="rounded-xl border border-borderSubtle bg-surface/95 p-5 shadow-soft backdrop-blur-xl"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -284,7 +284,7 @@ export default function TimesheetsPage() {
 
 function SummaryCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-lg border border-borderSubtle bg-surface p-4 shadow-soft">
+    <div className="rounded-xl border border-borderSubtle bg-surface/95 p-5 shadow-soft backdrop-blur-xl">
       <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">
         {label}
       </p>
@@ -304,7 +304,7 @@ function MobileHourCell({ day, hours }: { day: string; hours: number }) {
 
 function LoadingPanel({ label }: { label: string }) {
   return (
-    <div className="rounded-lg border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
+    <div className="rounded-xl border border-borderSubtle bg-surface/95 p-12 text-center text-sm text-textSecondary shadow-soft backdrop-blur-xl">
       {label}
     </div>
   );

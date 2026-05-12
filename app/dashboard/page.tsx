@@ -161,12 +161,12 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">
+    <div className="space-y-8">
+      <header className="space-y-2">
+        <h1 className="text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
           Dashboard
         </h1>
-        <p className="max-w-3xl text-sm text-textSecondary">
+        <p className="max-w-3xl text-base text-textSecondary">
           Your team&apos;s daily command center.
         </p>
       </header>
@@ -177,14 +177,14 @@ export default function DashboardPage() {
         <LoadingPanel label="Loading dashboard..." />
       ) : (
         <>
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {statCards.map((card) => {
               const Icon = card.icon;
               return (
                 <Link
                   key={card.label}
                   href={card.href}
-                  className="block cursor-pointer rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft transition-colors hover:border-borderHover hover:bg-surfaceHover"
+                  className="block cursor-pointer rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-borderHover hover:bg-surface hover:shadow-cyberMd"
                 >
                   <div className="flex items-center gap-2.5">
                     <Icon className={`h-5 w-5 ${card.color}`} />
@@ -192,7 +192,7 @@ export default function DashboardPage() {
                       {card.label}
                     </p>
                   </div>
-                  <p className="mt-3 text-4xl font-semibold text-textPrimary">
+                  <p className="mt-4 text-4xl font-semibold tracking-normal text-textPrimary">
                     {card.value}
                   </p>
                 </Link>
@@ -200,7 +200,7 @@ export default function DashboardPage() {
             })}
           </section>
 
-          <section className="rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft">
+          <section className="rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl md:p-8">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-lg font-semibold text-textPrimary">
@@ -215,7 +215,7 @@ export default function DashboardPage() {
               </span>
             </div>
 
-            <div className="mt-4 space-y-3">
+            <div className="mt-6 space-y-3">
               {quickTasks.length === 0 ? (
                 <p className="text-sm text-textSecondary">
                   No high-priority or blocked tasks found.
@@ -225,7 +225,7 @@ export default function DashboardPage() {
                   <Link
                     key={task.id}
                     href={`/tasks/${task.id}`}
-                    className="block rounded-lg border border-borderSubtle bg-bgDark p-4 transition hover:bg-surface"
+                    className="block rounded-xl border border-borderSubtle bg-bgDark/80 p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-borderHover hover:bg-surface hover:shadow-soft"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
@@ -308,7 +308,7 @@ function formatDate(value: string | null) {
 
 function LoadingPanel({ label }: { label: string }) {
   return (
-    <div className="rounded-lg border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
+    <div className="rounded-xl border border-borderSubtle bg-surface/95 p-12 text-center text-sm text-textSecondary shadow-soft backdrop-blur-xl">
       {label}
     </div>
   );
@@ -316,7 +316,7 @@ function LoadingPanel({ label }: { label: string }) {
 
 function ErrorPanel({ message }: { message: string }) {
   return (
-    <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 shadow-soft dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+    <div className="rounded-xl border border-red-200 bg-red-50/90 p-5 text-sm text-red-700 shadow-soft dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
       {message}
     </div>
   );

@@ -116,7 +116,7 @@ export default function InventoryDetailPage() {
 
   if (loading) {
     return (
-      <div className="rounded-lg border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
+      <div className="rounded-xl border border-borderSubtle bg-surface/95 p-12 text-center text-sm text-textSecondary shadow-soft backdrop-blur-xl">
         Loading inventory item...
       </div>
     );
@@ -124,7 +124,7 @@ export default function InventoryDetailPage() {
 
   if (!item) {
     return (
-      <div className="space-y-4 rounded-lg border border-borderSubtle bg-surface p-6 shadow-soft">
+      <div className="space-y-4 rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl">
         <button
           type="button"
           onClick={() => router.back()}
@@ -156,7 +156,7 @@ export default function InventoryDetailPage() {
         ← Back to Inventory
       </button>
 
-      <section className="space-y-4 rounded-lg border border-borderSubtle bg-surface p-6 shadow-soft">
+      <section className="space-y-5 rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl md:p-8">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <h1 className="text-2xl font-semibold text-textPrimary">
             {item.item_name}

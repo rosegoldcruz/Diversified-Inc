@@ -5,7 +5,7 @@ const Table = React.forwardRef<
   HTMLTableElement,
   React.HTMLAttributes<HTMLTableElement>
 >(({ className, ...props }, ref) => (
-  <div className="w-full overflow-auto rounded-lg border border-borderSubtle bg-surface shadow-soft">
+  <div className="w-full overflow-auto rounded-xl border border-borderSubtle bg-surface/95 shadow-soft backdrop-blur-xl">
     <table
       ref={ref}
       className={cn("w-full caption-bottom text-sm", className)}
@@ -19,7 +19,7 @@ const TableHeader = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn("bg-bgDark", className)} {...props} />
+  <thead ref={ref} className={cn("bg-surfaceSoft", className)} {...props} />
 ));
 TableHeader.displayName = "TableHeader";
 
@@ -54,7 +54,7 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      "h-10 px-4 text-left align-middle text-xs font-semibold uppercase tracking-wide text-textMuted",
+      "h-12 px-5 text-left align-middle text-xs font-semibold uppercase tracking-wide text-textMuted",
       className,
     )}
     {...props}
@@ -68,7 +68,7 @@ const TableCell = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <td
     ref={ref}
-    className={cn("px-4 py-3 align-middle text-textSecondary", className)}
+    className={cn("px-5 py-4 align-middle text-textSecondary", className)}
     {...props}
   />
 ));

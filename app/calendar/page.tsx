@@ -320,9 +320,9 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="flex h-full min-h-[calc(100dvh-8rem)] overflow-hidden rounded-lg border border-borderSubtle bg-bgDark shadow-soft">
-      <aside className="flex w-64 shrink-0 flex-col border-r border-borderSubtle bg-surface">
-        <div className="border-b border-borderSubtle p-4">
+    <div className="flex h-full min-h-[calc(100dvh-8rem)] overflow-hidden rounded-xl border border-borderSubtle bg-bgDark/80 shadow-soft backdrop-blur-xl">
+      <aside className="flex w-64 shrink-0 flex-col border-r border-borderSubtle bg-surface/95">
+        <div className="border-b border-borderSubtle p-5">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-base font-semibold text-textPrimary">
               Task List
@@ -336,12 +336,12 @@ export default function CalendarPage() {
             value={sidebarSearch}
             onChange={(event) => setSidebarSearch(event.target.value)}
             placeholder="Search tasks"
-            className="mt-3 w-full rounded-lg border border-borderSubtle bg-bgDark px-3 py-2 text-sm text-textPrimary focus:border-accent focus:outline-none"
+            className="mt-4 w-full rounded-xl border border-borderSubtle bg-bgDark/80 px-3 py-2.5 text-sm text-textPrimary outline-none transition-all focus:border-accent focus:bg-surface focus:ring-4 focus:ring-accent/10"
           />
           <button
             type="button"
             onClick={openNewTask}
-            className="mt-3 w-full rounded-md border border-accent bg-accent px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-accentSoft"
+            className="mt-3 w-full rounded-xl border border-accent bg-accent px-3 py-2.5 text-sm font-semibold text-white shadow-soft transition-all hover:-translate-y-px hover:bg-accentSoft hover:shadow-cyberMd"
           >
             + New Task
           </button>
@@ -356,7 +356,7 @@ export default function CalendarPage() {
                   key={task.id}
                   type="button"
                   onClick={() => openExistingTask(task)}
-                  className="block w-full border-b border-borderSubtle p-3 text-left transition hover:bg-bgDark"
+                  className="block w-full border-b border-borderSubtle p-4 text-left transition hover:bg-bgDark/80"
                 >
                   <p className="text-sm font-medium text-textPrimary">
                     {task.title}
@@ -379,9 +379,9 @@ export default function CalendarPage() {
         </div>
       </aside>
 
-      <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-surface">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-borderSubtle px-4 py-3">
-          <h1 className="text-xl font-semibold text-textPrimary">
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-surface/95">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-borderSubtle px-5 py-4">
+          <h1 className="text-2xl font-semibold tracking-normal text-textPrimary">
             Projection Calendar
           </h1>
           <p className="text-sm font-medium text-textSecondary">
@@ -391,35 +391,35 @@ export default function CalendarPage() {
             <button
               type="button"
               onClick={() => setWeekOffset((current) => current - 1)}
-              className="rounded-lg border border-borderSubtle px-3 py-2 text-sm font-semibold text-textPrimary transition hover:bg-bgDark"
+              className="rounded-xl border border-borderSubtle bg-surface/80 px-3 py-2 text-sm font-semibold text-textPrimary shadow-soft transition-all hover:-translate-y-px hover:bg-bgDark"
             >
               &larr; Past Week
             </button>
             <button
               type="button"
               onClick={() => setWeekOffset(0)}
-              className="rounded-lg border border-borderSubtle px-3 py-2 text-sm font-semibold text-textPrimary transition hover:bg-bgDark"
+              className="rounded-xl border border-borderSubtle bg-surface/80 px-3 py-2 text-sm font-semibold text-textPrimary shadow-soft transition-all hover:-translate-y-px hover:bg-bgDark"
             >
               Current Week
             </button>
             <button
               type="button"
               onClick={() => setWeekOffset((current) => current + 1)}
-              className="rounded-lg border border-borderSubtle px-3 py-2 text-sm font-semibold text-textPrimary transition hover:bg-bgDark"
+              className="rounded-xl border border-borderSubtle bg-surface/80 px-3 py-2 text-sm font-semibold text-textPrimary shadow-soft transition-all hover:-translate-y-px hover:bg-bgDark"
             >
               Future Weeks &rarr;
             </button>
             <select
               value={userFilter}
               onChange={(event) => setUserFilter(event.target.value)}
-              className="rounded-lg border border-borderSubtle bg-bgDark px-3 py-2 text-sm text-textPrimary focus:border-accent focus:outline-none"
+              className="rounded-xl border border-borderSubtle bg-bgDark/80 px-3 py-2 text-sm text-textPrimary outline-none transition-all focus:border-accent focus:bg-surface focus:ring-4 focus:ring-accent/10"
             >
               <option>All Users</option>
               {employees.map((employee) => (
                 <option key={employee.id}>{employee.name}</option>
               ))}
             </select>
-            <div className="inline-flex rounded-lg border border-borderSubtle bg-bgDark p-1">
+            <div className="inline-flex rounded-xl border border-borderSubtle bg-bgDark/80 p-1 shadow-soft">
               {(["Day", "Week", "Month"] as ViewMode[]).map((mode) => (
                 <button
                   key={mode}

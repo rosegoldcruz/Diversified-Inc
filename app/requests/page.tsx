@@ -109,10 +109,10 @@ export default function RequestsPage() {
       {loading ? (
         <LoadingPanel label="Loading requests..." />
       ) : (
-        <section className="overflow-hidden rounded-lg border border-borderSubtle bg-surface shadow-soft">
+        <section className="overflow-hidden rounded-xl border border-borderSubtle bg-surface/95 shadow-soft backdrop-blur-xl">
           <div className="hidden overflow-x-auto md:block">
             <table className="min-w-[980px] w-full text-left text-sm">
-              <thead className="bg-bgDark text-xs uppercase tracking-wide text-textMuted">
+              <thead className="bg-surfaceSoft text-xs uppercase tracking-wide text-textMuted">
                 <tr>
                   <th className="px-4 py-3 font-semibold">Requester</th>
                   <th className="px-4 py-3 font-semibold">Category</th>
@@ -210,7 +210,7 @@ export default function RequestsPage() {
             ))}
 
             {requests.length === 0 ? (
-              <article className="rounded-lg border border-dashed border-borderSubtle bg-bgDark p-6 text-center text-sm text-textSecondary">
+              <article className="rounded-xl border border-dashed border-borderSubtle bg-bgDark/80 p-8 text-center text-sm text-textSecondary">
                 No requests are available.
               </article>
             ) : null}
@@ -219,7 +219,7 @@ export default function RequestsPage() {
       )}
 
       <aside
-        className={`fixed right-0 top-0 z-50 h-full w-80 border-l border-borderSubtle bg-surface p-6 shadow-cyberLg transition-transform duration-200 ${
+        className={`fixed right-0 top-0 z-50 h-full w-80 border-l border-borderSubtle bg-surface/95 p-6 shadow-cyberLg backdrop-blur-xl transition-transform duration-200 ${
           selectedRequest ? "translate-x-0" : "translate-x-full"
         }`}
         aria-hidden={selectedRequest ? "false" : "true"}
@@ -285,7 +285,7 @@ export default function RequestsPage() {
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <article className="rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft">
+    <article className="rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl">
       <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">
         {label}
       </p>
@@ -353,7 +353,7 @@ function SlideOverRow({ label, value }: { label: string; value: ReactNode }) {
 
 function LoadingPanel({ label }: { label: string }) {
   return (
-    <div className="rounded-lg border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
+    <div className="rounded-xl border border-borderSubtle bg-surface/95 p-12 text-center text-sm text-textSecondary shadow-soft backdrop-blur-xl">
       {label}
     </div>
   );

@@ -26,7 +26,6 @@ import {
 import { AnimatePresence, motion } from "framer-motion";
 import { Sidebar } from "./sidebar";
 import { TopBar } from "./topbar";
-import { PageTransition } from "./page-transition";
 
 const MOBILE_PRIMARY_NAV = [
   { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -78,8 +77,8 @@ export function DashboardShell({ children }: { children: ReactNode }) {
       />
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <TopBar onMenuToggle={toggleSidebar} />
-        <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-4 pb-28 pt-5 sm:px-5 lg:px-8 lg:pb-6">
-          <PageTransition>{children}</PageTransition>
+        <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-5 pb-28 pt-6 sm:px-6 lg:px-10 lg:pb-8 lg:pt-8">
+          {children}
         </main>
         <MobileBottomNav
           pathname={pathname}
@@ -107,7 +106,7 @@ function MobileBottomNav({ pathname, onMoreClick }: MobileBottomNavProps) {
         initial={{ y: 56, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: "spring", stiffness: 360, damping: 32, mass: 0.85 }}
-        className="mx-auto grid max-w-lg grid-cols-5 gap-1 rounded-lg border border-borderSubtle bg-surface/95 p-1.5 shadow-soft backdrop-blur"
+        className="mx-auto grid max-w-lg grid-cols-5 gap-1 rounded-2xl border border-borderSubtle bg-surface/90 p-1.5 shadow-cyberMd backdrop-blur-xl"
       >
         {MOBILE_PRIMARY_NAV.map((item) => {
           const Icon = item.icon;
@@ -120,7 +119,7 @@ function MobileBottomNav({ pathname, onMoreClick }: MobileBottomNavProps) {
               key={item.href}
               href={item.href}
               className={[
-                "relative flex min-h-12 flex-col items-center justify-center gap-1 rounded-md px-2 text-[10px] font-medium transition-colors",
+                "relative flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl px-2 text-[10px] font-medium transition-colors",
                 active
                   ? "bg-blue-50 text-accent dark:bg-blue-500/10 dark:text-blue-300"
                   : "text-textMuted hover:bg-bgMedium hover:text-textPrimary",
@@ -135,7 +134,7 @@ function MobileBottomNav({ pathname, onMoreClick }: MobileBottomNavProps) {
                     damping: 35,
                     mass: 0.9,
                   }}
-                  className="absolute inset-0 rounded-md bg-blue-50 dark:bg-blue-500/10"
+                  className="absolute inset-0 rounded-xl bg-blue-50 dark:bg-blue-500/10"
                 />
               ) : null}
               <Icon className="relative z-10 h-4 w-4" />
@@ -146,7 +145,7 @@ function MobileBottomNav({ pathname, onMoreClick }: MobileBottomNavProps) {
         <button
           type="button"
           onClick={onMoreClick}
-          className="flex min-h-12 flex-col items-center justify-center gap-1 rounded-md px-2 text-[10px] font-medium text-textMuted transition-colors hover:bg-bgMedium hover:text-textPrimary"
+          className="flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl px-2 text-[10px] font-medium text-textMuted transition-colors hover:bg-bgMedium hover:text-textPrimary"
           aria-label="Open full navigation"
         >
           <MoreHorizontal className="h-4 w-4" />
@@ -192,7 +191,7 @@ function MobileNavigationSheet({
               damping: 34,
               mass: 0.9,
             }}
-            className="fixed inset-x-0 bottom-0 z-50 rounded-t-lg border border-borderSubtle bg-surface px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-3 shadow-cyberLg lg:hidden"
+            className="fixed inset-x-0 bottom-0 z-50 rounded-t-2xl border border-borderSubtle bg-surface/95 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-4 shadow-cyberLg backdrop-blur-xl lg:hidden"
           >
             <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-borderHover" />
             <p className="px-1 text-sm text-textMuted">All destinations</p>
@@ -209,7 +208,7 @@ function MobileNavigationSheet({
                     href={item.href}
                     onClick={onClose}
                     className={[
-                      "flex min-h-12 items-center gap-2 rounded-md border px-3 text-sm font-medium",
+                      "flex min-h-12 items-center gap-2 rounded-xl border px-3 text-sm font-medium",
                       active
                         ? "border-blue-200 bg-blue-50 text-accent dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300"
                         : "border-borderSubtle text-textPrimary",

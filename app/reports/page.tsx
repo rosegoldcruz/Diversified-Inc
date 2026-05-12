@@ -226,11 +226,11 @@ export default function ReportsPage() {
         <LoadingPanel label="Loading reports..." />
       ) : (
         <>
-          <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
             {cards.map((card) => (
               <article
                 key={card.label}
-                className="rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft"
+                className="rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl"
               >
                 <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">
                   {card.label}
@@ -242,7 +242,7 @@ export default function ReportsPage() {
             ))}
           </section>
 
-          <section className="rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft">
+          <section className="rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl md:p-8">
             <h2 className="text-lg font-semibold text-textPrimary">
               Task Breakdown by Status
             </h2>
@@ -251,7 +251,7 @@ export default function ReportsPage() {
             </p>
             <div className="mt-4 overflow-x-auto">
               <table className="min-w-full text-left text-sm">
-                <thead className="bg-bgDark text-xs uppercase tracking-wide text-textMuted">
+                <thead className="bg-surfaceSoft text-xs uppercase tracking-wide text-textMuted">
                   <tr>
                     <th className="px-4 py-3 font-semibold">Status</th>
                     <th className="px-4 py-3 font-semibold">Count</th>
@@ -301,7 +301,7 @@ export default function ReportsPage() {
             </div>
           </section>
 
-          <section className="rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft">
+          <section className="rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl md:p-8">
             <h2 className="text-lg font-semibold text-textPrimary">
               Work Order Breakdown by Status
             </h2>
@@ -310,7 +310,7 @@ export default function ReportsPage() {
             </p>
             <div className="mt-4 overflow-x-auto">
               <table className="min-w-full text-left text-sm">
-                <thead className="bg-bgDark text-xs uppercase tracking-wide text-textMuted">
+                <thead className="bg-surfaceSoft text-xs uppercase tracking-wide text-textMuted">
                   <tr>
                     <th className="px-4 py-3 font-semibold">Status</th>
                     <th className="px-4 py-3 font-semibold">Count</th>
@@ -362,7 +362,7 @@ export default function ReportsPage() {
             </div>
           </section>
 
-          <section className="rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft">
+          <section className="rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl md:p-8">
             <h2 className="text-lg font-semibold text-textPrimary">
               Inventory Alerts
             </h2>
@@ -377,7 +377,7 @@ export default function ReportsPage() {
             ) : (
               <div className="mt-4 overflow-x-auto">
                 <table className="min-w-full text-left text-sm">
-                  <thead className="bg-bgDark text-xs uppercase tracking-wide text-textMuted">
+                  <thead className="bg-surfaceSoft text-xs uppercase tracking-wide text-textMuted">
                     <tr>
                       <th className="px-4 py-3 font-semibold">Item</th>
                       <th className="px-4 py-3 font-semibold">Quantity</th>
@@ -445,7 +445,7 @@ function InventoryStatusBadge({ status }: { status: string | null }) {
 
 function LoadingPanel({ label }: { label: string }) {
   return (
-    <div className="rounded-lg border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
+    <div className="rounded-xl border border-borderSubtle bg-surface/95 p-12 text-center text-sm text-textSecondary shadow-soft backdrop-blur-xl">
       {label}
     </div>
   );

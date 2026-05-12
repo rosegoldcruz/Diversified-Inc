@@ -107,14 +107,14 @@ export function Sidebar({
       />
       <aside
         className={[
-          "fixed inset-y-0 left-0 z-50 flex h-dvh w-[min(20rem,85vw)] flex-col border-r border-borderSubtle bg-surface transition-all duration-300 lg:static lg:z-auto lg:h-full lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 flex h-dvh w-[min(20rem,85vw)] flex-col border-r border-borderSubtle bg-surface/80 backdrop-blur-xl transition-all duration-300 lg:static lg:z-auto lg:h-full lg:translate-x-0",
           mobileOpen ? "translate-x-0" : "-translate-x-full",
           desktopCollapsed ? "lg:w-16" : "lg:w-64",
         ].join(" ")}
       >
         {/* Logo Section */}
-        <div className="relative border-b border-borderSubtle">
-          <div className="relative h-20 w-full overflow-hidden">
+        <div className="relative border-b border-borderSubtle px-3 py-3">
+          <div className="relative h-16 w-full overflow-hidden rounded-2xl border border-white/20 shadow-soft">
             <Image
               src="/divco.gif"
               alt="Diversified OS"
@@ -123,12 +123,12 @@ export function Sidebar({
               className="object-cover"
               sizes="(max-width: 1024px) 85vw, 256px"
             />
-            <div className="pointer-events-none absolute inset-0 bg-black/25" />
+            <div className="pointer-events-none absolute inset-0 bg-black/20" />
           </div>
           <button
             type="button"
             onClick={onDesktopToggle}
-            className="absolute right-2 top-2 hidden h-8 w-8 items-center justify-center rounded-md border border-white/30 bg-black/35 text-white transition-colors hover:bg-black/55 lg:inline-flex"
+            className="absolute right-5 top-5 hidden h-8 w-8 items-center justify-center rounded-xl border border-white/30 bg-black/35 text-white backdrop-blur transition-colors hover:bg-black/55 lg:inline-flex"
             aria-label={
               desktopCollapsed ? "Expand sidebar" : "Collapse sidebar"
             }
@@ -143,7 +143,7 @@ export function Sidebar({
           <button
             type="button"
             onClick={onClose}
-            className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-md bg-black/35 text-white transition-colors hover:bg-black/55 lg:hidden"
+            className="absolute right-5 top-5 inline-flex h-8 w-8 items-center justify-center rounded-xl bg-black/35 text-white backdrop-blur transition-colors hover:bg-black/55 lg:hidden"
             aria-label="Close navigation"
           >
             <X className="h-4 w-4" />
@@ -151,12 +151,12 @@ export function Sidebar({
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 space-y-5 overflow-y-auto scrollbar-thin px-3 py-5 text-sm lg:px-3">
+        <nav className="flex-1 space-y-6 overflow-y-auto scrollbar-thin px-3 py-5 text-sm lg:px-3">
           {NAV_GROUPS.map((group) => (
             <div key={group.label} className="space-y-1">
               <p
                 className={[
-                  "px-2 text-[10px] font-semibold uppercase tracking-widest text-textDisabled",
+                  "px-3 text-[10px] font-semibold uppercase tracking-widest text-textDisabled",
                   desktopCollapsed ? "lg:hidden" : "",
                 ].join(" ")}
               >

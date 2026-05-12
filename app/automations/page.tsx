@@ -68,7 +68,7 @@ export default function AutomationsPage() {
           return (
             <article
               key={automation.title}
-              className="rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft"
+              className="rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="rounded-lg bg-bgDark p-2">

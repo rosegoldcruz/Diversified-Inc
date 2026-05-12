@@ -24,16 +24,16 @@ export function SidebarItem({
       href={href}
       onClick={onClick}
       className={cn(
-        "group relative flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors duration-150",
+        "group relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200",
         collapsed && "lg:justify-center lg:px-0",
         active
-          ? "bg-blue-50 text-accent dark:bg-blue-500/10 dark:text-blue-300"
-          : "text-textSecondary hover:bg-bgDark hover:text-textPrimary",
+          ? "bg-blue-50/90 text-accent shadow-[inset_0_0_0_1px_rgba(37,99,235,0.08)] dark:bg-blue-500/10 dark:text-blue-300"
+          : "text-textSecondary hover:bg-bgDark/80 hover:text-textPrimary",
       )}
       title={collapsed ? label : undefined}
     >
       {active ? (
-        <span className="absolute left-0 top-1.5 h-[calc(100%-0.75rem)] w-0.5 rounded-full bg-accent" />
+        <span className="absolute left-1 top-2 h-[calc(100%-1rem)] w-0.5 rounded-full bg-accent" />
       ) : null}
       <Icon className="h-4 w-4 shrink-0" />
       <span className={cn("truncate", collapsed && "lg:hidden")}>{label}</span>

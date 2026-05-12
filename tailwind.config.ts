@@ -56,20 +56,27 @@ const config: Config = {
         accentBlue: "rgb(var(--color-accent) / <alpha-value>)",
       },
       boxShadow: {
-        soft: "0 1px 3px rgba(15, 23, 42, 0.05)",
-        cyberSm: "0 1px 3px rgba(15, 23, 42, 0.05)",
-        cyberMd: "0 4px 10px rgba(15, 23, 42, 0.07)",
-        cyberLg: "0 12px 24px rgba(15, 23, 42, 0.10)",
-        cyberMagenta: "0 1px 3px rgba(15, 23, 42, 0.05)",
-        cyberYellow: "0 1px 3px rgba(15, 23, 42, 0.05)",
-        cyberInset: "inset 0 1px 2px rgba(15, 23, 42, 0.05)",
+        soft: "0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 28px rgba(15, 23, 42, 0.04)",
+        cyberSm:
+          "0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 20px rgba(15, 23, 42, 0.04)",
+        cyberMd:
+          "0 1px 3px rgba(15, 23, 42, 0.05), 0 18px 38px rgba(15, 23, 42, 0.07)",
+        cyberLg:
+          "0 2px 6px rgba(15, 23, 42, 0.06), 0 28px 60px rgba(15, 23, 42, 0.10)",
+        cyberMagenta:
+          "0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 28px rgba(15, 23, 42, 0.04)",
+        cyberYellow:
+          "0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 28px rgba(15, 23, 42, 0.04)",
+        cyberInset:
+          "inset 0 1px 0 rgba(255, 255, 255, 0.70), inset 0 -1px 0 rgba(15, 23, 42, 0.04)",
       },
       borderRadius: {
-        lg: "0.5rem",
-        xl: "0.625rem",
-        "2xl": "0.625rem",
-        "3xl": "0.625rem",
-        cyber: "0.5rem",
+        md: "0.625rem",
+        lg: "0.75rem",
+        xl: "0.875rem",
+        "2xl": "0.875rem",
+        "3xl": "0.875rem",
+        cyber: "0.75rem",
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],

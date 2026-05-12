@@ -19,12 +19,12 @@
 
   /* === BACKGROUNDS === */
   --color-bg: #ffffff;
-  --color-bg-subtle: #f8fafc;
-  --color-bg-muted: #f1f5f9;
+  --color-bg-subtle: #f6f7fb;
+  --color-bg-muted: #f1f3f8;
 
   /* === BORDERS === */
-  --color-border: #e2e8f0;
-  --color-border-hover: #cbd5e1;
+  --color-border: #e2e6ee;
+  --color-border-hover: #cfd5e0;
   --color-border-focus: #2563eb;
 
   /* === TEXT === */
@@ -34,9 +34,12 @@
   --color-text-disabled: #94a3b8;
 
   /* === SHADOWS === */
-  --shadow-sm: 0 1px 3px rgba(15, 23, 42, 0.05);
-  --shadow-md: 0 4px 10px rgba(15, 23, 42, 0.07);
-  --shadow-lg: 0 12px 24px rgba(15, 23, 42, 0.1);
+  --shadow-sm:
+    0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 28px rgba(15, 23, 42, 0.04);
+  --shadow-md:
+    0 1px 3px rgba(15, 23, 42, 0.05), 0 18px 38px rgba(15, 23, 42, 0.07);
+  --shadow-lg:
+    0 2px 6px rgba(15, 23, 42, 0.06), 0 28px 60px rgba(15, 23, 42, 0.1);
 }
 
 /* === TYPOGRAPHY BASE === */

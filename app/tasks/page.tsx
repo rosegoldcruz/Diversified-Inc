@@ -92,30 +92,30 @@ function TasksPageContent() {
   }, [priorityParam, statusParam]);
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-1">
+    <div className="space-y-8">
+      <header className="space-y-2">
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">
+          <h1 className="text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
             Tasks
           </h1>
           <span className="inline-flex rounded-md border border-borderSubtle bg-bgDark px-3 py-1 text-xs font-medium text-textMuted">
             {filteredTasks.length} of {tasks.length} Tasks
           </span>
         </div>
-        <p className="max-w-3xl text-sm text-textSecondary">
+        <p className="max-w-3xl text-base text-textSecondary">
           Live task queue from PostgreSQL with assignment, priority, and due
           date visibility.
         </p>
       </header>
 
-      <section className="rounded-lg border border-borderSubtle bg-surface p-4 shadow-soft">
-        <div className="grid gap-3 sm:grid-cols-2">
+      <section className="rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl">
+        <div className="grid gap-4 sm:grid-cols-2">
           <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-textMuted">
             Filter By Status
             <select
               value={statusFilter}
               onChange={(event) => setStatusFilter(event.target.value)}
-              className="h-10 rounded-md border border-borderSubtle bg-bgDark px-3 text-sm font-medium normal-case text-textPrimary outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/20"
+              className="h-11 rounded-xl border border-borderSubtle bg-bgDark/80 px-3 text-sm font-medium normal-case text-textPrimary outline-none transition-all focus:border-accent focus:bg-surface focus:ring-4 focus:ring-accent/10"
             >
               <option>All</option>
               <option>Not Started</option>
@@ -131,7 +131,7 @@ function TasksPageContent() {
             <select
               value={priorityFilter}
               onChange={(event) => setPriorityFilter(event.target.value)}
-              className="h-10 rounded-md border border-borderSubtle bg-bgDark px-3 text-sm font-medium normal-case text-textPrimary outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/20"
+              className="h-11 rounded-xl border border-borderSubtle bg-bgDark/80 px-3 text-sm font-medium normal-case text-textPrimary outline-none transition-all focus:border-accent focus:bg-surface focus:ring-4 focus:ring-accent/10"
             >
               <option>All</option>
               <option>Low</option>
@@ -148,16 +148,16 @@ function TasksPageContent() {
       {loading ? (
         <LoadingPanel label="Loading tasks..." />
       ) : (
-        <section className="overflow-hidden rounded-lg border border-borderSubtle bg-surface shadow-soft">
+        <section className="overflow-hidden rounded-xl border border-borderSubtle bg-surface/95 shadow-soft backdrop-blur-xl">
           <div className="hidden overflow-x-auto md:block">
             <table className="min-w-full text-left text-sm">
-              <thead className="bg-bgDark text-xs uppercase tracking-wide text-textMuted">
+              <thead className="bg-surfaceSoft text-xs uppercase tracking-wide text-textMuted">
                 <tr>
-                  <th className="px-4 py-3 font-semibold">Title</th>
-                  <th className="px-4 py-3 font-semibold">Status</th>
-                  <th className="px-4 py-3 font-semibold">Priority</th>
-                  <th className="px-4 py-3 font-semibold">Assigned To</th>
-                  <th className="px-4 py-3 font-semibold">Due Date</th>
+                  <th className="px-5 py-4 font-semibold">Title</th>
+                  <th className="px-5 py-4 font-semibold">Status</th>
+                  <th className="px-5 py-4 font-semibold">Priority</th>
+                  <th className="px-5 py-4 font-semibold">Assigned To</th>
+                  <th className="px-5 py-4 font-semibold">Due Date</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-borderSubtle">
@@ -165,21 +165,21 @@ function TasksPageContent() {
                   <tr
                     key={task.id}
                     onClick={() => router.push(`/tasks/${task.id}`)}
-                    className="cursor-pointer transition-colors hover:bg-bgDark"
+                    className="cursor-pointer transition-colors hover:bg-surfaceHover"
                   >
-                    <td className="px-4 py-3 font-medium text-textPrimary">
+                    <td className="px-5 py-4 font-medium text-textPrimary">
                       {task.title}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-5 py-4">
                       <TaskStatusBadge status={task.status} />
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-5 py-4">
                       <TaskPriorityBadge priority={task.priority} />
                     </td>
-                    <td className="px-4 py-3 text-textSecondary">
+                    <td className="px-5 py-4 text-textSecondary">
                       {task.assigned_to_name || "Unassigned"}
                     </td>
-                    <td className="px-4 py-3 text-textSecondary">
+                    <td className="px-5 py-4 text-textSecondary">
                       {formatDate(task.due_date)}
                     </td>
                   </tr>
@@ -202,7 +202,7 @@ function TasksPageContent() {
           <div className="grid gap-3 p-4 md:hidden">
             {filteredTasks.map((task) => (
               <Link key={task.id} href={`/tasks/${task.id}`}>
-                <article className="rounded-lg border border-borderSubtle bg-bgDark p-4">
+                <article className="rounded-xl border border-borderSubtle bg-bgDark/80 p-5 shadow-soft">
                   <div className="flex items-start justify-between gap-3">
                     <h2 className="font-medium text-textPrimary">
                       {task.title}
@@ -223,7 +223,7 @@ function TasksPageContent() {
             ))}
 
             {filteredTasks.length === 0 ? (
-              <article className="rounded-lg border border-dashed border-borderSubtle bg-bgDark p-6 text-center text-sm text-textSecondary">
+              <article className="rounded-xl border border-dashed border-borderSubtle bg-bgDark/80 p-8 text-center text-sm text-textSecondary">
                 No tasks match the selected filters.
               </article>
             ) : null}
@@ -365,7 +365,7 @@ function formatDate(value: string | null) {
 
 function LoadingPanel({ label }: { label: string }) {
   return (
-    <div className="rounded-lg border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
+    <div className="rounded-xl border border-borderSubtle bg-surface/95 p-12 text-center text-sm text-textSecondary shadow-soft backdrop-blur-xl">
       {label}
     </div>
   );
@@ -373,7 +373,7 @@ function LoadingPanel({ label }: { label: string }) {
 
 function ErrorPanel({ message }: { message: string }) {
   return (
-    <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 shadow-soft dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+    <div className="rounded-xl border border-red-200 bg-red-50/90 p-5 text-sm text-red-700 shadow-soft dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
       {message}
     </div>
   );

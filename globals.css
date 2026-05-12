@@ -12,10 +12,10 @@ body {
 
 :root {
   color-scheme: light;
-  --color-background: 255 255 255;
+  --color-background: 246 247 251;
   --color-surface: 255 255 255;
-  --color-surface-soft: 248 250 252;
-  --color-surface-hover: 241 245 249;
+  --color-surface-soft: 250 251 253;
+  --color-surface-hover: 246 248 252;
   --color-cyber-cyan: 37 99 235;
   --color-cyber-cyan-dim: 29 78 216;
   --color-cyber-magenta: 124 58 237;
@@ -25,17 +25,17 @@ body {
   --color-cyber-red: 220 38 38;
   --color-cyber-green: 16 185 129;
   --color-bg-darkest: 255 255 255;
-  --color-bg-dark: 248 250 252;
-  --color-bg-medium: 241 245 249;
-  --color-bg-light: 226 232 240;
-  --color-bg-lighter: 203 213 225;
-  --color-border-subtle: 226 232 240;
-  --color-border-hover: 203 213 225;
+  --color-bg-dark: 246 247 251;
+  --color-bg-medium: 241 243 248;
+  --color-bg-light: 229 233 240;
+  --color-bg-lighter: 207 213 224;
+  --color-border-subtle: 226 230 238;
+  --color-border-hover: 207 213 224;
   --color-border-focus: 37 99 235;
-  --color-text-primary: 15 23 42;
-  --color-text-secondary: 51 65 85;
-  --color-text-muted: 100 116 139;
-  --color-text-disabled: 148 163 184;
+  --color-text-primary: 17 24 39;
+  --color-text-secondary: 61 73 92;
+  --color-text-muted: 112 123 142;
+  --color-text-disabled: 158 167 181;
   --color-navy: 26 43 74;
   --color-accent: 37 99 235;
   --color-accent-soft: 29 78 216;
@@ -43,10 +43,10 @@ body {
 
 .dark {
   color-scheme: dark;
-  --color-background: 7 12 21;
-  --color-surface: 15 23 42;
-  --color-surface-soft: 17 26 43;
-  --color-surface-hover: 30 41 59;
+  --color-background: 8 12 20;
+  --color-surface: 17 24 39;
+  --color-surface-soft: 21 30 48;
+  --color-surface-hover: 28 38 59;
   --color-cyber-cyan: 96 165 250;
   --color-cyber-cyan-dim: 59 130 246;
   --color-cyber-magenta: 167 139 250;
@@ -55,13 +55,13 @@ body {
   --color-cyber-yellow-dim: 245 158 11;
   --color-cyber-red: 248 113 113;
   --color-cyber-green: 16 185 129;
-  --color-bg-darkest: 2 6 23;
-  --color-bg-dark: 7 12 21;
-  --color-bg-medium: 15 23 42;
-  --color-bg-light: 30 41 59;
-  --color-bg-lighter: 51 65 85;
-  --color-border-subtle: 51 65 85;
-  --color-border-hover: 71 85 105;
+  --color-bg-darkest: 5 8 14;
+  --color-bg-dark: 8 12 20;
+  --color-bg-medium: 17 24 39;
+  --color-bg-light: 31 41 60;
+  --color-bg-lighter: 55 68 90;
+  --color-border-subtle: 47 58 78;
+  --color-border-hover: 72 86 111;
   --color-border-focus: 96 165 250;
   --color-text-primary: 241 245 249;
   --color-text-secondary: 203 213 225;
@@ -76,6 +76,9 @@ body {
   @apply bg-bgDark text-textPrimary antialiased;
   font-family: "Inter", system-ui, sans-serif;
   font-weight: 400;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  letter-spacing: 0;
+  line-height: 1.5;
 }
 
 ::selection {
@@ -83,7 +86,7 @@ body {
 }
 
 *:focus-visible {
-  outline: 2px solid rgb(var(--color-border-focus) / 0.55);
+  outline: 3px solid rgb(var(--color-border-focus) / 0.18);
   outline-offset: 2px;
 }
 
@@ -117,8 +120,8 @@ body {
 .dark .shadow-cyberLg,
 .dark .shadow-cyberInset {
   box-shadow:
-    0 1px 3px rgba(0, 0, 0, 0.28),
-    0 10px 24px rgba(0, 0, 0, 0.18);
+    0 1px 2px rgba(0, 0, 0, 0.28),
+    0 18px 44px rgba(0, 0, 0, 0.22);
 }
 
 .dark .bg-white {
@@ -135,12 +138,12 @@ body {
 
 /* Card — clean white with subtle shadow */
 .glass-panel {
-  @apply rounded-lg border border-borderSubtle bg-surface shadow-soft;
+  @apply rounded-xl border border-borderSubtle bg-surface/95 shadow-soft backdrop-blur-xl;
 }
 
 /* Cyber card — remapped to clean corporate card */
 .cyber-card-tw {
-  @apply relative rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft;
+  @apply relative rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl;
 }
 
 .cyber-card-tw::before {
@@ -162,8 +165,8 @@ body {
 
 /* Cyber button — remapped to corporate primary button */
 .btn-cyber {
-  @apply relative px-4 py-2 font-sans text-sm font-semibold;
-  @apply rounded-md bg-[#2563EB] text-white border border-[#2563EB];
+  @apply relative px-4 py-2.5 font-sans text-sm font-semibold;
+  @apply rounded-lg bg-[#2563EB] text-white border border-[#2563EB];
   @apply cursor-pointer transition-colors duration-150;
   clip-path: none;
 }

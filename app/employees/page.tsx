@@ -62,21 +62,21 @@ export default function EmployeesPage() {
   }, []);
 
   return (
-    <div className="space-y-5">
-      <header className="flex flex-col gap-4 border-b border-borderSubtle pb-5 lg:flex-row lg:items-end lg:justify-between">
-        <div className="space-y-1">
+    <div className="space-y-8">
+      <header className="flex flex-col gap-6 border-b border-borderSubtle pb-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="space-y-2">
           <p className="text-xs font-medium uppercase tracking-wide text-textMuted">
             Operations directory
           </p>
-          <h1 className="text-2xl font-semibold tracking-normal text-textPrimary md:text-3xl">
+          <h1 className="text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
             Employees
           </h1>
-          <p className="max-w-3xl text-sm text-textSecondary">
+          <p className="max-w-3xl text-base text-textSecondary">
             Live employee records from PostgreSQL, including role, department,
             and contact details.
           </p>
         </div>
-        <div className="grid grid-cols-2 gap-3 sm:flex">
+        <div className="grid grid-cols-2 gap-4 sm:flex">
           <Metric label="Total employees" value={employees.length} />
           <Metric
             label="Active"
@@ -94,16 +94,16 @@ export default function EmployeesPage() {
       {loading ? (
         <LoadingPanel label="Loading employees..." />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
           {employees.map((employee) => (
             <Link
               key={employee.id}
               href={`/employees/${employee.id}`}
-              className="group rounded-lg border border-borderSubtle bg-surface p-4 shadow-soft transition-colors hover:border-borderHover hover:bg-surfaceHover md:p-5"
+              className="group rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-borderHover hover:bg-surface hover:shadow-cyberMd"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-start gap-3">
-                  <div className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-blue-50 text-sm font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+                  <div className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-blue-50/90 text-sm font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
                     {getInitials(employee.name)}
                   </div>
                   <div className="min-w-0">
@@ -143,9 +143,9 @@ export default function EmployeesPage() {
 
 function Metric({ label, value }: { label: string; value: number }) {
   return (
-    <Card padding="sm" className="min-w-36">
+    <Card padding="sm" className="min-w-40">
       <div className="flex items-center gap-3">
-        <div className="grid h-8 w-8 place-items-center rounded-md bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+        <div className="grid h-10 w-10 place-items-center rounded-xl bg-blue-50/90 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
           <Users className="h-4 w-4" />
         </div>
         <div>
@@ -191,7 +191,7 @@ function StatusBadge({ status }: { status: string | null }) {
 
 function LoadingPanel({ label }: { label: string }) {
   return (
-    <div className="rounded-lg border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
+    <div className="rounded-xl border border-borderSubtle bg-surface/95 p-12 text-center text-sm text-textSecondary shadow-soft backdrop-blur-xl">
       {label}
     </div>
   );
@@ -199,7 +199,7 @@ function LoadingPanel({ label }: { label: string }) {
 
 function ErrorPanel({ message }: { message: string }) {
   return (
-    <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 shadow-soft dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+    <div className="rounded-xl border border-red-200 bg-red-50/90 p-5 text-sm text-red-700 shadow-soft dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
       {message}
     </div>
   );

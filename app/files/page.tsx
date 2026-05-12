@@ -120,7 +120,7 @@ export default function FilesPage() {
         <StatCard label="Permits" value={metrics.permits} />
       </section>
 
-      <div className="rounded-lg border border-borderSubtle bg-surface p-4 shadow-soft">
+      <div className="rounded-xl border border-borderSubtle bg-surface/95 p-5 shadow-soft backdrop-blur-xl">
         <div className="flex flex-col gap-3 md:flex-row md:items-center">
           <input
             type="search"
@@ -152,10 +152,10 @@ export default function FilesPage() {
       {loading ? (
         <LoadingPanel label="Loading files..." />
       ) : (
-        <section className="overflow-hidden rounded-lg border border-borderSubtle bg-surface shadow-soft">
+        <section className="overflow-hidden rounded-xl border border-borderSubtle bg-surface/95 shadow-soft backdrop-blur-xl">
           <div className="hidden overflow-x-auto md:block">
             <table className="min-w-[980px] w-full text-left text-sm">
-              <thead className="bg-bgDark text-xs uppercase tracking-wide text-textMuted">
+              <thead className="bg-surfaceSoft text-xs uppercase tracking-wide text-textMuted">
                 <tr>
                   <th className="px-4 py-3 font-semibold">ID</th>
                   <th className="px-4 py-3 font-semibold">File Name</th>
@@ -272,7 +272,7 @@ export default function FilesPage() {
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <article className="rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft">
+    <article className="rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl">
       <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">
         {label}
       </p>
@@ -325,7 +325,7 @@ function MobileField({ label, value }: { label: string; value: string }) {
 
 function LoadingPanel({ label }: { label: string }) {
   return (
-    <div className="rounded-lg border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
+    <div className="rounded-xl border border-borderSubtle bg-surface/95 p-12 text-center text-sm text-textSecondary shadow-soft backdrop-blur-xl">
       {label}
     </div>
   );

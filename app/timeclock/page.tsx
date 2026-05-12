@@ -254,7 +254,7 @@ export default function TimeclockPage() {
       </header>
 
       {/* SECTION A: Punch Panel */}
-      <section className="space-y-4 rounded-lg border border-borderSubtle bg-surface p-6 shadow-soft">
+      <section className="space-y-5 rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl md:p-8">
         <div>
           <h2 className="text-lg font-semibold text-textPrimary">
             Clock In / Clock Out
@@ -330,7 +330,7 @@ export default function TimeclockPage() {
         {loadingActive ? (
           <LoadingPanel label="Loading active entries..." />
         ) : activeEntries.length === 0 ? (
-          <div className="rounded-lg border border-borderSubtle bg-surface p-6 text-center text-sm text-textMuted shadow-soft">
+          <div className="rounded-xl border border-borderSubtle bg-surface/95 p-8 text-center text-sm text-textMuted shadow-soft backdrop-blur-xl">
             No employees currently clocked in.
           </div>
         ) : (
@@ -338,7 +338,7 @@ export default function TimeclockPage() {
             {activeEntries.map((entry) => (
               <div
                 key={entry.id}
-                className="rounded-lg border border-borderSubtle bg-surface p-4 shadow-soft"
+                className="rounded-xl border border-borderSubtle bg-surface/95 p-5 shadow-soft backdrop-blur-xl"
               >
                 <h3 className="text-lg font-semibold text-textPrimary">
                   {entry.employee_name}
@@ -372,16 +372,16 @@ export default function TimeclockPage() {
         {loading ? (
           <LoadingPanel label="Loading punch log..." />
         ) : todayEntries.length === 0 ? (
-          <div className="rounded-lg border border-borderSubtle bg-surface p-6 text-center text-sm text-textMuted shadow-soft">
+          <div className="rounded-xl border border-borderSubtle bg-surface/95 p-8 text-center text-sm text-textMuted shadow-soft backdrop-blur-xl">
             No punch entries for today.
           </div>
         ) : (
           <>
             {/* Table view (hidden on mobile) */}
-            <div className="hidden overflow-hidden rounded-lg border border-borderSubtle bg-surface shadow-soft md:block">
+            <div className="hidden overflow-hidden rounded-xl border border-borderSubtle bg-surface/95 shadow-soft backdrop-blur-xl md:block">
               <div className="overflow-x-auto">
                 <table className="min-w-full text-left text-sm">
-                  <thead className="bg-bgDark text-xs uppercase tracking-wide text-textMuted">
+                  <thead className="bg-surfaceSoft text-xs uppercase tracking-wide text-textMuted">
                     <tr>
                       <th className="px-4 py-3 font-semibold">Employee</th>
                       <th className="px-4 py-3 font-semibold">Clock In</th>
@@ -428,7 +428,7 @@ export default function TimeclockPage() {
               {todayEntries.map((entry) => (
                 <div
                   key={entry.id}
-                  className="rounded-lg border border-borderSubtle bg-surface p-4 shadow-soft"
+                  className="rounded-xl border border-borderSubtle bg-surface/95 p-5 shadow-soft backdrop-blur-xl"
                 >
                   <h3 className="text-lg font-semibold text-textPrimary">
                     {entry.employee_name}
@@ -467,7 +467,7 @@ export default function TimeclockPage() {
 
 function LoadingPanel({ label }: { label: string }) {
   return (
-    <div className="rounded-lg border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
+    <div className="rounded-xl border border-borderSubtle bg-surface/95 p-12 text-center text-sm text-textSecondary shadow-soft backdrop-blur-xl">
       {label}
     </div>
   );

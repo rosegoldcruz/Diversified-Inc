@@ -141,7 +141,7 @@ export default function EmployeeDetailPage() {
 
   if (loading) {
     return (
-      <div className="rounded-lg border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
+      <div className="rounded-xl border border-borderSubtle bg-surface/95 p-12 text-center text-sm text-textSecondary shadow-soft backdrop-blur-xl">
         Loading employee...
       </div>
     );
@@ -149,7 +149,7 @@ export default function EmployeeDetailPage() {
 
   if (!employee) {
     return (
-      <div className="space-y-4 rounded-lg border border-borderSubtle bg-surface p-6 shadow-soft">
+      <div className="space-y-4 rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl">
         <button
           type="button"
           onClick={() => router.back()}
@@ -166,7 +166,7 @@ export default function EmployeeDetailPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <button
         type="button"
         onClick={() => router.back()}
@@ -176,17 +176,17 @@ export default function EmployeeDetailPage() {
         Back to Employees
       </button>
 
-      <section className="space-y-5 rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft md:p-6">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+      <section className="space-y-6 rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl md:p-8">
+        <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="flex min-w-0 items-start gap-4">
-            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-md bg-blue-50 text-base font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+            <div className="grid h-14 w-14 shrink-0 place-items-center rounded-xl bg-blue-50/90 text-lg font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
               {getInitials(employee.name)}
             </div>
             <div className="min-w-0">
               <p className="text-xs font-medium uppercase tracking-wide text-textMuted">
                 Employee profile
               </p>
-              <h1 className="mt-1 text-2xl font-semibold tracking-normal text-textPrimary">
+              <h1 className="mt-1 text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
                 {employee.name}
               </h1>
               <p className="mt-1 text-sm text-textSecondary">
@@ -198,12 +198,12 @@ export default function EmployeeDetailPage() {
         </div>
 
         {error ? (
-          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+          <div className="rounded-xl border border-red-200 bg-red-50/90 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
             {error}
           </div>
         ) : null}
 
-        <dl className="grid gap-3 rounded-lg border border-borderSubtle bg-bgDark p-4 sm:grid-cols-3">
+        <dl className="grid gap-4 rounded-xl border border-borderSubtle bg-bgDark/80 p-5 sm:grid-cols-3">
           <InfoRow
             icon={<Users className="h-4 w-4" />}
             label="Department"
@@ -235,7 +235,7 @@ export default function EmployeeDetailPage() {
             assignedTasks.map((task) => (
               <article
                 key={task.id}
-                className="rounded-lg border border-borderSubtle bg-bgDark p-4"
+                className="rounded-xl border border-borderSubtle bg-bgDark/80 p-5"
               >
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <h3 className="font-medium text-textPrimary">{task.title}</h3>
@@ -263,7 +263,7 @@ export default function EmployeeDetailPage() {
             recentEntries.map((entry) => (
               <article
                 key={entry.id}
-                className="rounded-lg border border-borderSubtle bg-bgDark p-4"
+                className="rounded-xl border border-borderSubtle bg-bgDark/80 p-5"
               >
                 <p className="text-sm text-textPrimary">
                   {formatDateTime(entry.clock_in)} to{" "}

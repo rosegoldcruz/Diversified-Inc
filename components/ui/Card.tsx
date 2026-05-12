@@ -8,9 +8,9 @@ type CardProps = React.HTMLAttributes<HTMLDivElement> & {
 
 const paddingClasses = {
   none: "p-0",
-  sm: "p-4",
-  md: "p-4 md:p-5",
-  lg: "p-5 md:p-6",
+  sm: "p-5",
+  md: "p-5 md:p-6",
+  lg: "p-6 md:p-8",
 };
 
 export function Card({
@@ -23,9 +23,9 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-lg border border-borderSubtle bg-surface shadow-soft",
+        "rounded-xl border border-borderSubtle bg-surface/95 shadow-soft backdrop-blur-xl",
         interactive &&
-          "transition-colors hover:border-borderHover hover:bg-surfaceHover",
+          "transition-all duration-200 hover:-translate-y-0.5 hover:border-borderHover hover:bg-surface hover:shadow-cyberMd",
         paddingClasses[padding],
         className,
       )}
@@ -40,7 +40,7 @@ export function CardHeader({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("space-y-1", className)} {...props} />;
+  return <div className={cn("space-y-1.5", className)} {...props} />;
 }
 
 export function CardTitle({
@@ -49,7 +49,10 @@ export function CardTitle({
 }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h3
-      className={cn("text-base font-semibold text-textPrimary", className)}
+      className={cn(
+        "text-base font-semibold tracking-normal text-textPrimary",
+        className,
+      )}
       {...props}
     />
   );
@@ -68,7 +71,7 @@ export function CardContent({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("mt-4", className)} {...props} />;
+  return <div className={cn("mt-5", className)} {...props} />;
 }
 
 export function CardFooter({
@@ -77,7 +80,7 @@ export function CardFooter({
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("mt-4 border-t border-borderSubtle pt-4", className)}
+      className={cn("mt-5 border-t border-borderSubtle pt-5", className)}
       {...props}
     />
   );

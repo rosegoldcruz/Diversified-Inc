@@ -482,7 +482,7 @@ export default function AiChatPage() {
       className="grid h-[calc(100dvh-11rem)] min-h-0 w-full items-stretch overflow-hidden gap-4 lg:h-[calc(100dvh-8rem)] xl:grid-cols-[minmax(0,1fr)_20rem]"
       style={availableHeight ? { height: `${availableHeight}px` } : undefined}
     >
-      <section className="relative flex h-full min-h-0 max-h-full flex-col overflow-hidden rounded-lg border border-borderSubtle bg-surface shadow-soft">
+      <section className="relative flex h-full min-h-0 max-h-full flex-col overflow-hidden rounded-xl border border-borderSubtle bg-surface/95 shadow-soft backdrop-blur-xl">
         <header className="shrink-0 border-b border-borderSubtle px-4 pb-3 pt-4 sm:px-5">
           <h1 className="text-3xl font-semibold tracking-normal text-textPrimary">
             AI Chat
@@ -577,7 +577,7 @@ export default function AiChatPage() {
             />
 
             {pendingFiles.length > 0 ? (
-              <div className="rounded-lg border border-borderSubtle bg-surface p-2.5">
+              <div className="rounded-xl border border-borderSubtle bg-surface/95 p-3 shadow-soft backdrop-blur-xl">
                 <p className="mb-2 text-xs font-medium uppercase tracking-wide text-textMuted">
                   Attached Files ({pendingFiles.length})
                 </p>
@@ -746,7 +746,7 @@ export default function AiChatPage() {
         <div
           ref={quickPromptsRailRef}
           className={[
-            "h-full min-h-0 space-y-3 overflow-y-auto rounded-lg border border-borderSubtle bg-surface p-3 shadow-soft",
+            "h-full min-h-0 space-y-3 overflow-y-auto rounded-xl border border-borderSubtle bg-surface/95 p-4 shadow-soft backdrop-blur-xl",
             railPulse ? "ring-2 ring-accent/20" : "",
           ].join(" ")}
         >

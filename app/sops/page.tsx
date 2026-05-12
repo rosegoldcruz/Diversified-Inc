@@ -88,7 +88,7 @@ export default function SopsPage() {
         </p>
       </header>
 
-      <div className="rounded-lg border border-borderSubtle bg-surface p-4 shadow-soft">
+      <div className="rounded-xl border border-borderSubtle bg-surface/95 p-5 shadow-soft backdrop-blur-xl">
         <div className="relative">
           <input
             type="search"
@@ -119,7 +119,7 @@ export default function SopsPage() {
           {filteredSops.map((sop) => (
             <article
               key={sop.id}
-              className="rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft"
+              className="rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -260,7 +260,7 @@ function formatDate(value: string | null) {
 
 function LoadingPanel({ label }: { label: string }) {
   return (
-    <div className="rounded-lg border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
+    <div className="rounded-xl border border-borderSubtle bg-surface/95 p-12 text-center text-sm text-textSecondary shadow-soft backdrop-blur-xl">
       {label}
     </div>
   );

@@ -27,14 +27,14 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
   };
 
   return (
-    <header className="flex min-w-0 items-center justify-between border-b border-borderSubtle bg-surface px-3 py-2.5 shadow-soft sm:px-4 lg:px-6">
+    <header className="flex min-w-0 items-center justify-between border-b border-borderSubtle bg-surface/80 px-4 py-3 shadow-soft backdrop-blur-xl sm:px-5 lg:px-8">
       {/* Search Section */}
       <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
         {canGoBack && (
           <button
             type="button"
             onClick={() => router.back()}
-            className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-borderSubtle bg-surface text-textMuted transition-colors hover:bg-bgDark hover:text-textPrimary"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-borderSubtle bg-surface/80 text-textMuted shadow-soft transition-all hover:-translate-y-px hover:bg-surface hover:text-textPrimary"
             aria-label="Go back"
             title="Back"
           >
@@ -44,23 +44,23 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
         <button
           type="button"
           onClick={onMenuToggle}
-          className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-borderSubtle bg-surface text-textMuted transition-colors hover:bg-bgDark hover:text-textPrimary lg:hidden"
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-borderSubtle bg-surface/80 text-textMuted shadow-soft transition-all hover:-translate-y-px hover:bg-surface hover:text-textPrimary lg:hidden"
           aria-label="Open navigation"
         >
           <Menu className="h-4 w-4" />
         </button>
-        <div className="relative max-w-lg min-w-0 flex-1">
-          <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-textDisabled" />
+        <div className="relative max-w-xl min-w-0 flex-1">
+          <Search className="pointer-events-none absolute left-3.5 top-2.5 h-4 w-4 text-textDisabled" />
           <input
-            className="h-9 w-full rounded-md border border-borderSubtle bg-bgDark pl-9 pr-3 text-sm text-textPrimary outline-none transition-colors placeholder:text-textDisabled focus:border-borderFocus focus:ring-2 focus:ring-accent/20"
+            className="h-10 w-full rounded-xl border border-borderSubtle bg-bgDark/80 pl-10 pr-3 text-sm text-textPrimary outline-none transition-all placeholder:text-textDisabled focus:border-borderFocus focus:bg-surface focus:ring-4 focus:ring-accent/10"
             placeholder="Search tasks, work orders, files…"
           />
-          <kbd className="absolute right-3 top-2 hidden rounded border border-borderSubtle bg-surface px-1.5 py-0.5 text-[10px] text-textDisabled sm:block">
+          <kbd className="absolute right-3 top-2.5 hidden rounded-md border border-borderSubtle bg-surface/90 px-1.5 py-0.5 text-[10px] text-textDisabled sm:block">
             ⌘K
           </kbd>
         </div>
 
-        <button className="hidden items-center gap-1.5 rounded-md border border-borderSubtle bg-surface px-3 py-1.5 text-xs font-medium text-textSecondary transition-colors hover:bg-bgDark hover:text-textPrimary sm:inline-flex">
+        <button className="hidden h-10 items-center gap-1.5 rounded-xl border border-borderSubtle bg-surface/80 px-3 text-xs font-medium text-textSecondary shadow-soft transition-all hover:-translate-y-px hover:bg-surface hover:text-textPrimary sm:inline-flex">
           <Filter className="h-3.5 w-3.5" />
           <span>Filters</span>
         </button>
@@ -71,7 +71,7 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
         <button
           type="button"
           onClick={toggleTheme}
-          className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-borderSubtle bg-surface text-textMuted transition-colors hover:bg-bgDark hover:text-textPrimary"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-borderSubtle bg-surface/80 text-textMuted shadow-soft transition-all hover:-translate-y-px hover:bg-surface hover:text-textPrimary"
           aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
           title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
         >
@@ -83,14 +83,14 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
         </button>
 
         {/* Notifications */}
-        <button className="relative inline-flex h-8 w-8 items-center justify-center rounded-md border border-borderSubtle bg-surface text-textMuted transition-colors hover:bg-bgDark hover:text-textPrimary">
+        <button className="relative inline-flex h-9 w-9 items-center justify-center rounded-xl border border-borderSubtle bg-surface/80 text-textMuted shadow-soft transition-all hover:-translate-y-px hover:bg-surface hover:text-textPrimary">
           <Bell className="h-4 w-4" />
           <span className="absolute -right-0.5 -top-0.5 flex h-2.5 w-2.5 items-center justify-center rounded-full bg-red-500 ring-2 ring-surface" />
         </button>
 
         {/* User Profile */}
-        <div className="hidden items-center gap-2.5 rounded-md border border-borderSubtle bg-surface px-3 py-1.5 sm:flex">
-          <div className="flex h-6 w-6 items-center justify-center rounded-md bg-accent text-[10px] font-semibold text-white">
+        <div className="hidden h-10 items-center gap-2.5 rounded-xl border border-borderSubtle bg-surface/80 px-3 shadow-soft backdrop-blur-xl sm:flex">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-[10px] font-semibold text-white shadow-soft">
             D
           </div>
           <div className="leading-tight">

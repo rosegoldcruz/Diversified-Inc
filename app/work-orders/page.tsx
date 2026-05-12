@@ -86,29 +86,29 @@ function WorkOrdersPageContent() {
   }, [statusParam]);
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-1">
+    <div className="space-y-8">
+      <header className="space-y-2">
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">
+          <h1 className="text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
             Work Orders
           </h1>
           <span className="inline-flex rounded-md border border-borderSubtle bg-bgDark px-3 py-1 text-xs font-medium text-textMuted">
             {filteredWorkOrders.length} of {workOrders.length} Work Orders
           </span>
         </div>
-        <p className="max-w-3xl text-sm text-textSecondary">
+        <p className="max-w-3xl text-base text-textSecondary">
           Live work orders with type, priority, ownership, and due dates from
           PostgreSQL.
         </p>
       </header>
 
-      <section className="rounded-lg border border-borderSubtle bg-surface p-4 shadow-soft">
+      <section className="rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl">
         <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-textMuted sm:max-w-xs">
           Status Filter
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value)}
-            className="h-10 rounded-md border border-borderSubtle bg-bgDark px-3 text-sm font-medium normal-case text-textPrimary outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/20"
+            className="h-11 rounded-xl border border-borderSubtle bg-bgDark/80 px-3 text-sm font-medium normal-case text-textPrimary outline-none transition-all focus:border-accent focus:bg-surface focus:ring-4 focus:ring-accent/10"
           >
             <option>All</option>
             <option>Open</option>
@@ -126,17 +126,17 @@ function WorkOrdersPageContent() {
       {loading ? (
         <LoadingPanel label="Loading work orders..." />
       ) : (
-        <section className="overflow-hidden rounded-lg border border-borderSubtle bg-surface shadow-soft">
+        <section className="overflow-hidden rounded-xl border border-borderSubtle bg-surface/95 shadow-soft backdrop-blur-xl">
           <div className="hidden overflow-x-auto md:block">
             <table className="min-w-full text-left text-sm">
-              <thead className="bg-bgDark text-xs uppercase tracking-wide text-textMuted">
+              <thead className="bg-surfaceSoft text-xs uppercase tracking-wide text-textMuted">
                 <tr>
-                  <th className="px-4 py-3 font-semibold">Title</th>
-                  <th className="px-4 py-3 font-semibold">Type</th>
-                  <th className="px-4 py-3 font-semibold">Status</th>
-                  <th className="px-4 py-3 font-semibold">Priority</th>
-                  <th className="px-4 py-3 font-semibold">Owner</th>
-                  <th className="px-4 py-3 font-semibold">Due Date</th>
+                  <th className="px-5 py-4 font-semibold">Title</th>
+                  <th className="px-5 py-4 font-semibold">Type</th>
+                  <th className="px-5 py-4 font-semibold">Status</th>
+                  <th className="px-5 py-4 font-semibold">Priority</th>
+                  <th className="px-5 py-4 font-semibold">Owner</th>
+                  <th className="px-5 py-4 font-semibold">Due Date</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-borderSubtle">
@@ -144,24 +144,24 @@ function WorkOrdersPageContent() {
                   <tr
                     key={workOrder.id}
                     onClick={() => router.push(`/work-orders/${workOrder.id}`)}
-                    className="cursor-pointer transition-colors hover:bg-bgDark"
+                    className="cursor-pointer transition-colors hover:bg-surfaceHover"
                   >
-                    <td className="px-4 py-3 font-medium text-textPrimary">
+                    <td className="px-5 py-4 font-medium text-textPrimary">
                       {workOrder.title}
                     </td>
-                    <td className="px-4 py-3 text-textSecondary">
+                    <td className="px-5 py-4 text-textSecondary">
                       {workOrder.type || "Uncategorized"}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-5 py-4">
                       <TaskStatusBadge status={workOrder.status} />
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-5 py-4">
                       <TaskPriorityBadge priority={workOrder.priority} />
                     </td>
-                    <td className="px-4 py-3 text-textSecondary">
+                    <td className="px-5 py-4 text-textSecondary">
                       {workOrder.owner_name || "Unassigned"}
                     </td>
-                    <td className="px-4 py-3 text-textSecondary">
+                    <td className="px-5 py-4 text-textSecondary">
                       {formatDate(workOrder.due_date)}
                     </td>
                   </tr>
@@ -184,7 +184,7 @@ function WorkOrdersPageContent() {
           <div className="grid gap-3 p-4 md:hidden">
             {filteredWorkOrders.map((workOrder) => (
               <Link key={workOrder.id} href={`/work-orders/${workOrder.id}`}>
-                <article className="rounded-lg border border-borderSubtle bg-bgDark p-5 shadow-soft">
+                <article className="rounded-xl border border-borderSubtle bg-bgDark/80 p-6 shadow-soft">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <h2 className="text-lg font-semibold text-textPrimary">
@@ -214,7 +214,7 @@ function WorkOrdersPageContent() {
             ))}
 
             {filteredWorkOrders.length === 0 ? (
-              <article className="rounded-lg border border-dashed border-borderSubtle bg-bgDark p-8 text-center text-sm text-textSecondary">
+              <article className="rounded-xl border border-dashed border-borderSubtle bg-bgDark/80 p-8 text-center text-sm text-textSecondary">
                 No work orders match this status filter.
               </article>
             ) : null}
@@ -322,7 +322,7 @@ function formatDate(value: string | null) {
 
 function LoadingPanel({ label }: { label: string }) {
   return (
-    <div className="rounded-lg border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
+    <div className="rounded-xl border border-borderSubtle bg-surface/95 p-12 text-center text-sm text-textSecondary shadow-soft backdrop-blur-xl">
       {label}
     </div>
   );

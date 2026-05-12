@@ -124,10 +124,10 @@ export default function DocumentsPage() {
         <SummaryCard label="Draft" value={draftCount} />
       </section>
 
-      <section className="overflow-hidden rounded-lg border border-borderSubtle bg-surface shadow-soft">
+      <section className="overflow-hidden rounded-xl border border-borderSubtle bg-surface/95 shadow-soft backdrop-blur-xl">
         <div className="overflow-x-auto">
           <table className="min-w-[920px] w-full text-left text-sm">
-            <thead className="bg-bgDark text-xs uppercase tracking-wide text-textMuted">
+            <thead className="bg-surfaceSoft text-xs uppercase tracking-wide text-textMuted">
               <tr>
                 <th className="px-4 py-3 font-semibold">ID</th>
                 <th className="px-4 py-3 font-semibold">Document Name</th>
@@ -179,7 +179,7 @@ export default function DocumentsPage() {
 
 function SummaryCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-lg border border-borderSubtle bg-surface p-4 shadow-soft">
+    <div className="rounded-xl border border-borderSubtle bg-surface/95 p-5 shadow-soft backdrop-blur-xl">
       <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">
         {label}
       </p>

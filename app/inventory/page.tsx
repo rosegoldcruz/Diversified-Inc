@@ -77,10 +77,10 @@ export default function InventoryPage() {
       {loading ? (
         <LoadingPanel label="Loading inventory..." />
       ) : (
-        <section className="overflow-hidden rounded-lg border border-borderSubtle bg-surface shadow-soft">
+        <section className="overflow-hidden rounded-xl border border-borderSubtle bg-surface/95 shadow-soft backdrop-blur-xl">
           <div className="hidden overflow-x-auto md:block">
             <table className="min-w-full text-left text-sm">
-              <thead className="bg-bgDark text-xs uppercase tracking-wide text-textMuted">
+              <thead className="bg-surfaceSoft text-xs uppercase tracking-wide text-textMuted">
                 <tr>
                   <th className="px-4 py-3 font-semibold">Item</th>
                   <th className="px-4 py-3 font-semibold">Category</th>
@@ -205,7 +205,7 @@ function InventoryStatusBadge({ status }: { status: string | null }) {
 
 function LoadingPanel({ label }: { label: string }) {
   return (
-    <div className="rounded-lg border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
+    <div className="rounded-xl border border-borderSubtle bg-surface/95 p-12 text-center text-sm text-textSecondary shadow-soft backdrop-blur-xl">
       {label}
     </div>
   );

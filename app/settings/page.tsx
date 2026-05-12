@@ -28,7 +28,7 @@ function KpiCard({
   };
   const c = colors[variant];
   return (
-    <div className="rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft">
+    <div className="rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl">
       <div className={`mb-3 h-1.5 w-10 rounded-sm ${c.icon}`} />
       <p className="text-xs font-medium uppercase tracking-wide text-textMuted">
         {label}
@@ -101,7 +101,7 @@ export default function SettingsPage() {
           const Icon = section.icon;
           return (
             <Link key={section.href} href={section.href}>
-              <div className="cursor-pointer rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft transition-colors hover:border-borderHover hover:bg-surfaceHover">
+              <div className="cursor-pointer rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-borderHover hover:bg-surface hover:shadow-cyberMd">
                 <div className="flex items-start gap-4">
                   <div
                     className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md border ${section.border} ${section.iconBg}`}

@@ -42,7 +42,7 @@ export default function AdminPage() {
         </p>
       </header>
 
-      <section className="space-y-4 rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft">
+      <section className="space-y-5 rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <SectionTitle icon={Users} title="Team & Roles" />
           <button
@@ -81,7 +81,7 @@ export default function AdminPage() {
         </div>
       </section>
 
-      <section className="space-y-4 rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft">
+      <section className="space-y-5 rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl">
         <SectionTitle icon={Settings} title="System Preferences" />
         <div className="space-y-3">
           <ToggleRow
@@ -102,7 +102,7 @@ export default function AdminPage() {
         </div>
       </section>
 
-      <section className="space-y-4 rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft">
+      <section className="space-y-5 rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl">
         <SectionTitle icon={Zap} title="Integrations" />
         <div className="space-y-3">
           <IntegrationRow
@@ -121,7 +121,7 @@ export default function AdminPage() {
         </div>
       </section>
 
-      <section className="space-y-4 rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft">
+      <section className="space-y-5 rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl">
         <SectionTitle
           icon={AlertTriangle}
           title="Danger Zone"
