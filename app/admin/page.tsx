@@ -42,14 +42,14 @@ export default function AdminPage() {
         </p>
       </header>
 
-      <section className="space-y-4 rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft">
+      <section className="space-y-4 rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <SectionTitle icon={Users} title="Team & Roles" />
           <button
             type="button"
             disabled
             title="Coming in next release"
-            className="inline-flex h-10 cursor-not-allowed items-center justify-center rounded-lg bg-navy px-4 text-sm font-semibold text-white opacity-50"
+            className="inline-flex h-10 cursor-not-allowed items-center justify-center rounded-md border border-accent bg-accent px-4 text-sm font-semibold text-white opacity-50"
           >
             + Add Employee
           </button>
@@ -81,7 +81,7 @@ export default function AdminPage() {
         </div>
       </section>
 
-      <section className="space-y-4 rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft">
+      <section className="space-y-4 rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft">
         <SectionTitle icon={Settings} title="System Preferences" />
         <div className="space-y-3">
           <ToggleRow
@@ -102,7 +102,7 @@ export default function AdminPage() {
         </div>
       </section>
 
-      <section className="space-y-4 rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft">
+      <section className="space-y-4 rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft">
         <SectionTitle icon={Zap} title="Integrations" />
         <div className="space-y-3">
           <IntegrationRow
@@ -121,7 +121,7 @@ export default function AdminPage() {
         </div>
       </section>
 
-      <section className="space-y-4 rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft">
+      <section className="space-y-4 rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft">
         <SectionTitle
           icon={AlertTriangle}
           title="Danger Zone"
@@ -219,7 +219,7 @@ function IntegrationRow({
         <p className="font-medium text-textPrimary">{name}</p>
       </div>
       <div className="flex items-center gap-3">
-        <span className="inline-flex rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-600 dark:text-emerald-300">
+        <span className="inline-flex rounded-md border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
           {badge}
         </span>
         {href ? (

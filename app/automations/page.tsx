@@ -56,7 +56,7 @@ export default function AutomationsPage() {
           href="https://auto.snrglabs.com"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+          className="inline-flex items-center gap-2 rounded-md border border-accent bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accentSoft"
         >
           Open n8n Dashboard -&gt;
         </Link>
@@ -68,7 +68,7 @@ export default function AutomationsPage() {
           return (
             <article
               key={automation.title}
-              className="rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft"
+              className="rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="rounded-lg bg-bgDark p-2">
@@ -101,7 +101,7 @@ function StatusBadge({ status }: { status: string }) {
 
   return (
     <span
-      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${styles}`}
+      className={`inline-flex rounded-md border px-2 py-0.5 text-xs font-medium ${styles}`}
     >
       {status}
     </span>

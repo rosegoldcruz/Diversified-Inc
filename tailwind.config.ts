@@ -1,4 +1,3 @@
-
 import type { Config } from "tailwindcss";
 
 const config: Config = {
@@ -6,7 +5,7 @@ const config: Config = {
   content: [
     "./app/**/*.{js,ts,jsx,tsx}",
     "./components/**/*.{js,ts,jsx,tsx}",
-    "./styles/**/*.css"
+    "./styles/**/*.css",
   ],
   theme: {
     extend: {
@@ -57,16 +56,19 @@ const config: Config = {
         accentBlue: "rgb(var(--color-accent) / <alpha-value>)",
       },
       boxShadow: {
-        soft: "0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06)",
-        cyberSm: "0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06)",
-        cyberMd: "0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.06)",
-        cyberLg: "0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.05)",
-        cyberMagenta: "0 1px 3px rgba(0,0,0,0.1)",
-        cyberYellow: "0 1px 3px rgba(0,0,0,0.1)",
-        cyberInset: "inset 0 1px 3px rgba(0,0,0,0.05)",
+        soft: "0 1px 3px rgba(15, 23, 42, 0.05)",
+        cyberSm: "0 1px 3px rgba(15, 23, 42, 0.05)",
+        cyberMd: "0 4px 10px rgba(15, 23, 42, 0.07)",
+        cyberLg: "0 12px 24px rgba(15, 23, 42, 0.10)",
+        cyberMagenta: "0 1px 3px rgba(15, 23, 42, 0.05)",
+        cyberYellow: "0 1px 3px rgba(15, 23, 42, 0.05)",
+        cyberInset: "inset 0 1px 2px rgba(15, 23, 42, 0.05)",
       },
       borderRadius: {
-        xl: "1rem",
+        lg: "0.5rem",
+        xl: "0.625rem",
+        "2xl": "0.625rem",
+        "3xl": "0.625rem",
         cyber: "0.5rem",
       },
       fontFamily: {

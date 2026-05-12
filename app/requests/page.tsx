@@ -109,7 +109,7 @@ export default function RequestsPage() {
       {loading ? (
         <LoadingPanel label="Loading requests..." />
       ) : (
-        <section className="overflow-hidden rounded-xl border border-borderSubtle bg-surface shadow-soft">
+        <section className="overflow-hidden rounded-lg border border-borderSubtle bg-surface shadow-soft">
           <div className="hidden overflow-x-auto md:block">
             <table className="min-w-[980px] w-full text-left text-sm">
               <thead className="bg-bgDark text-xs uppercase tracking-wide text-textMuted">
@@ -219,7 +219,7 @@ export default function RequestsPage() {
       )}
 
       <aside
-        className={`fixed right-0 top-0 z-50 h-full w-80 border-l border-borderSubtle bg-surface p-6 shadow-lg transition-transform duration-200 ${
+        className={`fixed right-0 top-0 z-50 h-full w-80 border-l border-borderSubtle bg-surface p-6 shadow-cyberLg transition-transform duration-200 ${
           selectedRequest ? "translate-x-0" : "translate-x-full"
         }`}
         aria-hidden={selectedRequest ? "false" : "true"}
@@ -285,7 +285,7 @@ export default function RequestsPage() {
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <article className="rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft">
+    <article className="rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft">
       <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">
         {label}
       </p>
@@ -324,7 +324,7 @@ function StatusBadge({ status }: { status: RequestStatus }) {
 function Badge({ label, className }: { label: string; className: string }) {
   return (
     <span
-      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${className}`}
+      className={`inline-flex rounded-md border px-2 py-0.5 text-xs font-medium ${className}`}
     >
       {label}
     </span>
@@ -353,7 +353,7 @@ function SlideOverRow({ label, value }: { label: string; value: ReactNode }) {
 
 function LoadingPanel({ label }: { label: string }) {
   return (
-    <div className="rounded-xl border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
+    <div className="rounded-lg border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
       {label}
     </div>
   );
@@ -361,7 +361,7 @@ function LoadingPanel({ label }: { label: string }) {
 
 function ErrorPanel({ message }: { message: string }) {
   return (
-    <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-300">
+    <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 shadow-soft dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
       {message}
     </div>
   );

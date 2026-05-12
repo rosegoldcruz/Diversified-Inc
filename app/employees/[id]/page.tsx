@@ -1,7 +1,11 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { ArrowLeft, Mail, Phone, Users } from "lucide-react";
+import { Badge } from "@/components/ui/Badge";
+import { Card } from "@/components/ui/Card";
 
 type Employee = {
   id: number;
@@ -137,7 +141,7 @@ export default function EmployeeDetailPage() {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
+      <div className="rounded-lg border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
         Loading employee...
       </div>
     );
@@ -145,13 +149,14 @@ export default function EmployeeDetailPage() {
 
   if (!employee) {
     return (
-      <div className="space-y-4 rounded-xl border border-borderSubtle bg-surface p-6 shadow-soft">
+      <div className="space-y-4 rounded-lg border border-borderSubtle bg-surface p-6 shadow-soft">
         <button
           type="button"
           onClick={() => router.back()}
-          className="text-sm font-medium text-textSecondary hover:text-textPrimary"
+          className="inline-flex items-center gap-2 text-sm font-medium text-textSecondary transition-colors hover:text-textPrimary"
         >
-          ← Back to Employees
+          <ArrowLeft className="h-4 w-4" />
+          Back to Employees
         </button>
         <p className="text-sm text-red-700 dark:text-red-300">
           {error || "Employee not found"}
@@ -165,41 +170,59 @@ export default function EmployeeDetailPage() {
       <button
         type="button"
         onClick={() => router.back()}
-        className="text-sm font-medium text-textSecondary hover:text-textPrimary"
+        className="inline-flex items-center gap-2 text-sm font-medium text-textSecondary transition-colors hover:text-textPrimary"
       >
-        ← Back to Employees
+        <ArrowLeft className="h-4 w-4" />
+        Back to Employees
       </button>
 
-      <section className="space-y-4 rounded-xl border border-borderSubtle bg-surface p-6 shadow-soft">
+      <section className="space-y-5 rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft md:p-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-semibold text-textPrimary">
-              {employee.name}
-            </h1>
-            <p className="mt-1 text-sm text-textSecondary">
-              {employee.role || "Title not set"}
-            </p>
+          <div className="flex min-w-0 items-start gap-4">
+            <div className="grid h-12 w-12 shrink-0 place-items-center rounded-md bg-blue-50 text-base font-semibold text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+              {getInitials(employee.name)}
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs font-medium uppercase tracking-wide text-textMuted">
+                Employee profile
+              </p>
+              <h1 className="mt-1 text-2xl font-semibold tracking-normal text-textPrimary">
+                {employee.name}
+              </h1>
+              <p className="mt-1 text-sm text-textSecondary">
+                {employee.role || "Title not set"}
+              </p>
+            </div>
           </div>
           <StatusBadge status={employee.status} />
         </div>
 
         {error ? (
-          <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">
+          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
             {error}
           </div>
         ) : null}
 
         <dl className="grid gap-3 rounded-lg border border-borderSubtle bg-bgDark p-4 sm:grid-cols-3">
           <InfoRow
+            icon={<Users className="h-4 w-4" />}
             label="Department"
             value={employee.department || "Not set"}
           />
-          <InfoRow label="Email" value={employee.email || "Not set"} />
-          <InfoRow label="Phone" value={employee.phone || "Not set"} />
+          <InfoRow
+            icon={<Mail className="h-4 w-4" />}
+            label="Email"
+            value={employee.email || "Not set"}
+          />
+          <InfoRow
+            icon={<Phone className="h-4 w-4" />}
+            label="Phone"
+            value={employee.phone || "Not set"}
+          />
         </dl>
       </section>
 
-      <section className="rounded-xl border border-borderSubtle bg-surface p-6 shadow-soft">
+      <Card padding="lg">
         <h2 className="text-lg font-semibold text-textPrimary">
           Assigned Tasks
         </h2>
@@ -225,9 +248,9 @@ export default function EmployeeDetailPage() {
             ))
           )}
         </div>
-      </section>
+      </Card>
 
-      <section className="rounded-xl border border-borderSubtle bg-surface p-6 shadow-soft">
+      <Card padding="lg">
         <h2 className="text-lg font-semibold text-textPrimary">
           Recent Timeclock
         </h2>
@@ -256,16 +279,25 @@ export default function EmployeeDetailPage() {
             ))
           )}
         </div>
-      </section>
+      </Card>
     </div>
   );
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function InfoRow({
+  icon,
+  label,
+  value,
+}: {
+  icon?: ReactNode;
+  label: string;
+  value: string;
+}) {
   return (
     <div>
-      <dt className="text-xs font-semibold uppercase tracking-wide text-textMuted">
-        {label}
+      <dt className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wide text-textMuted">
+        {icon}
+        <span>{label}</span>
       </dt>
       <dd className="mt-1 text-sm text-textPrimary">{value}</dd>
     </div>
@@ -275,17 +307,10 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 function StatusBadge({ status }: { status: string | null }) {
   const normalized =
     status?.toLowerCase() === "inactive" ? "inactive" : "active";
-  const styles =
-    normalized === "active"
-      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
-      : "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300";
-
   return (
-    <span
-      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${styles}`}
-    >
+    <Badge variant={normalized === "active" ? "success" : "neutral"}>
       {normalized}
-    </span>
+    </Badge>
   );
 }
 
@@ -302,7 +327,7 @@ function TaskStatusBadge({ status }: { status: string | null }) {
 
   return (
     <span
-      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${styles[normalized] || styles.todo}`}
+      className={`inline-flex rounded-md border px-2 py-0.5 text-xs font-medium capitalize ${styles[normalized] || styles.todo}`}
     >
       {normalized.replaceAll("_", " ")}
     </span>
@@ -320,11 +345,20 @@ function PriorityBadge({ priority }: { priority: string | null }) {
 
   return (
     <span
-      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${styles[normalized] || styles.low}`}
+      className={`inline-flex rounded-md border px-2 py-0.5 text-xs font-medium capitalize ${styles[normalized] || styles.low}`}
     >
       {normalized}
     </span>
   );
+}
+
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
 }
 
 function formatDateTime(value: string | null) {

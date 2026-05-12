@@ -5,17 +5,27 @@ type SopCardProps = {
 };
 
 const STATUS_STYLES: Record<Sop["status"], string> = {
-  Draft: "bg-amber-50 text-cyber-yellow border-amber-200 dark:bg-amber-500/10 dark:border-amber-400/30",
-  Active: "bg-green-50 text-cyber-green border-green-200 dark:bg-emerald-500/10 dark:border-emerald-400/30",
-  "Needs Review": "bg-red-50 text-cyber-red border-red-200 dark:bg-red-500/10 dark:border-red-400/30",
-  Archived: "bg-slate-100 text-textMuted border-slate-200 dark:bg-slate-500/10 dark:border-slate-400/30",
+  Draft:
+    "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300",
+  Active:
+    "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300",
+  "Needs Review":
+    "border-red-200 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300",
+  Archived:
+    "bg-slate-100 text-textMuted border-slate-200 dark:bg-slate-500/10 dark:border-slate-400/30",
 };
 
 export function SopCard({ sop }: SopCardProps) {
   const relatedItems = [
-    sop.relatedFileIds?.length ? `${sop.relatedFileIds.length} file${sop.relatedFileIds.length === 1 ? "" : "s"}` : null,
-    sop.relatedFormIds?.length ? `${sop.relatedFormIds.length} form${sop.relatedFormIds.length === 1 ? "" : "s"}` : null,
-    sop.relatedTaskIds?.length ? `${sop.relatedTaskIds.length} task${sop.relatedTaskIds.length === 1 ? "" : "s"}` : null,
+    sop.relatedFileIds?.length
+      ? `${sop.relatedFileIds.length} file${sop.relatedFileIds.length === 1 ? "" : "s"}`
+      : null,
+    sop.relatedFormIds?.length
+      ? `${sop.relatedFormIds.length} form${sop.relatedFormIds.length === 1 ? "" : "s"}`
+      : null,
+    sop.relatedTaskIds?.length
+      ? `${sop.relatedTaskIds.length} task${sop.relatedTaskIds.length === 1 ? "" : "s"}`
+      : null,
     sop.relatedWorkOrderIds?.length
       ? `${sop.relatedWorkOrderIds.length} work order${sop.relatedWorkOrderIds.length === 1 ? "" : "s"}`
       : null,
@@ -25,10 +35,16 @@ export function SopCard({ sop }: SopCardProps) {
     <article className="rounded-lg border border-borderSubtle bg-surface p-4 shadow-soft transition-colors hover:border-borderHover">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-textDisabled">{sop.id}</p>
-          <h3 className="mt-1 text-base font-semibold text-navy">{sop.title}</h3>
+          <p className="text-xs font-semibold uppercase tracking-wide text-textDisabled">
+            {sop.id}
+          </p>
+          <h3 className="mt-1 text-base font-semibold text-navy">
+            {sop.title}
+          </h3>
         </div>
-        <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${STATUS_STYLES[sop.status]}`}>
+        <span
+          className={`inline-flex rounded-md border px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[sop.status]}`}
+        >
           {sop.status}
         </span>
       </div>
@@ -37,25 +53,39 @@ export function SopCard({ sop }: SopCardProps) {
 
       <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
         <div>
-          <dt className="text-xs font-semibold uppercase tracking-wide text-textDisabled">Category</dt>
+          <dt className="text-xs font-semibold uppercase tracking-wide text-textDisabled">
+            Category
+          </dt>
           <dd className="mt-1 text-textPrimary">{sop.category}</dd>
         </div>
         <div>
-          <dt className="text-xs font-semibold uppercase tracking-wide text-textDisabled">Department</dt>
+          <dt className="text-xs font-semibold uppercase tracking-wide text-textDisabled">
+            Department
+          </dt>
           <dd className="mt-1 text-textPrimary">{sop.department}</dd>
         </div>
         <div>
-          <dt className="text-xs font-semibold uppercase tracking-wide text-textDisabled">Owner</dt>
+          <dt className="text-xs font-semibold uppercase tracking-wide text-textDisabled">
+            Owner
+          </dt>
           <dd className="mt-1 text-textPrimary">{sop.owner}</dd>
         </div>
         <div>
-          <dt className="text-xs font-semibold uppercase tracking-wide text-textDisabled">Last Updated</dt>
-          <dd className="mt-1 text-textPrimary">{formatDate(sop.lastUpdated)}</dd>
+          <dt className="text-xs font-semibold uppercase tracking-wide text-textDisabled">
+            Last Updated
+          </dt>
+          <dd className="mt-1 text-textPrimary">
+            {formatDate(sop.lastUpdated)}
+          </dd>
         </div>
         {sop.reviewDate && (
           <div>
-            <dt className="text-xs font-semibold uppercase tracking-wide text-textDisabled">Review Date</dt>
-            <dd className="mt-1 text-textPrimary">{formatDate(sop.reviewDate)}</dd>
+            <dt className="text-xs font-semibold uppercase tracking-wide text-textDisabled">
+              Review Date
+            </dt>
+            <dd className="mt-1 text-textPrimary">
+              {formatDate(sop.reviewDate)}
+            </dd>
           </div>
         )}
       </dl>

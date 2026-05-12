@@ -1,7 +1,6 @@
 "use client";
 
 import type { ComponentType } from "react";
-import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
@@ -27,6 +26,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { SidebarItem } from "@/components/ui/SidebarItem";
 
 type NavItem = {
   label: string;
@@ -123,7 +123,7 @@ export function Sidebar({
               className="object-cover"
               sizes="(max-width: 1024px) 85vw, 256px"
             />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/60 via-black/25 to-transparent" />
+            <div className="pointer-events-none absolute inset-0 bg-black/25" />
           </div>
           <button
             type="button"
@@ -172,29 +172,15 @@ export function Sidebar({
                       pathname !== "/");
 
                   return (
-                    <Link
+                    <SidebarItem
                       key={item.href}
                       href={item.href}
+                      label={item.label}
+                      icon={Icon}
+                      active={active}
+                      collapsed={desktopCollapsed}
                       onClick={onClose}
-                      className={[
-                        "group flex items-center gap-2.5 rounded-md px-2.5 py-2 text-sm font-medium transition-colors duration-150",
-                        desktopCollapsed ? "lg:justify-center lg:px-0" : "",
-                        active
-                          ? "bg-navy text-white"
-                          : "text-textSecondary hover:bg-bgDark hover:text-textPrimary",
-                      ].join(" ")}
-                      title={desktopCollapsed ? item.label : undefined}
-                    >
-                      <Icon className="h-4 w-4 shrink-0" />
-                      <span
-                        className={[
-                          "truncate",
-                          desktopCollapsed ? "lg:hidden" : "",
-                        ].join(" ")}
-                      >
-                        {item.label}
-                      </span>
-                    </Link>
+                    />
                   );
                 })}
               </div>

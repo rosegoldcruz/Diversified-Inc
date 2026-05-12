@@ -107,7 +107,7 @@ export default function FilesPage() {
           type="button"
           disabled
           title="Coming soon"
-          className="inline-flex h-10 cursor-not-allowed items-center justify-center rounded-lg bg-navy px-4 text-sm font-semibold text-white opacity-50"
+          className="inline-flex h-10 cursor-not-allowed items-center justify-center rounded-md border border-accent bg-accent px-4 text-sm font-semibold text-white opacity-50"
         >
           Upload File
         </button>
@@ -120,7 +120,7 @@ export default function FilesPage() {
         <StatCard label="Permits" value={metrics.permits} />
       </section>
 
-      <div className="rounded-xl border border-borderSubtle bg-surface p-4 shadow-soft">
+      <div className="rounded-lg border border-borderSubtle bg-surface p-4 shadow-soft">
         <div className="flex flex-col gap-3 md:flex-row md:items-center">
           <input
             type="search"
@@ -152,7 +152,7 @@ export default function FilesPage() {
       {loading ? (
         <LoadingPanel label="Loading files..." />
       ) : (
-        <section className="overflow-hidden rounded-xl border border-borderSubtle bg-surface shadow-soft">
+        <section className="overflow-hidden rounded-lg border border-borderSubtle bg-surface shadow-soft">
           <div className="hidden overflow-x-auto md:block">
             <table className="min-w-[980px] w-full text-left text-sm">
               <thead className="bg-bgDark text-xs uppercase tracking-wide text-textMuted">
@@ -272,7 +272,7 @@ export default function FilesPage() {
 
 function StatCard({ label, value }: { label: string; value: number }) {
   return (
-    <article className="rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft">
+    <article className="rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft">
       <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">
         {label}
       </p>
@@ -297,7 +297,7 @@ function TypeBadge({ type }: { type: string }) {
 
   return (
     <span
-      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${
+      className={`inline-flex rounded-md border px-2 py-0.5 text-xs font-medium capitalize ${
         styles[type] || styles.document
       }`}
     >
@@ -325,7 +325,7 @@ function MobileField({ label, value }: { label: string; value: string }) {
 
 function LoadingPanel({ label }: { label: string }) {
   return (
-    <div className="rounded-xl border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
+    <div className="rounded-lg border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
       {label}
     </div>
   );
@@ -333,7 +333,7 @@ function LoadingPanel({ label }: { label: string }) {
 
 function ErrorPanel({ message }: { message: string }) {
   return (
-    <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-300">
+    <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 shadow-soft dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
       {message}
     </div>
   );

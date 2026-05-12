@@ -230,7 +230,7 @@ export default function ReportsPage() {
             {cards.map((card) => (
               <article
                 key={card.label}
-                className="rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft"
+                className="rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft"
               >
                 <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">
                   {card.label}
@@ -242,7 +242,7 @@ export default function ReportsPage() {
             ))}
           </section>
 
-          <section className="rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft">
+          <section className="rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft">
             <h2 className="text-lg font-semibold text-textPrimary">
               Task Breakdown by Status
             </h2>
@@ -301,7 +301,7 @@ export default function ReportsPage() {
             </div>
           </section>
 
-          <section className="rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft">
+          <section className="rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft">
             <h2 className="text-lg font-semibold text-textPrimary">
               Work Order Breakdown by Status
             </h2>
@@ -362,7 +362,7 @@ export default function ReportsPage() {
             </div>
           </section>
 
-          <section className="rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft">
+          <section className="rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft">
             <h2 className="text-lg font-semibold text-textPrimary">
               Inventory Alerts
             </h2>
@@ -436,7 +436,7 @@ function InventoryStatusBadge({ status }: { status: string | null }) {
 
   return (
     <span
-      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${styles[normalized] || styles.low_stock}`}
+      className={`inline-flex rounded-md border px-2 py-0.5 text-xs font-medium ${styles[normalized] || styles.low_stock}`}
     >
       {normalized.replaceAll("_", " ")}
     </span>
@@ -445,7 +445,7 @@ function InventoryStatusBadge({ status }: { status: string | null }) {
 
 function LoadingPanel({ label }: { label: string }) {
   return (
-    <div className="rounded-xl border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
+    <div className="rounded-lg border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
       {label}
     </div>
   );
@@ -453,7 +453,7 @@ function LoadingPanel({ label }: { label: string }) {
 
 function ErrorPanel({ message }: { message: string }) {
   return (
-    <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-300">
+    <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 shadow-soft dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
       {message}
     </div>
   );

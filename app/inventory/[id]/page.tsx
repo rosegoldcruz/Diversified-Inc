@@ -116,7 +116,7 @@ export default function InventoryDetailPage() {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
+      <div className="rounded-lg border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
         Loading inventory item...
       </div>
     );
@@ -124,7 +124,7 @@ export default function InventoryDetailPage() {
 
   if (!item) {
     return (
-      <div className="space-y-4 rounded-xl border border-borderSubtle bg-surface p-6 shadow-soft">
+      <div className="space-y-4 rounded-lg border border-borderSubtle bg-surface p-6 shadow-soft">
         <button
           type="button"
           onClick={() => router.back()}
@@ -156,7 +156,7 @@ export default function InventoryDetailPage() {
         ← Back to Inventory
       </button>
 
-      <section className="space-y-4 rounded-xl border border-borderSubtle bg-surface p-6 shadow-soft">
+      <section className="space-y-4 rounded-lg border border-borderSubtle bg-surface p-6 shadow-soft">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <h1 className="text-2xl font-semibold text-textPrimary">
             {item.item_name}
@@ -171,7 +171,7 @@ export default function InventoryDetailPage() {
         ) : null}
 
         {error ? (
-          <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">
+          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
             {error}
           </div>
         ) : null}
@@ -241,7 +241,7 @@ function InventoryStatusBadge({ status }: { status: string | null }) {
 
   return (
     <span
-      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${styles[normalized] || styles.in_stock}`}
+      className={`inline-flex rounded-md border px-2 py-0.5 text-xs font-medium ${styles[normalized] || styles.in_stock}`}
     >
       {normalized.replaceAll("_", " ")}
     </span>

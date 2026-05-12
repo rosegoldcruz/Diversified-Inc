@@ -78,7 +78,7 @@ export default function SopsPage() {
           <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">
             SOPs
           </h1>
-          <span className="inline-flex rounded-full border border-borderSubtle bg-bgDark px-3 py-1 text-xs font-semibold uppercase tracking-wide text-textMuted">
+          <span className="inline-flex rounded-md border border-borderSubtle bg-bgDark px-3 py-1 text-xs font-medium text-textMuted">
             {filteredSops.length} of {sops.length} SOPs
           </span>
         </div>
@@ -88,7 +88,7 @@ export default function SopsPage() {
         </p>
       </header>
 
-      <div className="rounded-xl border border-borderSubtle bg-surface p-4 shadow-soft">
+      <div className="rounded-lg border border-borderSubtle bg-surface p-4 shadow-soft">
         <div className="relative">
           <input
             type="search"
@@ -119,7 +119,7 @@ export default function SopsPage() {
           {filteredSops.map((sop) => (
             <article
               key={sop.id}
-              className="rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft"
+              className="rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -142,7 +142,7 @@ export default function SopsPage() {
           ))}
 
           {filteredSops.length === 0 ? (
-            <article className="rounded-xl border border-dashed border-borderSubtle bg-surface p-8 text-center text-sm text-textSecondary lg:col-span-2 xl:col-span-3">
+            <article className="rounded-lg border border-dashed border-borderSubtle bg-surface p-8 text-center text-sm text-textSecondary lg:col-span-2 xl:col-span-3">
               No SOPs match this search.
             </article>
           ) : null}
@@ -159,7 +159,7 @@ function CategoryBadge({ category }: { category: string | null }) {
 
   return (
     <span
-      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${styles}`}
+      className={`inline-flex rounded-md border px-2 py-0.5 text-xs font-medium ${styles}`}
     >
       {label}
     </span>
@@ -194,7 +194,7 @@ function SopStatusBadge({ status }: { status: string | null }) {
 
   return (
     <span
-      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${styles[normalized] || styles.archived}`}
+      className={`inline-flex rounded-md border px-2 py-0.5 text-xs font-medium ${styles[normalized] || styles.archived}`}
     >
       {labels[normalized] || "Archived"}
     </span>
@@ -260,7 +260,7 @@ function formatDate(value: string | null) {
 
 function LoadingPanel({ label }: { label: string }) {
   return (
-    <div className="rounded-xl border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
+    <div className="rounded-lg border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
       {label}
     </div>
   );
@@ -268,7 +268,7 @@ function LoadingPanel({ label }: { label: string }) {
 
 function ErrorPanel({ message }: { message: string }) {
   return (
-    <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-300">
+    <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 shadow-soft dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
       {message}
     </div>
   );

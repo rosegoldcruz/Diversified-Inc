@@ -482,13 +482,13 @@ export default function AiChatPage() {
       className="grid h-[calc(100dvh-11rem)] min-h-0 w-full items-stretch overflow-hidden gap-4 lg:h-[calc(100dvh-8rem)] xl:grid-cols-[minmax(0,1fr)_20rem]"
       style={availableHeight ? { height: `${availableHeight}px` } : undefined}
     >
-      <section className="relative flex h-full min-h-0 max-h-full flex-col overflow-hidden rounded-2xl border border-[#5A4926]/40 bg-[#05080F] shadow-[0_24px_55px_rgba(0,0,0,0.45)]">
-        <header className="shrink-0 border-b border-[#5A4926]/25 px-4 pb-3 pt-4 sm:px-5">
-          <h1 className="text-3xl font-bold tracking-tight text-[#F5F2E9]">
+      <section className="relative flex h-full min-h-0 max-h-full flex-col overflow-hidden rounded-lg border border-borderSubtle bg-surface shadow-soft">
+        <header className="shrink-0 border-b border-borderSubtle px-4 pb-3 pt-4 sm:px-5">
+          <h1 className="text-3xl font-semibold tracking-normal text-textPrimary">
             AI Chat
           </h1>
-          <p className="mt-1 text-sm text-[#A4AAB7]">
-            AEON — The &ldquo;Advanced Efficient Optimized Network&rdquo; — is
+          <p className="mt-1 text-sm text-textSecondary">
+            AEON - The &ldquo;Advanced Efficient Optimized Network&rdquo; - is
             the SNRG Labs-powered operations assistant built inside Diversified
             Companies OS. Ask for SOP guidance, work order planning, summaries,
             email drafts, or to vent about work, and get organized before moving
@@ -515,10 +515,10 @@ export default function AiChatPage() {
                   mass: 0.8,
                 }}
                 className={[
-                  "max-w-3xl rounded-2xl px-4 py-3 text-sm",
+                  "max-w-3xl rounded-lg px-4 py-3 text-sm",
                   message.role === "user"
-                    ? "ml-auto bg-gradient-to-br from-[#82612A] to-[#B28A44] text-[#0F1117]"
-                    : "border border-[#3B3F4B] bg-[#0F141F] text-[#E8EAF0]",
+                    ? "ml-auto bg-accent text-white"
+                    : "border border-borderSubtle bg-bgDark text-textPrimary",
                 ].join(" ")}
               >
                 <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide opacity-80">
@@ -532,7 +532,7 @@ export default function AiChatPage() {
                     {extractFileParts(message).map((filePart, index) => (
                       <div
                         key={`${filePart.filename ?? "file"}-${index}`}
-                        className="inline-flex items-center gap-2 rounded-lg border border-[#6B5530]/45 bg-black/20 px-2.5 py-1.5 text-xs"
+                        className="inline-flex items-center gap-2 rounded-md border border-borderSubtle bg-surface px-2.5 py-1.5 text-xs"
                       >
                         <FileText className="h-3.5 w-3.5" />
                         <span>{filePart.filename ?? filePart.mediaType}</span>
@@ -554,7 +554,7 @@ export default function AiChatPage() {
                 damping: 30,
                 mass: 0.85,
               }}
-              className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-[#5A4926]/45 bg-[#111725] px-3 py-2 text-xs text-[#BBC1CC]"
+              className="inline-flex min-h-11 items-center gap-2 rounded-md border border-borderSubtle bg-bgDark px-3 py-2 text-xs text-textSecondary"
             >
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
               AEON is thinking...
@@ -562,10 +562,10 @@ export default function AiChatPage() {
           )}
         </div>
 
-        <footer className="sticky bottom-0 z-10 shrink-0 border-t border-[#5A4926]/25 bg-[#0A111C]/95 p-3 backdrop-blur-md lg:p-4">
+        <footer className="sticky bottom-0 z-10 shrink-0 border-t border-borderSubtle bg-surface/95 p-3 backdrop-blur-md lg:p-4">
           <form
             onSubmit={submitMessage}
-            className="space-y-3 rounded-2xl border border-[#5A4926]/35 bg-[#101929] p-3 focus-within:ring-2 focus-within:ring-yellow-600/50"
+            className="space-y-3 rounded-lg border border-borderSubtle bg-bgDark p-3 focus-within:ring-2 focus-within:ring-accent/20"
           >
             <input
               ref={fileInputRef}
@@ -577,8 +577,8 @@ export default function AiChatPage() {
             />
 
             {pendingFiles.length > 0 ? (
-              <div className="rounded-xl border border-[#5A4926]/35 bg-[#0B1320] p-2.5">
-                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-[#B4BAC6]">
+              <div className="rounded-lg border border-borderSubtle bg-surface p-2.5">
+                <p className="mb-2 text-xs font-medium uppercase tracking-wide text-textMuted">
                   Attached Files ({pendingFiles.length})
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -589,19 +589,19 @@ export default function AiChatPage() {
                     return (
                       <div
                         key={`${filePart.filename ?? "pending"}-${index}`}
-                        className="inline-flex items-center gap-2 rounded-lg border border-[#4A3D24]/45 bg-[#131D2C] px-2.5 py-1.5 text-xs text-[#D8DCE5]"
+                        className="inline-flex items-center gap-2 rounded-md border border-borderSubtle bg-bgDark px-2.5 py-1.5 text-xs text-textPrimary"
                       >
                         <FileText className="h-3.5 w-3.5" />
                         <span className="max-w-[12rem] truncate">
                           {filePart.filename ?? "Attachment"}
                         </span>
-                        <span className="text-[#8E96A6]">
+                        <span className="text-textMuted">
                           {formatBytes(approximateBytes)}
                         </span>
                         <button
                           type="button"
                           onClick={() => removePendingFile(index)}
-                          className="inline-flex h-4 w-4 items-center justify-center rounded-full text-[#8E96A6] transition-colors hover:text-[#F6F7FA]"
+                          className="inline-flex h-4 w-4 items-center justify-center rounded-md text-textMuted transition-colors hover:text-textPrimary"
                           aria-label={`Remove ${filePart.filename ?? "attachment"}`}
                         >
                           <X className="h-3 w-3" />
@@ -626,22 +626,22 @@ export default function AiChatPage() {
               }}
               rows={2}
               placeholder="Ask AEON anything, attach files with +, or use the mic for speech-to-text..."
-              className="w-full resize-none rounded-xl border border-[#5A4926]/30 bg-[#0C1422] px-3 py-3 text-sm text-[#ECEEF4] outline-none transition-colors placeholder:text-[#7E8698] focus:border-[#B28A44]"
+              className="w-full resize-none rounded-md border border-borderSubtle bg-surface px-3 py-3 text-sm text-textPrimary outline-none transition-colors placeholder:text-textDisabled focus:border-accent focus:ring-2 focus:ring-accent/20"
             />
             <div className="flex items-center justify-between gap-2">
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={handlePromptButtonClick}
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#5A4926]/45 bg-[#0F1726] px-3 text-sm font-semibold text-[#F3EFE3] transition-colors hover:bg-[#152036]"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-borderSubtle bg-surface px-3 text-sm font-medium text-textPrimary transition-colors hover:bg-bgDark"
                 >
-                  <WandSparkles className="h-4 w-4 text-[#CBA661]" />
+                  <WandSparkles className="h-4 w-4 text-accent" />
                   Prompts
                 </button>
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-[#5A4926]/45 bg-[#0F1726] px-3 text-sm font-semibold text-[#E9ECF4] transition-colors hover:bg-[#152036]"
+                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-borderSubtle bg-surface px-3 text-sm font-medium text-textPrimary transition-colors hover:bg-bgDark"
                 >
                   <Plus className="h-4 w-4" />
                   File
@@ -651,12 +651,12 @@ export default function AiChatPage() {
                   onClick={toggleRecording}
                   disabled={!sttSupported || isTranscribing}
                   className={[
-                    "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3 text-sm font-semibold",
+                    "inline-flex min-h-11 items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium",
                     !sttSupported || isTranscribing
-                      ? "cursor-not-allowed border-[#3B3F4B] bg-[#0F1726] text-[#7E8698]"
+                      ? "cursor-not-allowed border-borderSubtle bg-bgDark text-textDisabled"
                       : isRecording
-                        ? "border-[#B97724] bg-[#B97724]/15 text-[#FFCC7A]"
-                        : "border-[#5A4926]/45 bg-[#0F1726] text-[#E9ECF4]",
+                        ? "border-red-200 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300"
+                        : "border-borderSubtle bg-surface text-textPrimary",
                   ].join(" ")}
                 >
                   {isRecording || isTranscribing ? (
@@ -670,14 +670,14 @@ export default function AiChatPage() {
                       ? "Stop Mic"
                       : "Mic"}
                 </button>
-                <label className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#5A4926]/45 bg-[#0F1726] px-3 text-xs font-semibold text-[#AEB5C4]">
+                <label className="inline-flex min-h-11 items-center justify-center rounded-md border border-borderSubtle bg-surface px-3 text-xs font-medium text-textSecondary">
                   Model
                   <select
                     value={model}
                     onChange={(event) =>
                       setModel(event.target.value as ChatModel)
                     }
-                    className="ml-2 bg-transparent text-xs text-[#F1F3F8] outline-none"
+                    className="ml-2 bg-transparent text-xs text-textPrimary outline-none"
                   >
                     <option value="deepseek-v4-flash">v4 Flash</option>
                     <option value="deepseek-v4-pro">v4 Pro</option>
@@ -689,7 +689,7 @@ export default function AiChatPage() {
                   <button
                     type="button"
                     onClick={() => void stop()}
-                    className="inline-flex min-h-11 items-center justify-center rounded-xl border border-[#5A4926]/45 bg-[#0F1726] px-3 text-sm font-semibold text-[#F0F2F8]"
+                    className="inline-flex min-h-11 items-center justify-center rounded-md border border-borderSubtle bg-surface px-3 text-sm font-medium text-textPrimary"
                   >
                     Stop
                   </button>
@@ -700,7 +700,7 @@ export default function AiChatPage() {
                     isLoading ||
                     (input.trim().length === 0 && pendingFiles.length === 0)
                   }
-                  className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-[#8F6D31] to-[#C29A4E] px-4 text-sm font-semibold text-[#0F1219] transition-all hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="inline-flex min-h-11 items-center justify-center gap-1.5 rounded-md border border-accent bg-accent px-4 text-sm font-semibold text-white transition-colors hover:bg-accentSoft disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   <Send className="h-3.5 w-3.5" />
                   Send
@@ -722,13 +722,13 @@ export default function AiChatPage() {
           )}
 
           {sttStatus && !sttError && (
-            <div className="mt-3 rounded-md border border-[#5A4926]/40 bg-[#B48942]/10 px-3 py-2 text-xs text-[#E6C17B]">
+            <div className="mt-3 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-700 dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300">
               {sttStatus}
             </div>
           )}
 
           {error && (
-            <div className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-cyber-red dark:border-red-400/30 dark:bg-red-500/10">
+            <div className="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-400/30 dark:bg-red-500/10 dark:text-red-300">
               {error.message}
               <button
                 type="button"
@@ -746,15 +746,13 @@ export default function AiChatPage() {
         <div
           ref={quickPromptsRailRef}
           className={[
-            "h-full min-h-0 space-y-3 overflow-y-auto rounded-2xl bg-[#0A111C]/72 p-3 backdrop-blur-md",
-            railPulse
-              ? "ring-2 ring-[#B78F48]/55 shadow-[0_0_0_1px_rgba(183,143,72,0.3)]"
-              : "ring-1 ring-[#3B3F4B]/65",
+            "h-full min-h-0 space-y-3 overflow-y-auto rounded-lg border border-borderSubtle bg-surface p-3 shadow-soft",
+            railPulse ? "ring-2 ring-accent/20" : "",
           ].join(" ")}
         >
           <div className="mb-1 flex items-center gap-2 px-1">
-            <Command className="h-4 w-4 text-[#C39A52]" />
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#D7DCE6]">
+            <Command className="h-4 w-4 text-accent" />
+            <p className="text-xs font-medium uppercase tracking-wide text-textMuted">
               Quick Prompts
             </p>
           </div>
@@ -811,31 +809,21 @@ function EmptyState() {
       initial={{ opacity: 0, y: 14 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ type: "spring", stiffness: 320, damping: 28, mass: 0.85 }}
-      className="relative grid min-h-[8.5rem] place-items-center overflow-hidden rounded-2xl bg-[#0D1522] px-6 py-6 text-center sm:min-h-[10rem]"
+      className="relative grid min-h-[8.5rem] place-items-center overflow-hidden rounded-lg border border-borderSubtle bg-bgDark px-6 py-6 text-center sm:min-h-[10rem]"
     >
-      <motion.div
-        className="pointer-events-none absolute -top-20 h-64 w-64 rounded-full bg-[#BB8D3F]/20 blur-3xl"
-        animate={{ opacity: [0.15, 0.35, 0.15], scale: [0.95, 1.08, 0.95] }}
-        transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-      />
-      <motion.div
-        className="pointer-events-none absolute bottom-[-30%] h-72 w-72 rounded-full bg-[#4E658D]/25 blur-3xl"
-        animate={{ opacity: [0.25, 0.4, 0.25], scale: [1, 1.12, 1] }}
-        transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-      />
       <div className="relative">
-        <div className="mx-auto mb-3 inline-flex h-11 w-11 items-center justify-center rounded-full bg-[#B48942]/20 text-[#E6BC72]">
+        <div className="mx-auto mb-3 inline-flex h-11 w-11 items-center justify-center rounded-md bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
           <Bot className="h-5 w-5" />
         </div>
         <motion.h2
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.08, duration: 0.35 }}
-          className="text-2xl font-bold tracking-tight text-[#F6F3EA]"
+          className="text-2xl font-semibold tracking-normal text-textPrimary"
         >
           AEON is ready
         </motion.h2>
-        <p className="mt-2 max-w-md text-sm text-[#B5BBC8]">
+        <p className="mt-2 max-w-md text-sm text-textSecondary">
           Ask AEON to summarize tasks, triage requests, draft SOPs, create work
           order follow-up plans, or prepare a leadership update. Use a quick
           prompt on the right to get started.
@@ -858,13 +846,13 @@ function QuickPromptCard({ title, prompt, onSelect }: QuickPromptCardProps) {
       onClick={() => onSelect(prompt)}
       whileHover={{ scale: 1.03 }}
       whileTap={{ scale: 0.985 }}
-      className="group w-full rounded-xl bg-slate-800/50 p-4 text-left backdrop-blur-md transition-all duration-200 hover:shadow-[0_0_0_1px_rgba(191,149,73,0.38),0_14px_26px_rgba(0,0,0,0.32)]"
+      className="group w-full rounded-lg border border-borderSubtle bg-bgDark p-4 text-left transition-colors duration-150 hover:border-borderHover hover:bg-surfaceHover"
     >
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#E0E6F2]">
+      <p className="text-xs font-medium uppercase tracking-wide text-textMuted">
         Quick Prompt
       </p>
-      <h3 className="mt-1 text-sm font-bold text-[#FAFCFF]">{title}</h3>
-      <p className="mt-2 text-xs leading-5 text-[#AAB1C0]">{prompt}</p>
+      <h3 className="mt-1 text-sm font-semibold text-textPrimary">{title}</h3>
+      <p className="mt-2 text-xs leading-5 text-textSecondary">{prompt}</p>
     </motion.button>
   );
 }
@@ -906,24 +894,24 @@ function QuickPromptSheet({
               damping: 34,
               mass: 0.88,
             }}
-            className="fixed inset-x-0 bottom-0 z-50 rounded-t-3xl border border-[#5A4926]/40 bg-[#060C17] px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-3 shadow-cyberLg xl:hidden"
+            className="fixed inset-x-0 bottom-0 z-50 rounded-t-lg border border-borderSubtle bg-surface px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-3 shadow-cyberLg xl:hidden"
           >
             <div className="mb-2 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-[#C39A52]" />
-                <h2 className="text-2xl font-bold tracking-tight text-[#F5F2E8]">
+                <Sparkles className="h-4 w-4 text-accent" />
+                <h2 className="text-2xl font-semibold tracking-normal text-textPrimary">
                   Quick Prompts
                 </h2>
               </div>
               <button
                 type="button"
                 onClick={onClose}
-                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-[#5A4926]/40 bg-[#111827]"
+                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md border border-borderSubtle bg-surface text-textSecondary transition-colors hover:bg-bgDark hover:text-textPrimary"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <p className="text-sm text-[#AEB5C5]">
+            <p className="text-sm text-textSecondary">
               Start faster with high-signal prompts built for operations
               workflows.
             </p>
@@ -942,12 +930,12 @@ function QuickPromptSheet({
                     mass: 0.86,
                     delay: index * 0.02,
                   }}
-                  className="w-full rounded-xl bg-slate-800/50 px-3 py-3 text-left backdrop-blur-md"
+                  className="w-full rounded-lg border border-borderSubtle bg-bgDark px-3 py-3 text-left"
                 >
-                  <p className="text-sm font-bold text-[#F9FBFF]">
+                  <p className="text-sm font-semibold text-textPrimary">
                     {item.title}
                   </p>
-                  <p className="mt-1 text-xs leading-5 text-[#AEB5C5]">
+                  <p className="mt-1 text-xs leading-5 text-textSecondary">
                     {item.prompt}
                   </p>
                 </motion.button>

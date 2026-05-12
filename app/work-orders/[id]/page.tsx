@@ -129,7 +129,7 @@ export default function WorkOrderDetailPage() {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
+      <div className="rounded-lg border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
         Loading work order...
       </div>
     );
@@ -137,7 +137,7 @@ export default function WorkOrderDetailPage() {
 
   if (!workOrder) {
     return (
-      <div className="space-y-4 rounded-xl border border-borderSubtle bg-surface p-6 shadow-soft">
+      <div className="space-y-4 rounded-lg border border-borderSubtle bg-surface p-6 shadow-soft">
         <button
           type="button"
           onClick={() => router.back()}
@@ -155,7 +155,8 @@ export default function WorkOrderDetailPage() {
   const clientValue =
     workOrder.client_name || workOrder.customer_name || "Not specified";
   const siteValue = workOrder.site_name || workOrder.site || "Not specified";
-  const assignee = workOrder.assigned_to_name || workOrder.owner_name || "Unassigned";
+  const assignee =
+    workOrder.assigned_to_name || workOrder.owner_name || "Unassigned";
 
   return (
     <div className="space-y-6">
@@ -167,10 +168,12 @@ export default function WorkOrderDetailPage() {
         ← Back to Work Orders
       </button>
 
-      <section className="space-y-4 rounded-xl border border-borderSubtle bg-surface p-6 shadow-soft">
+      <section className="space-y-4 rounded-lg border border-borderSubtle bg-surface p-6 shadow-soft">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold text-textPrimary">{workOrder.title}</h1>
+            <h1 className="text-2xl font-semibold text-textPrimary">
+              {workOrder.title}
+            </h1>
             <p className="mt-1 text-sm text-textMuted">WO-{workOrder.id}</p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -180,16 +183,22 @@ export default function WorkOrderDetailPage() {
         </div>
 
         {error ? (
-          <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">
+          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
             {error}
           </div>
         ) : null}
 
         <dl className="grid gap-3 rounded-lg border border-borderSubtle bg-bgDark p-4 sm:grid-cols-2">
-          <InfoRow label="Client/Site" value={`${clientValue} / ${siteValue}`} />
+          <InfoRow
+            label="Client/Site"
+            value={`${clientValue} / ${siteValue}`}
+          />
           <InfoRow label="Assigned To" value={assignee} />
           <InfoRow label="Due Date" value={formatDate(workOrder.due_date)} />
-          <InfoRow label="Created At" value={formatDateTime(workOrder.created_at)} />
+          <InfoRow
+            label="Created At"
+            value={formatDateTime(workOrder.created_at)}
+          />
         </dl>
 
         <section className="rounded-lg border border-borderSubtle bg-bgDark p-4">
@@ -256,12 +265,13 @@ function StatusBadge({ status }: { status: string | null }) {
     completed:
       "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
     cancelled: "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-300",
-    closed: "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300",
+    closed:
+      "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300",
   };
 
   return (
     <span
-      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${styles[normalized] || styles.open}`}
+      className={`inline-flex rounded-md border px-2 py-0.5 text-xs font-medium ${styles[normalized] || styles.open}`}
     >
       {labelize(normalized)}
     </span>
@@ -279,7 +289,7 @@ function PriorityBadge({ priority }: { priority: string | null }) {
 
   return (
     <span
-      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${styles[normalized] || styles.low}`}
+      className={`inline-flex rounded-md border px-2 py-0.5 text-xs font-medium capitalize ${styles[normalized] || styles.low}`}
     >
       {normalized}
     </span>

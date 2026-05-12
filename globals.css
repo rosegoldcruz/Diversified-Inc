@@ -6,7 +6,7 @@
 
 html,
 body {
-  background: #000;
+  background: rgb(var(--color-bg-dark));
   overscroll-behavior: none;
 }
 
@@ -23,7 +23,7 @@ body {
   --color-cyber-yellow: 217 119 6;
   --color-cyber-yellow-dim: 180 83 9;
   --color-cyber-red: 220 38 38;
-  --color-cyber-green: 22 163 74;
+  --color-cyber-green: 16 185 129;
   --color-bg-darkest: 255 255 255;
   --color-bg-dark: 248 250 252;
   --color-bg-medium: 241 245 249;
@@ -54,7 +54,7 @@ body {
   --color-cyber-yellow: 251 191 36;
   --color-cyber-yellow-dim: 245 158 11;
   --color-cyber-red: 248 113 113;
-  --color-cyber-green: 52 211 153;
+  --color-cyber-green: 16 185 129;
   --color-bg-darkest: 2 6 23;
   --color-bg-dark: 7 12 21;
   --color-bg-medium: 15 23 42;
@@ -75,6 +75,16 @@ body {
 body {
   @apply bg-bgDark text-textPrimary antialiased;
   font-family: "Inter", system-ui, sans-serif;
+  font-weight: 400;
+}
+
+::selection {
+  background: rgb(var(--color-accent) / 0.16);
+}
+
+*:focus-visible {
+  outline: 2px solid rgb(var(--color-border-focus) / 0.55);
+  outline-offset: 2px;
 }
 
 /* Scrollbar — clean */
@@ -106,7 +116,9 @@ body {
 .dark .shadow-cyberMd,
 .dark .shadow-cyberLg,
 .dark .shadow-cyberInset {
-  box-shadow: none;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.28),
+    0 10px 24px rgba(0, 0, 0, 0.18);
 }
 
 .dark .bg-white {
@@ -123,12 +135,12 @@ body {
 
 /* Card — clean white with subtle shadow */
 .glass-panel {
-  @apply bg-surface border border-borderSubtle rounded-lg shadow-sm;
+  @apply rounded-lg border border-borderSubtle bg-surface shadow-soft;
 }
 
 /* Cyber card — remapped to clean corporate card */
 .cyber-card-tw {
-  @apply relative bg-surface border border-borderSubtle rounded-lg p-5 shadow-sm;
+  @apply relative rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft;
 }
 
 .cyber-card-tw::before {
@@ -150,9 +162,9 @@ body {
 
 /* Cyber button — remapped to corporate primary button */
 .btn-cyber {
-  @apply relative px-5 py-2.5 font-sans font-semibold text-sm;
+  @apply relative px-4 py-2 font-sans text-sm font-semibold;
   @apply rounded-md bg-[#2563EB] text-white border border-[#2563EB];
-  @apply transition-colors duration-150 cursor-pointer;
+  @apply cursor-pointer transition-colors duration-150;
   clip-path: none;
 }
 

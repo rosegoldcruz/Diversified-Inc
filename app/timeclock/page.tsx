@@ -254,7 +254,7 @@ export default function TimeclockPage() {
       </header>
 
       {/* SECTION A: Punch Panel */}
-      <section className="space-y-4 rounded-xl border border-borderSubtle bg-surface p-6 shadow-soft">
+      <section className="space-y-4 rounded-lg border border-borderSubtle bg-surface p-6 shadow-soft">
         <div>
           <h2 className="text-lg font-semibold text-textPrimary">
             Clock In / Clock Out
@@ -330,7 +330,7 @@ export default function TimeclockPage() {
         {loadingActive ? (
           <LoadingPanel label="Loading active entries..." />
         ) : activeEntries.length === 0 ? (
-          <div className="rounded-xl border border-borderSubtle bg-surface p-6 text-center text-sm text-textMuted shadow-soft">
+          <div className="rounded-lg border border-borderSubtle bg-surface p-6 text-center text-sm text-textMuted shadow-soft">
             No employees currently clocked in.
           </div>
         ) : (
@@ -372,16 +372,16 @@ export default function TimeclockPage() {
         {loading ? (
           <LoadingPanel label="Loading punch log..." />
         ) : todayEntries.length === 0 ? (
-          <div className="rounded-xl border border-borderSubtle bg-surface p-6 text-center text-sm text-textMuted shadow-soft">
+          <div className="rounded-lg border border-borderSubtle bg-surface p-6 text-center text-sm text-textMuted shadow-soft">
             No punch entries for today.
           </div>
         ) : (
           <>
             {/* Table view (hidden on mobile) */}
-            <div className="hidden overflow-hidden rounded-xl border border-borderSubtle bg-surface shadow-soft md:block">
+            <div className="hidden overflow-hidden rounded-lg border border-borderSubtle bg-surface shadow-soft md:block">
               <div className="overflow-x-auto">
                 <table className="min-w-full text-left text-sm">
-                  <thead className="bg-navy text-xs uppercase tracking-wide text-white">
+                  <thead className="bg-bgDark text-xs uppercase tracking-wide text-textMuted">
                     <tr>
                       <th className="px-4 py-3 font-semibold">Employee</th>
                       <th className="px-4 py-3 font-semibold">Clock In</th>
@@ -467,7 +467,7 @@ export default function TimeclockPage() {
 
 function LoadingPanel({ label }: { label: string }) {
   return (
-    <div className="rounded-xl border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
+    <div className="rounded-lg border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
       {label}
     </div>
   );
@@ -475,7 +475,7 @@ function LoadingPanel({ label }: { label: string }) {
 
 function ErrorPanel({ message }: { message: string }) {
   return (
-    <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-300">
+    <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 shadow-soft dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
       {message}
     </div>
   );

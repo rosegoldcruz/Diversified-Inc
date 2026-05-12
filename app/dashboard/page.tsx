@@ -184,15 +184,15 @@ export default function DashboardPage() {
                 <Link
                   key={card.label}
                   href={card.href}
-                  className="block cursor-pointer rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft transition-colors hover:border-accent"
+                  className="block cursor-pointer rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft transition-colors hover:border-borderHover hover:bg-surfaceHover"
                 >
                   <div className="flex items-center gap-2.5">
                     <Icon className={`h-5 w-5 ${card.color}`} />
-                    <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">
+                    <p className="text-xs font-medium uppercase tracking-wide text-textMuted">
                       {card.label}
                     </p>
                   </div>
-                  <p className="mt-3 text-5xl font-bold text-textPrimary">
+                  <p className="mt-3 text-4xl font-semibold text-textPrimary">
                     {card.value}
                   </p>
                 </Link>
@@ -200,7 +200,7 @@ export default function DashboardPage() {
             })}
           </section>
 
-          <section className="rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft">
+          <section className="rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-lg font-semibold text-textPrimary">
@@ -268,7 +268,7 @@ function TaskStatusBadge({ status }: { status: string | null }) {
 
   return (
     <span
-      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${styles[normalized] || styles.todo}`}
+      className={`inline-flex rounded-md border px-2 py-0.5 text-xs font-medium ${styles[normalized] || styles.todo}`}
     >
       {normalized.replaceAll("_", " ")}
     </span>
@@ -286,7 +286,7 @@ function TaskPriorityBadge({ priority }: { priority: string | null }) {
 
   return (
     <span
-      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${styles[normalized] || styles.low}`}
+      className={`inline-flex rounded-md border px-2 py-0.5 text-xs font-medium capitalize ${styles[normalized] || styles.low}`}
     >
       {normalized}
     </span>
@@ -308,7 +308,7 @@ function formatDate(value: string | null) {
 
 function LoadingPanel({ label }: { label: string }) {
   return (
-    <div className="rounded-xl border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
+    <div className="rounded-lg border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
       {label}
     </div>
   );
@@ -316,7 +316,7 @@ function LoadingPanel({ label }: { label: string }) {
 
 function ErrorPanel({ message }: { message: string }) {
   return (
-    <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-300">
+    <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 shadow-soft dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
       {message}
     </div>
   );

@@ -125,7 +125,7 @@ export default function TaskDetailPage() {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
+      <div className="rounded-lg border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
         Loading task...
       </div>
     );
@@ -133,7 +133,7 @@ export default function TaskDetailPage() {
 
   if (!task) {
     return (
-      <div className="space-y-4 rounded-xl border border-borderSubtle bg-surface p-6 shadow-soft">
+      <div className="space-y-4 rounded-lg border border-borderSubtle bg-surface p-6 shadow-soft">
         <button
           type="button"
           onClick={() => router.back()}
@@ -158,7 +158,7 @@ export default function TaskDetailPage() {
         ← Back to Tasks
       </button>
 
-      <section className="space-y-4 rounded-xl border border-borderSubtle bg-surface p-6 shadow-soft">
+      <section className="space-y-4 rounded-lg border border-borderSubtle bg-surface p-6 shadow-soft">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <h1 className="text-2xl font-semibold text-textPrimary">
             {task.title}
@@ -170,7 +170,7 @@ export default function TaskDetailPage() {
         </div>
 
         {error ? (
-          <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-sm text-red-700 dark:text-red-300">
+          <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
             {error}
           </div>
         ) : null}
@@ -258,7 +258,7 @@ function StatusBadge({ status }: { status: string | null }) {
 
   return (
     <span
-      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${styles[normalized] || styles.todo}`}
+      className={`inline-flex rounded-md border px-2 py-0.5 text-xs font-medium ${styles[normalized] || styles.todo}`}
     >
       {labelize(normalized)}
     </span>
@@ -276,7 +276,7 @@ function PriorityBadge({ priority }: { priority: string | null }) {
 
   return (
     <span
-      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold capitalize ${styles[normalized] || styles.low}`}
+      className={`inline-flex rounded-md border px-2 py-0.5 text-xs font-medium capitalize ${styles[normalized] || styles.low}`}
     >
       {normalized}
     </span>

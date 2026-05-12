@@ -137,7 +137,7 @@ function ToolCard({ tool }: { tool: ToolConfig }) {
   }
 
   return (
-    <article className="space-y-3 rounded-xl border border-borderSubtle bg-surface p-5 shadow-soft">
+    <article className="space-y-3 rounded-lg border border-borderSubtle bg-surface p-5 shadow-soft">
       <div className="flex items-center gap-2">
         <Icon className="h-5 w-5 text-accent" />
         <h2 className="text-base font-semibold text-textPrimary">
@@ -167,7 +167,7 @@ function ToolCard({ tool }: { tool: ToolConfig }) {
       ) : null}
 
       {error ? (
-        <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-700 dark:text-red-300">
+        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
           {error}
         </div>
       ) : null}

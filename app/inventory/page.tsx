@@ -77,7 +77,7 @@ export default function InventoryPage() {
       {loading ? (
         <LoadingPanel label="Loading inventory..." />
       ) : (
-        <section className="overflow-hidden rounded-xl border border-borderSubtle bg-surface shadow-soft">
+        <section className="overflow-hidden rounded-lg border border-borderSubtle bg-surface shadow-soft">
           <div className="hidden overflow-x-auto md:block">
             <table className="min-w-full text-left text-sm">
               <thead className="bg-bgDark text-xs uppercase tracking-wide text-textMuted">
@@ -196,7 +196,7 @@ function InventoryStatusBadge({ status }: { status: string | null }) {
 
   return (
     <span
-      className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${styles[normalized] || styles.in_stock}`}
+      className={`inline-flex rounded-md border px-2 py-0.5 text-xs font-medium ${styles[normalized] || styles.in_stock}`}
     >
       {normalized.replaceAll("_", " ")}
     </span>
@@ -205,7 +205,7 @@ function InventoryStatusBadge({ status }: { status: string | null }) {
 
 function LoadingPanel({ label }: { label: string }) {
   return (
-    <div className="rounded-xl border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
+    <div className="rounded-lg border border-borderSubtle bg-surface p-10 text-center text-sm text-textSecondary shadow-soft">
       {label}
     </div>
   );
@@ -213,7 +213,7 @@ function LoadingPanel({ label }: { label: string }) {
 
 function ErrorPanel({ message }: { message: string }) {
   return (
-    <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-300">
+    <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 shadow-soft dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
       {message}
     </div>
   );

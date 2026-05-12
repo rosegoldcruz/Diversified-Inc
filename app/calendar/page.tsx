@@ -320,14 +320,14 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="flex h-full min-h-[calc(100dvh-8rem)] overflow-hidden rounded-xl border border-borderSubtle bg-bgDark shadow-soft">
+    <div className="flex h-full min-h-[calc(100dvh-8rem)] overflow-hidden rounded-lg border border-borderSubtle bg-bgDark shadow-soft">
       <aside className="flex w-64 shrink-0 flex-col border-r border-borderSubtle bg-surface">
         <div className="border-b border-borderSubtle p-4">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-base font-semibold text-textPrimary">
               Task List
             </h2>
-            <span className="rounded-full border border-borderSubtle bg-bgDark px-2 py-0.5 text-xs font-semibold text-textMuted">
+            <span className="rounded-md border border-borderSubtle bg-bgDark px-2 py-0.5 text-xs font-medium text-textMuted">
               {taskListItems.length}
             </span>
           </div>
@@ -341,7 +341,7 @@ export default function CalendarPage() {
           <button
             type="button"
             onClick={openNewTask}
-            className="mt-3 w-full rounded-lg bg-navy px-3 py-2 text-sm font-semibold text-white transition hover:opacity-90"
+            className="mt-3 w-full rounded-md border border-accent bg-accent px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-accentSoft"
           >
             + New Task
           </button>
@@ -427,7 +427,7 @@ export default function CalendarPage() {
                   onClick={() => setViewMode(mode)}
                   className={`rounded-md px-3 py-1.5 text-sm font-semibold transition ${
                     viewMode === mode
-                      ? "bg-navy text-white"
+                      ? "bg-accent text-white"
                       : "text-textSecondary hover:bg-surface"
                   }`}
                 >
@@ -554,7 +554,7 @@ function TaskEditorModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/50 pt-10">
-      <div className="mx-4 mb-10 w-full max-w-3xl rounded-xl border border-borderSubtle bg-surface shadow-lg">
+      <div className="mx-4 mb-10 w-full max-w-3xl rounded-lg border border-borderSubtle bg-surface shadow-cyberLg">
         <div className="flex items-start justify-between gap-4 border-b border-borderSubtle px-6 py-4">
           <div>
             <div className="flex items-center gap-2">
@@ -562,7 +562,7 @@ function TaskEditorModal({
                 Task Editor
               </h2>
               {isLocked ? (
-                <span className="inline-flex items-center gap-1 rounded-full border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300">
+                <span className="inline-flex items-center gap-1 rounded-md border border-amber-200 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-300">
                   <Lock className="h-3 w-3" /> Locked
                 </span>
               ) : null}
@@ -585,7 +585,7 @@ function TaskEditorModal({
 
         <div className="grid gap-4 p-6 md:grid-cols-2">
           {editorError ? (
-            <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-700 md:col-span-2 dark:text-red-300">
+            <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 md:col-span-2 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
               {editorError}
             </div>
           ) : null}
@@ -884,7 +884,7 @@ function TaskEditorModal({
               type="button"
               onClick={onSave}
               disabled={saving || isLocked}
-              className="rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-md border border-accent bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accentSoft disabled:cursor-not-allowed disabled:opacity-50"
             >
               Save Task
             </button>
@@ -974,7 +974,7 @@ function StatusBadge({
   const label = getStatusLabel(status);
   return (
     <span
-      className={`inline-flex rounded-full border font-semibold ${
+      className={`inline-flex rounded-md border font-medium ${
         compact ? "px-2 py-0.5 text-[11px]" : "px-2.5 py-1 text-xs"
       } ${getBadgeClassName(status)}`}
     >
@@ -985,7 +985,7 @@ function StatusBadge({
 
 function LoadingPanel({ label }: { label: string }) {
   return (
-    <div className="m-3 rounded-xl border border-borderSubtle bg-bgDark p-5 text-center text-sm text-textSecondary">
+    <div className="m-3 rounded-lg border border-borderSubtle bg-bgDark p-5 text-center text-sm text-textSecondary">
       {label}
     </div>
   );
@@ -993,7 +993,7 @@ function LoadingPanel({ label }: { label: string }) {
 
 function ErrorPanel({ message }: { message: string }) {
   return (
-    <div className="m-3 rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-700 dark:text-red-300">
+    <div className="m-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 shadow-soft dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
       {message}
     </div>
   );

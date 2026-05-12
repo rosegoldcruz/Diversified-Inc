@@ -167,7 +167,9 @@ export default function FormsCenterPage() {
   return (
     <div className="space-y-5 font-sans">
       <div className="space-y-1">
-        <h1 className="text-2xl font-bold text-navy">Forms Center</h1>
+        <h1 className="text-2xl font-semibold text-textPrimary">
+          Forms Center
+        </h1>
         <p className="text-sm text-textMuted">
           Submit operational requests and track each record through assignment
           and review.
@@ -175,8 +177,8 @@ export default function FormsCenterPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[18rem_minmax(0,1fr)]">
-        <aside className="rounded-lg border border-borderSubtle bg-white p-3 shadow-soft">
-          <div className="mb-3 flex items-center gap-2 px-2 text-sm font-semibold text-navy">
+        <aside className="rounded-lg border border-borderSubtle bg-surface p-3 shadow-soft">
+          <div className="mb-3 flex items-center gap-2 px-2 text-sm font-semibold text-textPrimary">
             <ClipboardList className="h-4 w-4" />
             Forms
           </div>
@@ -189,7 +191,7 @@ export default function FormsCenterPage() {
                 className={[
                   "w-full rounded-lg border px-3 py-3 text-left transition-colors",
                   activeForm === form.name
-                    ? "border-navy bg-navy text-white"
+                    ? "border-accent bg-blue-50 text-accent dark:bg-blue-500/10 dark:text-blue-300"
                     : "border-borderSubtle bg-bgDark text-textPrimary hover:border-borderHover",
                 ].join(" ")}
               >
@@ -198,9 +200,9 @@ export default function FormsCenterPage() {
                     <span className="text-sm font-semibold">{form.name}</span>
                     <span
                       className={[
-                        "rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                        "rounded-md px-2 py-0.5 text-[11px] font-medium",
                         activeForm === form.name
-                          ? "bg-white/15 text-white"
+                          ? "bg-blue-100 text-accent dark:bg-blue-500/20 dark:text-blue-200"
                           : "bg-surface text-textMuted",
                       ].join(" ")}
                     >
@@ -213,9 +215,9 @@ export default function FormsCenterPage() {
                   <div className="flex flex-wrap items-center gap-2">
                     <span
                       className={[
-                        "rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                        "rounded-md px-2 py-0.5 text-[11px] font-medium",
                         activeForm === form.name
-                          ? "bg-white/15 text-white"
+                          ? "bg-blue-100 text-accent dark:bg-blue-500/20 dark:text-blue-200"
                           : "bg-surface text-textMuted",
                       ].join(" ")}
                     >
@@ -224,9 +226,9 @@ export default function FormsCenterPage() {
                     {form.active ? (
                       <span
                         className={[
-                          "rounded-full px-2 py-0.5 text-[11px] font-semibold",
+                          "rounded-md px-2 py-0.5 text-[11px] font-medium",
                           activeForm === form.name
-                            ? "bg-emerald-400/20 text-emerald-50"
+                            ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300"
                             : "bg-emerald-500/10 text-emerald-700",
                         ].join(" ")}
                       >
@@ -238,7 +240,7 @@ export default function FormsCenterPage() {
                     className={[
                       "text-xs leading-5",
                       activeForm === form.name
-                        ? "text-white/90"
+                        ? "text-textSecondary"
                         : "text-textMuted",
                     ].join(" ")}
                   >
@@ -250,9 +252,11 @@ export default function FormsCenterPage() {
           </div>
         </aside>
 
-        <section className="rounded-lg border border-borderSubtle bg-white shadow-soft">
+        <section className="rounded-lg border border-borderSubtle bg-surface shadow-soft">
           <div className="border-b border-borderSubtle px-5 py-4">
-            <h2 className="text-lg font-bold text-navy">{activeForm}</h2>
+            <h2 className="text-lg font-semibold text-textPrimary">
+              {activeForm}
+            </h2>
             <p className="mt-1 text-sm text-textMuted">
               {activeFormDefinition?.description ||
                 "Complete the form fields and submit to create a trackable record."}
@@ -268,7 +272,7 @@ export default function FormsCenterPage() {
             )}
             <button
               type="submit"
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-navy px-4 text-sm font-semibold text-white transition-colors hover:bg-[#243B63]"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-md border border-accent bg-accent px-4 text-sm font-semibold text-white transition-colors hover:bg-accentSoft"
             >
               <Plus className="h-4 w-4" />
               Submit
@@ -277,10 +281,12 @@ export default function FormsCenterPage() {
         </section>
       </div>
 
-      <section className="overflow-hidden rounded-lg border border-borderSubtle bg-white shadow-soft">
+      <section className="overflow-hidden rounded-lg border border-borderSubtle bg-surface shadow-soft">
         <div className="flex items-center gap-2 border-b border-borderSubtle px-5 py-4">
-          <FileText className="h-4 w-4 text-navy" />
-          <h2 className="text-sm font-semibold text-navy">Trackable Records</h2>
+          <FileText className="h-4 w-4 text-accent" />
+          <h2 className="text-sm font-semibold text-textPrimary">
+            Trackable Records
+          </h2>
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-[760px] w-full text-left text-sm">
@@ -296,7 +302,7 @@ export default function FormsCenterPage() {
             <tbody className="divide-y divide-borderSubtle">
               {activeRecords.map((record) => (
                 <tr key={record.id} className="hover:bg-bgDark">
-                  <td className="px-4 py-3 font-semibold text-navy">
+                  <td className="px-4 py-3 font-semibold text-accent">
                     {record.id}
                   </td>
                   <td className="px-4 py-3 text-textPrimary">{record.form}</td>
@@ -419,7 +425,7 @@ function TextField({ label, type = "text" }: { label: string; type?: string }) {
       </span>
       <input
         type={type}
-        className="h-10 w-full rounded-md border border-borderSubtle bg-white px-3 text-sm text-textPrimary outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/20"
+        className="h-10 w-full rounded-md border border-borderSubtle bg-surface px-3 text-sm text-textPrimary outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/20"
       />
     </label>
   );
@@ -431,7 +437,7 @@ function SelectField({ label, options }: { label: string; options: string[] }) {
       <span className="text-xs font-semibold uppercase tracking-wide text-textMuted">
         {label}
       </span>
-      <select className="h-10 w-full rounded-md border border-borderSubtle bg-white px-3 text-sm text-textPrimary outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/20">
+      <select className="h-10 w-full rounded-md border border-borderSubtle bg-surface px-3 text-sm text-textPrimary outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/20">
         {options.map((option) => (
           <option key={option} value={option}>
             {option}
@@ -450,7 +456,7 @@ function TextAreaField({ label }: { label: string }) {
       </span>
       <textarea
         rows={4}
-        className="w-full rounded-md border border-borderSubtle bg-white px-3 py-2 text-sm text-textPrimary outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/20"
+        className="w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/20"
       />
     </label>
   );
@@ -473,13 +479,15 @@ function FileField({ label }: { label: string }) {
 function RecordStatus({ status }: { status: SubmittedRecord["status"] }) {
   const styles = {
     Submitted: "bg-blue-50 text-accent",
-    Assigned: "bg-green-50 text-cyber-green",
-    "In Review": "bg-amber-50 text-cyber-yellow",
+    Assigned:
+      "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300",
+    "In Review":
+      "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300",
   };
 
   return (
     <span
-      className={`inline-flex rounded-full px-2.5 py-1 text-xs font-semibold ${styles[status]}`}
+      className={`inline-flex rounded-md px-2 py-0.5 text-xs font-medium ${styles[status]}`}
     >
       {status}
     </span>
