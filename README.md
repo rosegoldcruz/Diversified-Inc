@@ -1,17 +1,24 @@
 # Diversified OS
 
-**Diversified OS** is a custom internal operations platform being built for Diversified Companies.
+**Diversified OS** is a custom internal operations platform being built for Diversified Companies by SNRG Labs LLC.
 
-It is designed to replace scattered SharePoint workflows, manual tracking sheets, disconnected task lists, fragile internal tools, and outdated workspace processes with one modern internal operating system.
+The active build is the **Workspace Environment Program**: a modern internal operating system for employees, tasks, calendar/projection, forms, requests, work orders, inventory, SOPs, files, reports, timeclock, timesheets, admin settings, mobile access, and AEON AI assistance.
 
-The first product lane is the **Workspace Environment Program**.
+It is designed to replace scattered SharePoint workflows, manual tracking sheets, disconnected task lists, fragile internal tools, and outdated workspace processes with one internal workspace the company can actually operate from.
 
-Future lanes include:
+This repository is focused on the internal operations system.
 
-1. Lead Workflow / CRM / ServiceTitan-adjacent visibility
-2. Marketing / lead generation / profitability reporting
-3. AI assistance and automation
-4. Multi-company operating visibility
+This is not:
+
+- a CRM
+- a customer portal
+- a ServiceTitan clone
+- a call center system
+- a lead automation platform
+- a marketing attribution platform
+- an ads reporting system
+- Lead Workflow / CRM / ServiceTitan-adjacent visibility
+- Marketing / lead generation / profitability reporting
 
 ---
 
@@ -27,9 +34,11 @@ Future lanes include:
 
 ## Product Definition
 
-Diversified OS is not just a CRM, calendar, dashboard, or task manager.
+Diversified OS is not just a calendar, dashboard, or task manager.
 
-It is a custom internal operating system that starts with the Workspace Environment Program, then expands into lead workflow visibility, ServiceTitan-adjacent reporting, marketing profitability, AI assistance, and multi-company automation.
+It is a custom internal operating system for daily execution, internal visibility, requests, forms, work orders, employee workload, SOPs, files, time tracking, reports, and operational follow-through.
+
+Future expansion ideas exist, but this repository should stay focused on completing the internal operations system first.
 
 The platform is meant to help leadership, office staff, managers, and employees answer:
 
@@ -45,7 +54,7 @@ The platform is meant to help leadership, office staff, managers, and employees 
 
 ---
 
-## Core Workstreams
+## Active Scope
 
 ### 1. Workspace Environment Program
 
