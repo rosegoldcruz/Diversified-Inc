@@ -28,8 +28,11 @@ Product name:
 Interface / brand name:
 **Diversified OS**
 
-Repo name:
-**DiversifiedINC**
+Repo:
+**rosegoldcruz/Diversified-Inc**
+
+Product:
+**Diversified OS**
 
 Diversified OS is an internal company operating system for managing daily execution, employee work, SOPs, forms, requests, work orders, inventory, files, reporting, automations, and admin settings from one central workspace.
 
@@ -110,7 +113,7 @@ Important: This project is **not using Supabase**.
 Do not add Supabase.
 Do not import Supabase packages.
 Do not create a Supabase client.
-Do not mention Supabase in the code or documentation.
+Do not add Supabase, import Supabase, create a Supabase client, or structure new work as a Supabase application. Existing legacy Supabase references should be treated as technical debt and removed only when safe.
 Do not structure this as a Supabase application.
 
 The backend direction is:
@@ -141,7 +144,7 @@ The app should be prepared for:
 - real CRUD later
 - auth and role-based access later
 
-Do not build deep backend integration unless existing credentials, schema, and app patterns are already present.
+Before building backend integration, inspect existing API routes, schema, and `lib/db.ts` patterns. If the module is already DB-backed, extend that pattern. If the module is UI-only, add backend wiring only when it directly supports the current task.
 
 ## Existing Repo / UI Direction
 
