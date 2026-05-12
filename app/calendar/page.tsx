@@ -1,6 +1,14 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import {
+  type Dispatch,
+  type DragEvent,
+  type ReactNode,
+  type SetStateAction,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import { Lock, X } from "phosphor-react";
 import { ShinyText } from "@/components/ui/ShinyText";
 
@@ -53,6 +61,11 @@ type EditorState = {
   locked: boolean;
 };
 
+type DragPayload = {
+  taskId: number;
+  origin: "unscheduled" | "scheduled";
+};
+
 const DIVISIONS = [
   "Diversified",
   "Marketing",
@@ -69,6 +82,8 @@ const DIVISIONS = [
 const PRIORITIES = ["Low", "Medium", "High", "Urgent"];
 const REPEAT_OPTIONS = ["None", "Daily", "Weekly", "Monthly"];
 const TIME_SLOTS = Array.from({ length: 11 }, (_, index) => index + 8);
+const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const SLOT_STEP_MINUTES = 60;
 
 const EMPTY_EDITOR_STATE: EditorState = {
   title: "",
@@ -97,6 +112,7 @@ export default function CalendarPage() {
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>("Week");
   const [weekOffset, setWeekOffset] = useState(0);
+  const [dayIndex, setDayIndex] = useState(0);
   const [userFilter, setUserFilter] = useState("All Users");
   const [sidebarSearch, setSidebarSearch] = useState("");
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
@@ -106,6 +122,9 @@ export default function CalendarPage() {
     useState<EditorState>(EMPTY_EDITOR_STATE);
   const [saving, setSaving] = useState(false);
   const [editorError, setEditorError] = useState<string | null>(null);
+  const [dropTargetKey, setDropTargetKey] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
 
   async function loadCalendarData(cancelled?: () => boolean) {
     try {
@@ -179,13 +198,44 @@ export default function CalendarPage() {
     }
   }, [editorOpen, isNewTask, selectedTask]);
 
+  useEffect(() => {
+    if (!statusMessage) return;
+    const timeout = window.setTimeout(() => setStatusMessage(null), 2400);
+    return () => window.clearTimeout(timeout);
+  }, [statusMessage]);
+
   const weekDays = useMemo(() => getWeekDays(weekOffset), [weekOffset]);
-  const visibleDays = viewMode === "Day" ? [weekDays[0]] : weekDays;
+  const currentDay =
+    weekDays[Math.max(0, Math.min(dayIndex, weekDays.length - 1))];
+  const visibleDays = viewMode === "Day" ? [currentDay] : weekDays;
   const weekStart = weekDays[0];
-  const weekEnd = weekDays[4];
+  const weekEnd = weekDays[weekDays.length - 1];
+
+  const acceptedStatuses = useMemo(() => {
+    return new Set(tasks.map((task) => normalizeStatus(task.status)));
+  }, [tasks]);
+
+  const unscheduledTasks = useMemo(() => {
+    const query = sidebarSearch.trim().toLowerCase();
+    return tasks
+      .filter((task) => {
+        if (
+          userFilter !== "All Users" &&
+          task.assigned_to_name !== userFilter
+        ) {
+          return false;
+        }
+        if (normalizeStatus(task.status) === "completed") return false;
+        if (hasProjectedWindow(task)) return false;
+        if (!query) return true;
+        return task.title.toLowerCase().includes(query);
+      })
+      .sort((a, b) => a.title.localeCompare(b.title));
+  }, [sidebarSearch, tasks, userFilter]);
 
   const calendarTasks = useMemo(() => {
     return tasks.filter((task) => {
+      if (!hasProjectedWindow(task)) return false;
       const taskDate = getTaskDate(task);
       if (!taskDate) return false;
       const matchesWeek = isWithinInclusive(taskDate, weekStart, weekEnd);
@@ -195,18 +245,7 @@ export default function CalendarPage() {
     });
   }, [tasks, userFilter, weekEnd, weekStart]);
 
-  const taskListItems = useMemo(() => {
-    const query = sidebarSearch.trim().toLowerCase();
-    return tasks.filter((task) => {
-      const status = normalizeStatus(task.status);
-      if (status === "completed") return false;
-      if (userFilter !== "All Users" && task.assigned_to_name !== userFilter) {
-        return false;
-      }
-      if (!query) return true;
-      return task.title.toLowerCase().includes(query);
-    });
-  }, [sidebarSearch, tasks, userFilter]);
+  const monthMatrix = useMemo(() => getMonthMatrix(currentDay), [currentDay]);
 
   function openExistingTask(task: Task) {
     setSelectedTask(task);
@@ -320,23 +359,182 @@ export default function CalendarPage() {
     }
   }
 
+  function handleTaskDragStart(
+    event: DragEvent<HTMLElement>,
+    payload: DragPayload,
+  ) {
+    event.dataTransfer.setData("application/json", JSON.stringify(payload));
+    event.dataTransfer.effectAllowed = "move";
+    setDropTargetKey(null);
+  }
+
+  function handleDragOver(
+    event: DragEvent<HTMLElement>,
+    slotKey: string,
+  ) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    if (dropTargetKey !== slotKey) {
+      setDropTargetKey(slotKey);
+    }
+  }
+
+  function handleDragLeave(slotKey: string) {
+    if (dropTargetKey === slotKey) {
+      setDropTargetKey(null);
+    }
+  }
+
+  async function handleDropToSlot(
+    event: DragEvent<HTMLElement>,
+    day: Date,
+    hour: number,
+  ) {
+    event.preventDefault();
+    setDropTargetKey(null);
+
+    const rawPayload = event.dataTransfer.getData("application/json");
+    if (!rawPayload) return;
+
+    const payload = parseDragPayload(rawPayload);
+    if (!payload) return;
+
+    const task = tasks.find((candidate) => candidate.id === payload.taskId);
+    if (!task) return;
+
+    const originalStart = toTaskDateTime(task.start_date, task.start_time);
+    const originalEnd = toTaskDateTime(task.start_date, task.end_time);
+
+    const startDate = toDateKey(day);
+    const startTime = `${String(hour).padStart(2, "0")}:00`;
+    const durationMinutes = getTaskDurationMinutes(task);
+    const projectedEnd = addMinutes(
+      combineDateAndTime(startDate, startTime),
+      durationMinutes,
+    );
+
+    let nextStatus = task.status;
+    if (originalStart && originalEnd && acceptedStatuses.has("rescheduled")) {
+      if (
+        originalStart.getTime() !==
+          combineDateAndTime(startDate, startTime).getTime() ||
+        originalEnd.getTime() !== projectedEnd.getTime()
+      ) {
+        nextStatus = "rescheduled";
+      }
+    }
+    // TODO: normalize status transitions globally once task status enum is formalized.
+
+    try {
+      const response = await fetch(`/api/tasks/${task.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          start_date: startDate,
+          start_time: startTime,
+          end_time: toTimeKey(projectedEnd),
+          status: nextStatus,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to save projection (${response.status})`);
+      }
+
+      const updatedTask = (await response.json()) as Task;
+      setTasks((current) =>
+        current.map((candidate) =>
+          candidate.id === updatedTask.id ? updatedTask : candidate,
+        ),
+      );
+      setStatusMessage("Projection updated.");
+      setError(null);
+      setIsMobileSidebarOpen(false);
+    } catch (dropError) {
+      setError(
+        dropError instanceof Error
+          ? dropError.message
+          : "Failed to update projected time",
+      );
+    }
+  }
+
+  function renderTaskBoard() {
+    if (loading) {
+      return <LoadingPanel label="Loading projection calendar..." />;
+    }
+
+    if (error) {
+      return <ErrorPanel message={error} />;
+    }
+
+    if (viewMode === "Month") {
+      return (
+        <MonthProjectionView
+          monthMatrix={monthMatrix}
+          tasks={calendarTasks}
+          onOpenTask={openExistingTask}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDropToDay={handleDropToSlot}
+          onTaskDragStart={handleTaskDragStart}
+          dropTargetKey={dropTargetKey}
+        />
+      );
+    }
+
+    return (
+      <>
+        <div className="hidden flex-1 overflow-auto lg:block">
+          <DesktopWeekGrid
+            visibleDays={visibleDays}
+            calendarTasks={calendarTasks}
+            onOpenTask={openExistingTask}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDropToSlot={handleDropToSlot}
+            onTaskDragStart={handleTaskDragStart}
+            dropTargetKey={dropTargetKey}
+          />
+        </div>
+        <div className="flex-1 overflow-auto lg:hidden">
+          <MobileWeekGrid
+            visibleDays={visibleDays}
+            calendarTasks={calendarTasks}
+            onOpenTask={openExistingTask}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDropToSlot={handleDropToSlot}
+            onTaskDragStart={handleTaskDragStart}
+            dropTargetKey={dropTargetKey}
+          />
+        </div>
+      </>
+    );
+  }
+
   return (
-    <div className="flex h-full min-h-[calc(100dvh-8rem)] overflow-hidden rounded-xl border border-borderSubtle bg-bgDark/80 shadow-soft backdrop-blur-xl">
-      <aside className="flex w-64 shrink-0 flex-col border-r border-borderSubtle bg-surface/95">
+    <div className="flex min-h-[calc(100dvh-8rem)] flex-col overflow-hidden rounded-xl border border-borderSubtle bg-bgDark/80 shadow-soft backdrop-blur-xl lg:flex-row">
+      <aside
+        className={`border-b border-borderSubtle bg-surface/95 lg:flex lg:w-72 lg:shrink-0 lg:flex-col lg:border-b-0 lg:border-r ${isMobileSidebarOpen ? "block" : "hidden"}`}
+      >
         <div className="border-b border-borderSubtle p-5">
           <div className="flex items-center justify-between gap-3">
             <h2 className="text-base font-semibold text-textPrimary">
-              Task List
+              Unscheduled Tasks
             </h2>
             <span className="rounded-md border border-borderSubtle bg-bgDark px-2 py-0.5 text-xs font-medium text-textMuted">
-              {taskListItems.length}
+              {unscheduledTasks.length}
             </span>
           </div>
+          <p className="mt-2 text-xs text-textMuted">
+            Drag tasks into a day/time slot to create projected work blocks.
+          </p>
           <input
             type="search"
             value={sidebarSearch}
             onChange={(event) => setSidebarSearch(event.target.value)}
-            placeholder="Search tasks"
+            placeholder="Search unscheduled tasks"
             className="mt-4 w-full rounded-xl border border-borderSubtle bg-bgDark/80 px-3 py-2.5 text-sm text-textPrimary outline-none transition-all focus:border-accent focus:bg-surface focus:ring-4 focus:ring-accent/10"
           />
           <button
@@ -346,45 +544,50 @@ export default function CalendarPage() {
           >
             + New Task
           </button>
+          <button
+            type="button"
+            onClick={() => setIsMobileSidebarOpen(false)}
+            className="mt-2 w-full rounded-xl border border-borderSubtle bg-bgDark/80 px-3 py-2 text-sm font-semibold text-textPrimary lg:hidden"
+          >
+            Close Task List
+          </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto">
+        <div className="max-h-[45dvh] overflow-y-auto lg:max-h-none lg:flex-1">
           {loading ? <LoadingPanel label="Loading tasks..." /> : null}
-          {error ? <ErrorPanel message={error} /> : null}
-          {!loading && !error
-            ? taskListItems.map((task) => (
-                <button
-                  key={task.id}
-                  type="button"
-                  onClick={() => openExistingTask(task)}
-                  className="block w-full border-b border-borderSubtle p-4 text-left transition hover:bg-bgDark/80"
-                >
-                  <p className="text-sm font-medium text-textPrimary">
-                    {task.title}
-                  </p>
-                  <p className="mt-1 text-xs text-textMuted">
-                    {task.division || "Diversified"} -{" "}
-                    {task.assigned_to_name || "Unassigned"}
-                  </p>
-                  <div className="mt-2">
-                    <StatusBadge status={task.status} compact />
-                  </div>
-                </button>
-              ))
-            : null}
-          {!loading && !error && taskListItems.length === 0 ? (
+          {!loading && unscheduledTasks.length === 0 ? (
             <div className="p-4 text-sm text-textSecondary">
-              No open tasks match this view.
+              No unscheduled tasks. Everything with a projected start/end is
+              already on the board.
             </div>
           ) : null}
+          {!loading
+            ? unscheduledTasks.map((task) => (
+                <UnscheduledTaskCard
+                  key={task.id}
+                  task={task}
+                  onOpen={() => openExistingTask(task)}
+                  onDragStart={handleTaskDragStart}
+                />
+              ))
+            : null}
         </div>
       </aside>
 
       <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-white/45 backdrop-blur-2xl dark:bg-white/5">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/30 px-5 py-4 dark:border-white/10">
-          <h1 className="text-2xl font-semibold tracking-normal text-textPrimary">
-            <ShinyText>Projection Calendar</ShinyText>
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl font-semibold tracking-normal text-textPrimary">
+              <ShinyText>Projection Calendar</ShinyText>
+            </h1>
+            <button
+              type="button"
+              onClick={() => setIsMobileSidebarOpen((current) => !current)}
+              className="inline-flex rounded-xl border border-borderSubtle bg-surface/80 px-3 py-2 text-sm font-semibold text-textPrimary lg:hidden"
+            >
+              {isMobileSidebarOpen ? "Hide" : "Tasks"}
+            </button>
+          </div>
           <p className="text-sm font-medium text-textSecondary">
             {formatWeekHeader(weekDays)}
           </p>
@@ -436,77 +639,40 @@ export default function CalendarPage() {
                 </button>
               ))}
             </div>
+            {viewMode === "Day" ? (
+              <select
+                value={String(dayIndex)}
+                onChange={(event) => setDayIndex(Number(event.target.value))}
+                className="rounded-xl border border-borderSubtle bg-bgDark/80 px-3 py-2 text-sm text-textPrimary outline-none"
+              >
+                {weekDays.map((day, index) => (
+                  <option key={toDateKey(day)} value={index}>
+                    {DAY_NAMES[day.getDay()]} {formatShortDate(day)}
+                  </option>
+                ))}
+              </select>
+            ) : null}
           </div>
         </div>
 
-        <div className="flex-1 overflow-auto">
-          <div className="min-w-[980px]">
-            <div
-              className="sticky top-0 z-10 grid bg-surface"
-              style={{
-                gridTemplateColumns: `5rem repeat(${visibleDays.length}, minmax(10rem, 1fr))`,
-              }}
-            >
-              <div className="border-b border-r border-borderSubtle px-2 py-3 text-xs font-semibold uppercase tracking-wide text-textMuted">
-                Time
-              </div>
-              {visibleDays.map((day) => (
-                <div
-                  key={day.toISOString()}
-                  className="border-b border-r border-borderSubtle px-3 py-3 text-xs font-semibold uppercase tracking-wide text-textMuted"
-                >
-                  <span className="block">{formatDayName(day)}</span>
-                  <span className="block text-textPrimary">
-                    {formatShortDate(day)}
-                  </span>
-                </div>
-              ))}
-            </div>
-
-            <div>
-              {TIME_SLOTS.map((hour) => (
-                <div
-                  key={hour}
-                  className="grid min-h-16"
-                  style={{
-                    gridTemplateColumns: `5rem repeat(${visibleDays.length}, minmax(10rem, 1fr))`,
-                  }}
-                >
-                  <div className="min-h-16 border-b border-r border-borderSubtle px-2 pt-1 text-xs text-textMuted">
-                    {formatHourLabel(hour)}
-                  </div>
-                  {visibleDays.map((day) => {
-                    const slotTasks = calendarTasks.filter((task) =>
-                      doesTaskMatchSlot(task, day, hour),
-                    );
-
-                    return (
-                      <div
-                        key={`${day.toISOString()}-${hour}`}
-                        className="min-h-16 border-b border-r border-borderSubtle p-1 align-top"
-                      >
-                        {slotTasks.map((task) => (
-                          <TaskChip
-                            key={task.id}
-                            task={task}
-                            onClick={() => openExistingTask(task)}
-                          />
-                        ))}
-                      </div>
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
+        {statusMessage ? (
+          <div className="border-b border-emerald-500/30 bg-emerald-500/10 px-4 py-2 text-sm text-emerald-700 dark:text-emerald-300">
+            {statusMessage}
           </div>
-        </div>
+        ) : null}
+
+        {renderTaskBoard()}
 
         <div className="flex flex-wrap gap-4 border-t border-borderSubtle px-4 py-2 text-xs text-textSecondary">
-          <LegendDot className="bg-emerald-500" label="Completed" />
-          <LegendDot className="bg-sky-500" label="In Progress" />
-          <LegendDot className="bg-red-500" label="Blocked" />
-          <LegendDot className="bg-amber-500" label="To-Do" />
-          <LegendDot className="bg-slate-500" label="Canceled" />
+          <LegendDot className="bg-red-500" label="Canceled" />
+          <LegendDot className="bg-sky-500" label="Rescheduled" />
+          <LegendDot className="bg-slate-500" label="Completed" />
+          <LegendDot className="bg-rose-500" label="Blocked/Urgent" />
+          <LegendDot className="bg-amber-500" label="Default" />
+          <span className="text-textMuted">
+            Block resize is temporarily disabled in-grid; adjust duration in
+            Task Editor.
+          </span>
         </div>
       </main>
 
@@ -528,6 +694,300 @@ export default function CalendarPage() {
   );
 }
 
+function DesktopWeekGrid({
+  visibleDays,
+  calendarTasks,
+  onOpenTask,
+  onDragOver,
+  onDragLeave,
+  onDropToSlot,
+  onTaskDragStart,
+  dropTargetKey,
+}: {
+  visibleDays: Date[];
+  calendarTasks: Task[];
+  onOpenTask: (task: Task) => void;
+  onDragOver: (event: DragEvent<HTMLElement>, slotKey: string) => void;
+  onDragLeave: (slotKey: string) => void;
+  onDropToSlot: (
+    event: DragEvent<HTMLElement>,
+    day: Date,
+    hour: number,
+  ) => Promise<void>;
+  onTaskDragStart: (
+    event: DragEvent<HTMLElement>,
+    payload: DragPayload,
+  ) => void;
+  dropTargetKey: string | null;
+}) {
+  return (
+    <div className="min-w-[1080px]">
+      <div
+        className="sticky top-0 z-10 grid bg-surface"
+        style={{
+          gridTemplateColumns: `5rem repeat(${visibleDays.length}, minmax(10rem, 1fr))`,
+        }}
+      >
+        <div className="border-b border-r border-borderSubtle px-2 py-3 text-xs font-semibold uppercase tracking-wide text-textMuted">
+          Time
+        </div>
+        {visibleDays.map((day) => (
+          <div
+            key={day.toISOString()}
+            className="border-b border-r border-borderSubtle px-3 py-3 text-xs font-semibold uppercase tracking-wide text-textMuted"
+          >
+            <span className="block">{formatDayName(day)}</span>
+            <span className="block text-textPrimary">
+              {formatShortDate(day)}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div>
+        {TIME_SLOTS.map((hour) => (
+          <div
+            key={hour}
+            className="grid min-h-16"
+            style={{
+              gridTemplateColumns: `5rem repeat(${visibleDays.length}, minmax(10rem, 1fr))`,
+            }}
+          >
+            <div className="min-h-16 border-b border-r border-borderSubtle px-2 pt-1 text-xs text-textMuted">
+              {formatHourLabel(hour)}
+            </div>
+            {visibleDays.map((day) => {
+              const slotTasks = calendarTasks.filter((task) =>
+                doesTaskMatchSlot(task, day, hour),
+              );
+              const slotKey = `${toDateKey(day)}-${hour}`;
+
+              return (
+                <div
+                  key={`${day.toISOString()}-${hour}`}
+                  onDragOver={(event) => onDragOver(event, slotKey)}
+                  onDragLeave={() => onDragLeave(slotKey)}
+                  onDrop={(event) => void onDropToSlot(event, day, hour)}
+                  className={`min-h-16 border-b border-r border-borderSubtle p-1 align-top transition ${
+                    dropTargetKey === slotKey ? "bg-accent/10" : ""
+                  }`}
+                >
+                  {slotTasks.map((task) => (
+                    <TaskChip
+                      key={task.id}
+                      task={task}
+                      onClick={() => onOpenTask(task)}
+                      onDragStart={onTaskDragStart}
+                    />
+                  ))}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MobileWeekGrid({
+  visibleDays,
+  calendarTasks,
+  onOpenTask,
+  onDragOver,
+  onDragLeave,
+  onDropToSlot,
+  onTaskDragStart,
+  dropTargetKey,
+}: {
+  visibleDays: Date[];
+  calendarTasks: Task[];
+  onOpenTask: (task: Task) => void;
+  onDragOver: (event: DragEvent<HTMLElement>, slotKey: string) => void;
+  onDragLeave: (slotKey: string) => void;
+  onDropToSlot: (
+    event: DragEvent<HTMLElement>,
+    day: Date,
+    hour: number,
+  ) => Promise<void>;
+  onTaskDragStart: (
+    event: DragEvent<HTMLElement>,
+    payload: DragPayload,
+  ) => void;
+  dropTargetKey: string | null;
+}) {
+  return (
+    <div className="space-y-4 p-3">
+      {visibleDays.map((day) => (
+        <section
+          key={toDateKey(day)}
+          className="rounded-xl border border-borderSubtle bg-surface/80 p-3"
+        >
+          <h3 className="text-sm font-semibold text-textPrimary">
+            {formatDayName(day)} - {formatShortDate(day)}
+          </h3>
+          <div className="mt-2 space-y-2">
+            {TIME_SLOTS.map((hour) => {
+              const slotKey = `${toDateKey(day)}-${hour}`;
+              const slotTasks = calendarTasks.filter((task) =>
+                doesTaskMatchSlot(task, day, hour),
+              );
+              return (
+                <div
+                  key={slotKey}
+                  onDragOver={(event) => onDragOver(event, slotKey)}
+                  onDragLeave={() => onDragLeave(slotKey)}
+                  onDrop={(event) => void onDropToSlot(event, day, hour)}
+                  className={`rounded-lg border border-borderSubtle p-2 transition ${
+                    dropTargetKey === slotKey ? "bg-accent/10" : "bg-bgDark/30"
+                  }`}
+                >
+                  <p className="text-[11px] text-textMuted">
+                    {formatHourLabel(hour)}
+                  </p>
+                  <div className="mt-1 space-y-1">
+                    {slotTasks.map((task) => (
+                      <TaskChip
+                        key={task.id}
+                        task={task}
+                        onClick={() => onOpenTask(task)}
+                        onDragStart={onTaskDragStart}
+                      />
+                    ))}
+                    {slotTasks.length === 0 ? (
+                      <p className="text-[11px] text-textMuted">
+                        Drop projected task here
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      ))}
+    </div>
+  );
+}
+
+function MonthProjectionView({
+  monthMatrix,
+  tasks,
+  onOpenTask,
+  onDragOver,
+  onDragLeave,
+  onDropToDay,
+  onTaskDragStart,
+  dropTargetKey,
+}: {
+  monthMatrix: Date[];
+  tasks: Task[];
+  onOpenTask: (task: Task) => void;
+  onDragOver: (event: DragEvent<HTMLElement>, slotKey: string) => void;
+  onDragLeave: (slotKey: string) => void;
+  onDropToDay: (
+    event: DragEvent<HTMLElement>,
+    day: Date,
+    hour: number,
+  ) => Promise<void>;
+  onTaskDragStart: (
+    event: DragEvent<HTMLElement>,
+    payload: DragPayload,
+  ) => void;
+  dropTargetKey: string | null;
+}) {
+  return (
+    <div className="grid grid-cols-1 gap-2 p-3 sm:grid-cols-2 xl:grid-cols-7">
+      {monthMatrix.map((day) => {
+        const dayKey = toDateKey(day);
+        const dayTasks = tasks.filter((task) => {
+          const taskDate = getTaskDate(task);
+          return taskDate ? toDateKey(taskDate) === dayKey : false;
+        });
+        const slotKey = `${dayKey}-9`;
+        return (
+          <article
+            key={dayKey}
+            onDragOver={(event) => onDragOver(event, slotKey)}
+            onDragLeave={() => onDragLeave(slotKey)}
+            onDrop={(event) => void onDropToDay(event, day, 9)}
+            className={`min-h-32 rounded-xl border border-borderSubtle bg-surface/80 p-3 transition ${
+              dropTargetKey === slotKey ? "bg-accent/10" : ""
+            }`}
+          >
+            <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">
+              {DAY_NAMES[day.getDay()]} {formatShortDate(day)}
+            </p>
+            <div className="mt-2 space-y-1">
+              {dayTasks.slice(0, 4).map((task) => (
+                <TaskChip
+                  key={task.id}
+                  task={task}
+                  onClick={() => onOpenTask(task)}
+                  onDragStart={onTaskDragStart}
+                />
+              ))}
+              {dayTasks.length > 4 ? (
+                <p className="text-xs text-textMuted">
+                  +{dayTasks.length - 4} more
+                </p>
+              ) : null}
+              {dayTasks.length === 0 ? (
+                <p className="text-xs text-textMuted">
+                  Drop to schedule at 9:00 AM
+                </p>
+              ) : null}
+            </div>
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+
+function UnscheduledTaskCard({
+  task,
+  onOpen,
+  onDragStart,
+}: {
+  task: Task;
+  onOpen: () => void;
+  onDragStart: (
+    event: DragEvent<HTMLElement>,
+    payload: DragPayload,
+  ) => void;
+}) {
+  return (
+    <article
+      draggable
+      onDragStart={(event) =>
+        onDragStart(event, { taskId: task.id, origin: "unscheduled" })
+      }
+      className="cursor-grab border-b border-borderSubtle p-4 active:cursor-grabbing"
+    >
+      <button type="button" onClick={onOpen} className="block w-full text-left">
+        <p className="text-sm font-medium text-textPrimary">{task.title}</p>
+        <p className="mt-1 text-xs text-textMuted">
+          {task.assigned_to_name || "Unassigned"}
+          {task.division ? ` - ${task.division}` : ""}
+        </p>
+        <div className="mt-2 flex flex-wrap items-center gap-2">
+          <span className="text-[11px] text-textMuted">
+            Due: {formatDate(task.due_date)}
+          </span>
+          <PriorityPill priority={task.priority} />
+          <StatusBadge status={task.status} compact />
+          {task.estimated_hours || task.estimated_minutes ? (
+            <span className="rounded border border-borderSubtle px-1.5 py-0.5 text-[10px] text-textSecondary">
+              Est {formatEstimate(task.estimated_hours, task.estimated_minutes)}
+            </span>
+          ) : null}
+        </div>
+      </button>
+    </article>
+  );
+}
+
 function TaskEditorModal({
   editorState,
   setEditorState,
@@ -541,7 +1001,7 @@ function TaskEditorModal({
   onLockToggle,
 }: {
   editorState: EditorState;
-  setEditorState: React.Dispatch<React.SetStateAction<EditorState>>;
+  setEditorState: Dispatch<SetStateAction<EditorState>>;
   employees: Employee[];
   isNewTask: boolean;
   saving: boolean;
@@ -913,7 +1373,7 @@ function Field({
 }: {
   label: string;
   className?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <label className={className}>
@@ -950,16 +1410,35 @@ function CheckboxField({
   );
 }
 
-function TaskChip({ task, onClick }: { task: Task; onClick: () => void }) {
+function TaskChip({
+  task,
+  onClick,
+  onDragStart,
+}: {
+  task: Task;
+  onClick: () => void;
+  onDragStart: (
+    event: DragEvent<HTMLElement>,
+    payload: DragPayload,
+  ) => void;
+}) {
   return (
     <button
       type="button"
+      draggable
+      onDragStart={(event) =>
+        onDragStart(event, { taskId: task.id, origin: "scheduled" })
+      }
       onClick={onClick}
-      className={`mb-1 w-full cursor-pointer truncate rounded border px-1.5 py-1 text-left text-xs font-medium ${getChipClassName(task.status)}`}
+      className={`mb-1 w-full cursor-grab rounded border px-1.5 py-1 text-left text-xs font-medium active:cursor-grabbing ${getCalendarBlockClass(task)}`}
+      title="Drag to move projection"
     >
       <span className="block truncate">{task.title}</span>
       <span className="block truncate text-[10px] opacity-80">
         {task.assigned_to_name || "Unassigned"}
+      </span>
+      <span className="mt-0.5 inline-flex items-center rounded border border-current/30 px-1 py-0 text-[9px] opacity-75">
+        Resize in editor
       </span>
     </button>
   );
@@ -980,6 +1459,29 @@ function StatusBadge({
       } ${getBadgeClassName(status)}`}
     >
       {label}
+    </span>
+  );
+}
+
+function PriorityPill({ priority }: { priority: string | null }) {
+  const normalized = (priority || "medium").toLowerCase();
+  if (normalized === "urgent") {
+    return (
+      <span className="rounded border border-rose-500/40 bg-rose-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700 dark:text-rose-300">
+        Urgent
+      </span>
+    );
+  }
+  if (normalized === "high") {
+    return (
+      <span className="rounded border border-orange-500/40 bg-orange-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-orange-700 dark:text-orange-300">
+        High
+      </span>
+    );
+  }
+  return (
+    <span className="rounded border border-slate-500/30 bg-slate-500/10 px-1.5 py-0.5 text-[10px] font-semibold text-slate-700 dark:text-slate-300">
+      {normalized === "low" ? "Low" : "Normal"}
     </span>
   );
 }
@@ -1017,9 +1519,20 @@ function getWeekDays(offset: number): Date[] {
   monday.setHours(0, 0, 0, 0);
   monday.setDate(today.getDate() + distanceToMonday + offset * 7);
 
-  return Array.from({ length: 5 }, (_, index) => {
+  return Array.from({ length: 7 }, (_, index) => {
     const date = new Date(monday);
     date.setDate(monday.getDate() + index);
+    return date;
+  });
+}
+
+function getMonthMatrix(anchorDate: Date) {
+  const first = new Date(anchorDate.getFullYear(), anchorDate.getMonth(), 1);
+  const start = new Date(first);
+  start.setDate(first.getDate() - first.getDay());
+  return Array.from({ length: 42 }, (_, index) => {
+    const date = new Date(start);
+    date.setDate(start.getDate() + index);
     return date;
   });
 }
@@ -1050,10 +1563,29 @@ function formatShortDate(date: Date) {
   }).format(date);
 }
 
+function formatDate(value: string | null) {
+  if (!value) return "No due date";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+  }).format(date);
+}
+
 function formatHourLabel(hour: number) {
   const suffix = hour >= 12 ? "PM" : "AM";
   const displayHour = hour > 12 ? hour - 12 : hour;
   return `${displayHour}:00 ${suffix}`;
+}
+
+function formatEstimate(hours: number | null, minutes: number | null) {
+  const safeHours = hours ?? 0;
+  const safeMinutes = minutes ?? 0;
+  if (safeHours && safeMinutes) return `${safeHours}h ${safeMinutes}m`;
+  if (safeHours) return `${safeHours}h`;
+  if (safeMinutes) return `${safeMinutes}m`;
+  return "0h";
 }
 
 function doesTaskMatchSlot(task: Task, day: Date, hour: number) {
@@ -1067,6 +1599,10 @@ function getTaskDate(task: Task) {
   return parseDateOnly(task.start_date || task.due_date);
 }
 
+function hasProjectedWindow(task: Task) {
+  return Boolean(task.start_date && task.start_time && task.end_time);
+}
+
 function parseDateOnly(value: string | null | undefined) {
   if (!value) return null;
   const [year, month, day] = value.slice(0, 10).split("-").map(Number);
@@ -1076,6 +1612,10 @@ function parseDateOnly(value: string | null | undefined) {
 
 function toDateKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function toTimeKey(date: Date) {
+  return `${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
 }
 
 function isWithinInclusive(date: Date, start: Date, end: Date) {
@@ -1089,6 +1629,53 @@ function parseStartHour(value: string | null) {
   return Number.isInteger(hour) ? hour : 9;
 }
 
+function toTaskDateTime(dateValue: string | null, timeValue: string | null) {
+  if (!dateValue || !timeValue) return null;
+  const combined = new Date(`${dateValue}T${timeValue}:00`);
+  return Number.isNaN(combined.getTime()) ? null : combined;
+}
+
+function combineDateAndTime(dateKey: string, time: string) {
+  return new Date(`${dateKey}T${time}:00`);
+}
+
+function addMinutes(date: Date, minutes: number) {
+  const next = new Date(date);
+  next.setMinutes(next.getMinutes() + minutes);
+  return next;
+}
+
+function getTaskDurationMinutes(task: Task) {
+  const explicitMinutes =
+    (task.estimated_hours || 0) * 60 + (task.estimated_minutes || 0);
+  if (explicitMinutes > 0) return explicitMinutes;
+
+  const start = toTaskDateTime(task.start_date, task.start_time);
+  const end = toTaskDateTime(task.start_date, task.end_time);
+  if (start && end) {
+    const diff = Math.max(
+      15,
+      Math.round((end.getTime() - start.getTime()) / 60000),
+    );
+    return diff;
+  }
+
+  return SLOT_STEP_MINUTES;
+}
+
+function parseDragPayload(value: string): DragPayload | null {
+  try {
+    const parsed = JSON.parse(value) as DragPayload;
+    if (!parsed || typeof parsed.taskId !== "number") return null;
+    if (parsed.origin !== "scheduled" && parsed.origin !== "unscheduled") {
+      return null;
+    }
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
 function normalizeStatus(status: string | null) {
   const normalized = (status || "todo").toLowerCase();
   if (normalized === "done" || normalized === "complete") return "completed";
@@ -1096,36 +1683,46 @@ function normalizeStatus(status: string | null) {
   return normalized;
 }
 
-function getChipClassName(status: string | null) {
-  const normalized = normalizeStatus(status);
-  if (normalized === "completed") {
-    return "border-emerald-500/30 bg-emerald-500/20 text-emerald-700 dark:text-emerald-300";
-  }
-  if (normalized === "in_progress") {
-    return "border-sky-500/30 bg-sky-500/20 text-sky-700 dark:text-sky-300";
-  }
-  if (normalized === "blocked") {
-    return "border-red-500/30 bg-red-500/20 text-red-700 dark:text-red-300";
-  }
+function getCalendarBlockClass(task: Task) {
+  const normalized = normalizeStatus(task.status);
+  const priority = (task.priority || "").toLowerCase();
+
   if (normalized === "canceled") {
-    return "border-slate-500/30 bg-slate-500/20 text-slate-600 dark:text-slate-300";
+    return "border-red-500/40 bg-red-500/15 text-red-700 dark:text-red-300";
   }
-  return "border-amber-500/30 bg-amber-500/20 text-amber-700 dark:text-amber-300";
+  if (normalized === "rescheduled") {
+    return "border-sky-500/40 bg-sky-500/15 text-sky-700 dark:text-sky-300";
+  }
+  if (normalized === "completed") {
+    return "border-slate-500/40 bg-slate-500/20 text-slate-700 dark:text-slate-300";
+  }
+  if (
+    normalized === "blocked" ||
+    priority === "urgent" ||
+    priority === "high"
+  ) {
+    return "border-rose-500/40 bg-rose-500/15 text-rose-700 dark:text-rose-300";
+  }
+
+  return "border-amber-500/35 bg-amber-500/15 text-amber-800 dark:text-amber-300";
 }
 
 function getBadgeClassName(status: string | null) {
   const normalized = normalizeStatus(status);
   if (normalized === "completed") {
-    return "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300";
+    return "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300";
   }
-  if (normalized === "in_progress") {
+  if (normalized === "rescheduled") {
     return "border-sky-500/30 bg-sky-500/10 text-sky-600 dark:text-sky-300";
   }
   if (normalized === "blocked") {
-    return "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-300";
+    return "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-300";
   }
   if (normalized === "canceled") {
-    return "border-slate-500/30 bg-slate-500/10 text-slate-600 dark:text-slate-300";
+    return "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-300";
+  }
+  if (normalized === "in_progress") {
+    return "border-indigo-500/30 bg-indigo-500/10 text-indigo-600 dark:text-indigo-300";
   }
   return "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300";
 }
@@ -1134,6 +1731,7 @@ function getStatusLabel(status: string | null) {
   const normalized = normalizeStatus(status);
   if (normalized === "in_progress") return "In Progress";
   if (normalized === "completed") return "Completed";
+  if (normalized === "rescheduled") return "Rescheduled";
   if (normalized === "blocked") return "Blocked";
   if (normalized === "canceled") return "Canceled";
   return "To-Do";

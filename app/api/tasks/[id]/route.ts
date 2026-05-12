@@ -7,6 +7,8 @@ type RouteContext = {
   };
 };
 
+class InputValidationError extends Error {}
+
 function parseId(id: string) {
   const parsed = Number(id);
   if (!Number.isInteger(parsed) || parsed <= 0) {
@@ -86,7 +88,8 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 
     acceptedFields.forEach((field) => {
       if (!(field in body)) return;
-      values.push(normalizePatchValue(field, body[field]));
+      const normalized = normalizePatchValue(field, body[field]);
+      values.push(normalized);
       updates.push(`${field} = $${values.length}`);
     });
 
@@ -114,6 +117,10 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     const task = await getTaskById(taskId);
     return NextResponse.json(task ?? updatedRows[0]);
   } catch (error) {
+    if (error instanceof InputValidationError) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
     const message =
       error instanceof Error ? error.message : "Failed to update task";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -128,11 +135,50 @@ function normalizePatchValue(field: string, value: unknown) {
   ) {
     if (value === "" || value === null || value === undefined) return null;
     const parsed = Number(value);
-    return Number.isInteger(parsed) ? parsed : null;
+    if (!Number.isInteger(parsed)) {
+      throw new InputValidationError(`${field} must be an integer`);
+    }
+    return parsed;
   }
 
   if (field === "all_day" || field === "is_private" || field === "locked") {
     return Boolean(value);
+  }
+
+  if (field === "start_date" || field === "due_date") {
+    if (value === "" || value === null || value === undefined) return null;
+    if (
+      typeof value !== "string" ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(value.trim())
+    ) {
+      throw new InputValidationError(`${field} must be in YYYY-MM-DD format`);
+    }
+    return value.trim();
+  }
+
+  if (field === "start_time" || field === "end_time") {
+    if (value === "" || value === null || value === undefined) return null;
+    if (
+      typeof value !== "string" ||
+      !/^([01]\d|2[0-3]):([0-5]\d)$/.test(value.trim())
+    ) {
+      throw new InputValidationError(`${field} must be in HH:MM format`);
+    }
+    return value.trim();
+  }
+
+  if (field === "completed_at") {
+    if (value === "" || value === null || value === undefined) return null;
+    if (typeof value !== "string") {
+      throw new InputValidationError(
+        "completed_at must be an ISO datetime string",
+      );
+    }
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      throw new InputValidationError("completed_at must be a valid datetime");
+    }
+    return parsed.toISOString();
   }
 
   if (typeof value === "string") {

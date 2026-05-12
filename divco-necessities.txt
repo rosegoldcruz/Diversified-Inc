@@ -1,0 +1,580 @@
+App shell / navigation — The main frame of the app: sidebar, top bar, page layout, routing, and consistent navigation across every module.
+Modern dashboard — The home screen that gives leadership and staff a quick snapshot of what matters today.
+Mobile-responsive layout — Every screen adjusts cleanly on phones so employees can use the system away from a desk.
+Desktop layout — Full-width working layout for office/admin users who live on larger screens.
+Tablet layout — Middle-size layout for iPads or field-style devices without breaking the UI.
+Dark/light mode — Toggle between dark and light appearance depending on user preference.
+Company/division selector — Dropdown or filter to switch between Diversified, Overhead Door, SportCourt, Sneaky Bird, etc.
+User profile menu — User account dropdown for profile, settings, logout, and role info.
+Global search — One search bar to find tasks, employees, requests, forms, SOPs, files, and records.
+Quick action button — Fast button for common actions like new task, new request, new form, or clock in.
+Notification center — Central place where users see alerts, approvals, overdue items, and assignment updates.
+Activity feed — Live stream of what recently happened inside the system.
+Recent activity log — Historical record of recent user/system actions for accountability.
+System status indicators — Small indicators showing if AI, database, automations, or integrations are online.
+Employee directory — List of all employees with search, filters, role, department, and contact info.
+Employee detail page — Full profile page for one employee with work, schedule, files, and history.
+Employee role — The person’s position or function inside the company.
+Employee department — The team or department the employee belongs to.
+Employee company/division — Which business or company branch the employee belongs to.
+Employee status — Active, inactive, on leave, contractor, part-time, etc.
+Employee phone/email — Contact details stored for quick internal access.
+Employee manager — Who the employee reports to.
+Employee assigned tasks — Tasks currently assigned to that employee.
+Employee current workload — Snapshot of how much work is on that person’s plate.
+Employee schedule view — Calendar view of that employee’s planned work and meetings.
+Employee timeclock history — Clock-in/clock-out records for that employee.
+Employee timesheet history — Submitted/approved/rejected timesheets for that employee.
+Employee documents/files — Files tied to that employee, like HR docs, forms, or attachments.
+Employee permissions — What the employee is allowed to see or edit.
+Employee notes — Internal notes about the employee or their work context.
+User authentication — Secure login system so only approved users can access the app.
+Login page — Screen where users enter credentials.
+Logout — Ends the user session safely.
+Session handling — Keeps users logged in securely and expires sessions when needed.
+Role-based access — Users see different modules/actions based on their role.
+Executive role — Highest-level visibility across company, reports, and all modules.
+Admin role — Can manage employees, settings, forms, statuses, roles, and system configuration.
+Manager role — Can oversee employees, tasks, approvals, reports, and team workload.
+Employee role — Basic daily-user access to assigned tasks, forms, timeclock, and files.
+Marketing/support role — Access to creative requests, campaign board, assets, and support tasks.
+Company-based access — Users only see records tied to the companies/divisions they should access.
+Department-based access — Users only see records tied to their department when needed.
+Page-level permissions — Controls which pages each role can open.
+Action-level permissions — Controls who can create, edit, delete, approve, or assign.
+Admin-only controls — Dangerous or system-level controls only visible to admins.
+Admin dashboard — Control center for managing the app’s users, settings, options, and system behavior.
+Add employee — Create a new employee/user record.
+Edit employee — Update employee info, role, department, contact, or status.
+Disable employee — Remove access without deleting historical records.
+Manage roles — Create/edit roles like Admin, Manager, Employee, Executive.
+Manage departments — Add/edit departments used across employees, tasks, and reports.
+Manage companies/divisions — Manage business units like Diversified, Overhead Door, SportCourt, Sneaky Bird.
+Manage task categories — Define categories used for sorting and reporting tasks.
+Manage request categories — Define internal request types.
+Manage form categories — Define categories for forms and submissions.
+Manage inventory categories — Define stock/material/equipment categories.
+Manage calendar colors — Configure the color meaning for status, priority, employee, or company.
+Manage statuses — Control available statuses across tasks, requests, work orders, etc.
+Manage priorities — Configure priority levels like low, normal, high, urgent.
+Manage system settings — App-wide settings and defaults.
+Manage notification settings — Control when users get alerts or summaries.
+Manage AI settings — Configure AI assistant behavior, prompts, and permissions.
+Manage integrations — Show/configure connection points like n8n, NocoDB, AI, Outlook, etc.
+View audit logs — See who changed what and when.
+Task list — Main list of internal work items.
+Create task — Add a new task into the system.
+Edit task — Modify task details after creation.
+Delete/archive task — Remove a task from active work while keeping history if needed.
+Assign task — Give a task to a specific person.
+Reassign task — Move a task from one person to another.
+Task owner — Primary person responsible for task completion.
+Task watchers — People who are notified or kept in the loop.
+Task title — Short task name.
+Task description — Longer explanation of what needs to be done.
+Task notes — Internal notes attached to the task.
+Task comments — Conversation thread about the task.
+Task priority — Importance level.
+Task status — Current state of the task.
+Task category — Type of task.
+Task company/division — Business unit the task belongs to.
+Task department — Department responsible for the task.
+Task due date — Date the task should be completed.
+Task start time — Planned start time.
+Task end time — Planned finish time.
+Task estimated hours — Expected time required.
+Task actual hours — Time actually spent.
+Task all-day option — Marks task as full-day instead of timed.
+Task repeat schedule — Recurring task pattern.
+Task attachments — Files/photos/docs tied to the task.
+Task activity history — Log of updates, assignments, status changes, and comments.
+Task completion timestamp — Exact time the task was completed.
+Completed by user — Person who marked the task complete.
+Mark task todo — Set task as not started.
+Mark task in progress — Set task as actively being worked.
+Mark task waiting — Set task as paused because it depends on someone/something.
+Mark task blocked — Set task as stuck and needing attention.
+Mark task completed — Set task as finished.
+Mark task canceled — Set task as no longer needed.
+Mark task rescheduled — Set task as moved to another time/date.
+Carry unfinished task forward — Move incomplete work into the next day/week automatically or manually.
+Duplicate task — Copy a task to create a similar one quickly.
+Filter tasks by status — Show tasks by todo, blocked, completed, etc.
+Filter tasks by priority — Show only high, urgent, normal, etc.
+Filter tasks by employee — Show tasks assigned to one person.
+Filter tasks by company — Show tasks for one business/division.
+Filter tasks by department — Show tasks for one department.
+Filter tasks by due date — Show today, overdue, this week, etc.
+Search tasks — Text search through task titles/descriptions/notes.
+Mobile task cards — Phone-friendly task display.
+Desktop task table — Full table view for office users.
+Calendar page — Main planning and scheduling screen.
+Day view — Shows one day of planned work.
+Week view — Shows the team/person’s week layout.
+Month view — Broader calendar overview.
+Employee calendar view — Shows one employee’s schedule.
+Team calendar view — Shows multiple employees together.
+Leadership calendar view — Executive overview of key work and meetings.
+Company calendar view — Calendar filtered by company/division.
+Department calendar view — Calendar filtered by department.
+Projection calendar — Turns to-do items into planned time blocks.
+Unscheduled task sidebar — List of tasks not yet placed on the calendar.
+Drag task into calendar — Move a task from backlog into a scheduled time slot.
+Move calendar blocks — Drag scheduled items to another time/date.
+Resize calendar blocks — Change duration visually.
+Create calendar block — Add a new meeting/task/time block directly.
+Edit calendar block — Update block details.
+Delete calendar block — Remove a scheduled block.
+Meeting blocks — Calendar items for meetings.
+Task blocks — Calendar items tied to tasks.
+Personal/internal work blocks — Blocks for admin/personal/internal company work.
+Company work blocks — Blocks tied to a company/division.
+All-day blocks — Items not tied to a specific time.
+Recurring calendar blocks — Repeated meetings/tasks.
+Calendar notes — Notes attached to a scheduled block.
+Calendar attachments — Files attached to a calendar item.
+Calendar color legend — Explains what each calendar color means.
+Color by status — Calendar color changes based on todo/completed/canceled/etc.
+Color by priority — Calendar color changes based on importance.
+Color by employee — Calendar color changes by person.
+Color by company — Calendar color changes by business/division.
+Color by task type — Calendar color changes by task category.
+Red canceled status — Canceled blocks display red.
+Blue rescheduled status — Rescheduled blocks display blue.
+Gray completed status — Completed blocks display gray.
+Planned vs completed indicator — Shows whether scheduled work was actually finished.
+Calendar filters — Filter calendar by person, status, company, department, priority.
+Calendar mobile view — Phone-friendly calendar/list hybrid.
+Work orders list — List of internal work orders.
+Create work order — Add a new work order.
+Edit work order — Modify work order details.
+Work order detail page — Full page for one work order.
+Assign work order — Give work order responsibility to a person.
+Reassign work order — Move responsibility to someone else.
+Work order status — Current state of the work order.
+Work order priority — Importance/urgency.
+Work order category — Type of work order.
+Work order company/division — Which business it belongs to.
+Work order due date — When it should be completed.
+Work order notes — Internal notes.
+Work order comments — Discussion thread.
+Work order attachments — Photos/files/docs tied to work order.
+Vehicle work order type — Work order for company vehicle needs.
+Maintenance work order type — Work order for repair/maintenance.
+Internal work order type — General internal operational work order.
+Work order completion tracking — Records when and by whom it was completed.
+Work order reporting — Reports by status, priority, category, employee, company.
+Mobile work order cards — Phone-friendly work order display.
+Requests list — List of internal requests.
+Create request — Submit a new request.
+Request detail drawer/page — Full request details in drawer or page.
+Internal request form — Form used to submit internal needs.
+Request ID auto-generation — Automatically creates IDs like REQ-2026-001.
+Request category — Type of request.
+Request priority — Importance/urgency.
+Request company/division — Business unit tied to request.
+Request department — Department tied to request.
+Request owner — Person responsible for request.
+Request assignee — Person currently assigned.
+Request due date — Date request needs action.
+Request status — Current stage of request.
+Request notes — Notes attached to request.
+Request comments — Discussion thread.
+Request attachments — Files attached to request.
+Submitted status — Request has been submitted.
+Under review status — Someone is reviewing it.
+Approved status — Request has been approved.
+Denied status — Request has been rejected.
+Completed status — Request has been handled.
+Request routing — Sends request to correct person/department.
+Request approval workflow — Allows approval/denial before work happens.
+Request escalation — Raises attention when request is overdue/stuck.
+Overdue request alerts — Notifications for late requests.
+Request reporting — Stats around volume, status, completion time.
+Mobile request cards — Phone-friendly request display.
+Forms center — Central hub for all forms.
+Dynamic form builder — Admin can create/edit forms without hardcoding each one.
+Form templates — Pre-built forms for common needs.
+Submit form — User fills and submits a form.
+Form submission list — List of submitted forms.
+Form submission detail — Full record of one submission.
+Form submission status — Submitted, reviewing, approved, denied, completed.
+Form category — Type of form.
+Form company/division — Business unit tied to submission.
+Form routing — Sends submission to correct person/team.
+Form approval — Approve/deny form submissions.
+Form assignment — Assign a form submission for handling.
+Form comments — Discussion attached to submission.
+Form attachments — Upload files/photos with form.
+Form history — Tracks status changes and actions.
+Vehicle work order form — Form for vehicle repair/maintenance needs.
+Internal request form — Generic internal request form.
+Maintenance request form — Request repairs or maintenance.
+Inventory request form — Request materials/equipment/stock.
+Equipment request form — Request tools/equipment.
+Time-off request form — Employee PTO/time-off request.
+HR/admin form — Administrative or HR-related form.
+Purchase/material request form — Request purchases or materials.
+General request form — Catch-all form for misc internal needs.
+Marketing/creative request form — Request flyers, graphics, social posts, promos.
+Form-to-request conversion — Turns a form submission into an internal request.
+Form-to-work-order conversion — Turns a form submission into a work order.
+Form-to-tracking-record conversion — Turns submission into a tracked record/table row.
+Form reporting — Reports on form volume, status, categories, completion.
+Inventory list — Main stock/equipment/material list.
+Inventory detail page — Full page for one inventory item.
+Create inventory item — Add new item.
+Edit inventory item — Update item details.
+Update stock level — Change quantity on hand.
+Inventory categories — Sort items by category.
+Inventory company/division — Which company owns/uses it.
+Inventory location — Where the item is stored.
+Stock quantity — Current amount available.
+Minimum stock threshold — Low-stock trigger number.
+Low stock status — Item is below minimum threshold.
+Out of stock status — Item quantity is zero.
+Reorder needed status — Item needs replenishment.
+Assigned asset/equipment — Item assigned to person/vehicle/location.
+Vehicle inventory — Items tied to vehicles.
+Parts tracking — Track parts used internally.
+Materials tracking — Track materials/consumables.
+Equipment tracking — Track tools/assets/equipment.
+Inventory request — Request more stock/equipment.
+Inventory usage history — Log of stock changes and usage.
+Inventory notes — Notes on item.
+Inventory attachments — Receipts/photos/manuals/etc.
+Reorder alerts — Notifications when stock is low.
+Inventory reports — Reports on low stock, usage, categories, value.
+Mobile inventory cards — Phone-friendly inventory display.
+SOP library — Central place for company procedures.
+SOP list — List of procedures.
+SOP cards — Card-style SOP display.
+SOP detail/read page — Full SOP reading view.
+Create SOP — Add new procedure.
+Edit SOP — Update procedure.
+Archive SOP — Hide old SOP while preserving history.
+SOP title — Name of procedure.
+SOP description — Summary of procedure.
+SOP category — SOP type.
+SOP department — Department tied to procedure.
+SOP company/division — Company tied to procedure.
+SOP version — Version number.
+SOP status — Current lifecycle state.
+Active SOP status — Approved/current SOP.
+Under review SOP status — SOP being revised/reviewed.
+Archived SOP status — Old/inactive SOP.
+SOP attachments — Files tied to SOP.
+SOP search — Search procedure library.
+SOP filters — Filter by category/department/company/status.
+SOP approval/review workflow — Review before publishing.
+SOP AI retrieval — AI can answer questions using SOP content.
+Timeclock page — Screen for clocking in/out and viewing time.
+Clock in — Starts work time.
+Clock out — Ends active work time.
+Active clock-in detection — Detects if a user is currently clocked in.
+Timeclock history — Past clock records.
+Employee timeclock view — Employee sees their own time entries.
+Manager timeclock view — Manager sees team time entries.
+Task-level timer — Tracks time on a specific task.
+Start task timer — Begins timing a task.
+Stop task timer — Ends task timer.
+Actual time tracking — Records real time spent.
+Projected vs actual time — Compares planned time to real time.
+Daily time summary — Total time for the day.
+Weekly time summary — Total time for the week.
+Timeclock notes — Notes on a time entry.
+Timeclock corrections — Edit/fix incorrect time entries.
+Manager review — Manager approves or checks time.
+Mobile clock in/out — Phone-friendly clock controls.
+Timesheets page — Weekly timesheet management screen.
+Weekly timesheet view — One week of employee hours.
+Employee timesheet rows — Each employee displayed as row/card.
+Monday hours — Hours for Monday.
+Tuesday hours — Hours for Tuesday.
+Wednesday hours — Hours for Wednesday.
+Thursday hours — Hours for Thursday.
+Friday hours — Hours for Friday.
+Saturday hours — Hours for Saturday.
+Sunday hours — Hours for Sunday.
+Total hours — Weekly total.
+Draft status — Timesheet not submitted yet.
+Submitted status — Waiting for review.
+Approved status — Accepted by manager/admin.
+Rejected status — Sent back for correction.
+Submit timesheet — Employee submits weekly hours.
+Approve timesheet — Manager approves.
+Reject timesheet — Manager rejects with reason.
+Timesheet comments — Notes/conversation on timesheet.
+Timesheet correction request — Request changes to hours.
+Auto-populate from timeclock — Fill timesheet based on clock entries.
+Timesheet export — Download/export timesheet data.
+Mobile timesheet cards — Phone-friendly timesheet display.
+Reports dashboard — Central reporting page.
+Workspace reports — Reports about internal operations.
+Task reports — Stats on task status, priority, completion, overdue.
+Request reports — Stats on internal requests.
+Form reports — Stats on form submissions.
+Work order reports — Stats on work orders.
+Inventory reports — Stats on stock, low inventory, usage.
+Employee reports — Workload/performance visibility by employee.
+Timeclock reports — Time clock data and summaries.
+Timesheet reports — Weekly hours and approval reports.
+SOP reports — SOP usage/status/review reports.
+Productivity reports — Overall output and completion trends.
+Workload reports — Who has too much/too little assigned.
+Overdue work report — All late tasks/requests/work orders.
+Completed work report — Completed items by person/timeframe.
+Planned vs actual report — Compare scheduled work to completed/actual time.
+Internal bottleneck report — Shows stuck work and repeated blockers.
+Weekly leadership report — Summary for owners/managers every week.
+Monthly leadership report — Bigger monthly rollup.
+Company/division reports — Reports filtered by business unit.
+Department reports — Reports filtered by department.
+Graphs/charts — Visual reporting with bars, lines, pies, cards.
+Export reports — Send report data out of system.
+Print reports — Printer-friendly report layout.
+Download CSV/PDF — Export data in spreadsheet/PDF form.
+Files page — Central file area.
+Upload files — Add files to system.
+Download files — Retrieve files.
+File list — List of files.
+File detail — Full info about one file.
+File preview — View image/pdf/document preview.
+File metadata — Size, type, uploaded by, date, category.
+File category — Sort by file type/purpose.
+File company/division — Business unit tied to file.
+File owner — Person responsible for file.
+File permissions — Who can view/download/edit.
+Attach file to task — Link file to task.
+Attach file to request — Link file to request.
+Attach file to form submission — Link file to submitted form.
+Attach file to work order — Link file to work order.
+Attach file to employee — Link file to employee.
+Attach file to SOP — Link file to procedure.
+Marketing asset files — Store flyers/graphics/promo assets.
+Archive files — Hide old files while preserving them.
+Search files — Find files quickly.
+Documents page — Central documents module.
+Document library — Organized document collection.
+Document detail page — Full record/view of one document.
+Upload document — Add document file.
+Generate document — Create doc from template/data.
+Document templates — Reusable doc templates.
+Employee documents — Employee-related docs.
+Internal documents — General company docs.
+Work order documents — Docs tied to work orders.
+Request documents — Docs tied to requests.
+SOP documents — Procedure docs.
+eSign scaffold — Early structure for electronic signatures.
+Signature request — Send/request a signature.
+Signed document storage — Store completed signed docs.
+Document status — Draft, sent, signed, approved, archived.
+Document approval — Review/approve documents.
+Creative / Marketing Materials Center — Internal area for creating, requesting, approving, and storing marketing assets.
+Creative request form — Form to request a flyer, graphic, social post, or promo asset.
+AI Creative Studio — Workspace where users generate marketing visuals with AI.
+AI image generator — Tool to create images from prompts.
+AI flyer generator — Tool to create flyer-style drafts.
+Social post generator — Generate social media graphics/copy drafts.
+Promo graphic generator — Generate sale/promo graphics.
+Door hanger generator — Generate door hanger concepts.
+Coupon graphic generator — Generate coupon/promotional offer graphics.
+Hiring flyer generator — Generate hiring/recruiting flyers.
+Restaurant promo generator — Generate Sneaky Bird/local restaurant promo assets.
+Garage door promo generator — Generate garage door service promo graphics.
+SportCourt promo generator — Generate SportCourt promotional graphics.
+Before/after graphic generator — Generate layouts for before/after visuals.
+Brand selector — Choose which company’s brand to use.
+Asset type selector — Choose flyer, post, coupon, ad image, etc.
+Upload logo/reference image — Add logos/photos/examples for AI or asset creation.
+Prompt field — Text box for describing desired asset.
+Generate draft — Create first AI draft.
+Save draft — Store draft in system.
+Mark needs review — Flag asset for review.
+Mark approved — Approve asset.
+Mark final — Mark as finished and ready to use.
+Download asset — Export asset for posting/printing.
+Marketing asset library — Storage for all finished/draft creative assets.
+Creative approval workflow — Review process before asset is used.
+Creative request statuses — Status system for creative work.
+Requested status — Creative request has been submitted.
+Drafting status — Asset is being created.
+Needs review status — Waiting for review/approval.
+Approved status — Approved for use.
+Published status — Asset has been used/published.
+Archived status — Old asset no longer active.
+Brand Kit Library — Central brand information for each company.
+Brand profile per company — One profile per brand/division.
+Company logo — Stored logo file.
+Company colors — Approved brand colors.
+Company fonts — Approved fonts or style notes.
+Company tagline — Official tagline/positioning line.
+Company phone number — Correct phone number for marketing materials.
+Company website — Correct website URL.
+Company address/location — Address/location details.
+Common offers — Common promos or offers.
+Approved wording — Language approved for use in assets.
+Brand notes — General brand rules.
+Asset style notes — Visual direction for assets.
+Simple Campaign Board — Lightweight internal board for tracking campaigns manually.
+Campaign list — List of all internal campaigns/promotions.
+Campaign detail — Full record of one campaign.
+Campaign name — Name/title of campaign.
+Campaign company/division — Business unit campaign belongs to.
+Campaign owner — Person responsible.
+Campaign status — Current campaign stage.
+Campaign start date — When campaign begins.
+Campaign end date — When campaign ends.
+Campaign notes — Internal notes.
+Campaign assets needed — Assets required for campaign.
+Campaign assets attached — Actual files/assets linked.
+Idea status — Campaign is just an idea.
+Planning status — Campaign is being planned.
+Assets needed status — Campaign waiting on creative assets.
+Ready status — Campaign assets/setup are ready.
+Live status — Campaign is currently active.
+Completed status — Campaign finished.
+Manual KPI entry — Manual performance numbers entered by team.
+Weekly KPI entry — Weekly reporting input.
+Company KPI entry — KPI entry tied to a business/division.
+Campaign KPI entry — KPI entry tied to a campaign.
+Leads received manual field — Number of leads entered manually.
+Calls received manual field — Number of calls entered manually.
+Appointments booked manual field — Number of appointments manually tracked.
+Jobs sold manual field — Number of sales/jobs manually tracked.
+Estimated revenue manual field — Revenue estimate entered manually.
+Marketing spend manual field — Spend entered manually.
+Notes field — Extra context for KPI entry.
+Basic KPI graphs — Charts from manual KPI data.
+Basic profitability view — Simple spend vs revenue view.
+Basic program justification view — Shows whether a program appears worth continuing.
+ServiceTitan Review Tracker — Internal tracker for ServiceTitan wants/issues before integration work.
+ServiceTitan issue tracker — List of ServiceTitan problems/questions.
+ServiceTitan current behavior field — What ServiceTitan does now.
+ServiceTitan desired behavior field — What they wish it did.
+ServiceTitan priority — Importance of the issue/request.
+ServiceTitan owner — Person responsible for follow-up.
+ServiceTitan status — Open/reviewing/resolved/etc.
+ServiceTitan notes — Notes from team discussions.
+ServiceTitan package/add-on notes — Track what package/add-ons they may have or need.
+ServiceTitan export needs — Track data they want to export.
+ServiceTitan reporting needs — Track reports they wish ServiceTitan gave them.
+ServiceTitan mobile workflow notes — Track mobile issues/needs.
+Follow-up task categories — Task categories for revenue-adjacent follow-up work.
+Lead follow-up task type — Task type for manually following up on a lead.
+Marketing follow-up task type — Task type for marketing-related follow-up.
+Campaign review task type — Task type for reviewing campaign performance.
+ServiceTitan review task type — Task type for ServiceTitan review/issues.
+Customer follow-up task type — Task type for customer-related follow-up.
+Vendor follow-up task type — Task type for vendor/supplier follow-up.
+Internal follow-up task type — General internal follow-up category.
+AI Chat / AEON assistant — Internal AI assistant for operational help.
+AI quick prompts — Prebuilt buttons for common AI actions.
+Daily ops sync prompt — Summarizes what matters today.
+SOP assistant prompt — Answers questions using SOPs/procedures.
+Work order follow-up prompt — Helps review open work orders.
+Request triage prompt — Helps sort/prioritize requests.
+Employee workload review prompt — Summarizes employee workload.
+Inventory watch prompt — Reviews inventory/low stock concerns.
+Weekly leadership summary prompt — Generates leadership summary.
+AI summary of open work — Summarizes unfinished tasks/requests/work orders.
+AI summary of overdue work — Shows what is late.
+AI summary of requests — Summarizes open/internal requests.
+AI summary of inventory issues — Identifies low/out stock or inventory concerns.
+AI summary of employee workload — Highlights overloaded/underloaded employees.
+AI summary of weekly operations — Weekly operational recap.
+AI task drafting — AI creates draft task from natural language.
+AI request drafting — AI creates draft request from natural language.
+AI form drafting — AI helps fill or structure a form.
+AI report explanation — AI explains what reports mean.
+AI “what needs attention?” query — Ask AI what leadership should focus on.
+AI “what is everyone doing?” query — Ask AI for employee/team schedule/workload.
+AI “what is overdue?” query — Ask AI to list late work.
+AI “what changed this week?” query — Ask AI to summarize changes.
+Voice input — Microphone-based input for faster entry.
+Voice dictation into text fields — Speak and fill descriptions/notes.
+Voice-to-task draft — Speak and generate a draft task.
+Voice-to-request draft — Speak and generate a draft request.
+Voice-to-calendar draft — Speak and generate a draft calendar block.
+Voice-to-note draft — Speak and create notes.
+Confirm before save — User reviews AI/voice result before database write.
+Voice command audit log — Log what voice command created or changed.
+Browser microphone button — Mic button in app UI.
+Mobile voice input support — Works on phone browser/device.
+Notifications — Alert system for important updates.
+In-app notifications — Notifications inside the app.
+Email notifications — Email alerts.
+Optional SMS notifications later — Text alerts if added later.
+Task assigned notification — Alert when assigned a task.
+Task overdue notification — Alert when task is late.
+Request submitted notification — Alert when request comes in.
+Request approved notification — Alert when request approved.
+Form submitted notification — Alert when form is submitted.
+Work order assigned notification — Alert when work order assigned.
+Low inventory notification — Alert for low stock.
+Timesheet submitted notification — Alert for timesheet review.
+Timesheet approved notification — Alert when timesheet approved.
+Creative asset needs review notification — Alert for marketing asset review.
+Daily digest — Daily summary of important work.
+Weekly digest — Weekly summary of important work.
+Automations page — Page showing automation rules/status.
+Automation status dashboard — Shows which automations are active/healthy.
+n8n webhook connection — Connect app actions to n8n workflows.
+Automation logs — History of automation runs.
+Automation health checks — Show whether automations are functioning.
+Manual trigger buttons — Admin can manually trigger automations.
+Task automation hooks — Trigger automation from task events.
+Request automation hooks — Trigger automation from request events.
+Form automation hooks — Trigger automation from form submissions.
+Inventory automation hooks — Trigger automation from inventory events.
+Timesheet automation hooks — Trigger automation from timesheet events.
+Creative request automation hooks — Trigger automation from creative asset workflow.
+Daily summary automation — Automatic daily summary.
+Weekly summary automation — Automatic weekly summary.
+Outlook/Microsoft 365 planning — Foundation for future Outlook sync.
+Import Outlook meetings — Pull meetings into workspace.
+Link Outlook events to workspace calendar — Connect imported events to app calendar.
+Create workspace task from meeting — Turn meeting into follow-up task.
+Avoid duplicate meeting entry — Prevent retyping meetings manually.
+Calendar reminder foundation — Store reminder logic.
+Future two-way sync placeholder — Prepare for later full sync.
+Mobile/PWA — App behaves more like a mobile app.
+App manifest — Metadata for installable web app.
+Mobile navigation — Phone-friendly menus.
+Mobile dashboard — Dashboard optimized for phone.
+Mobile task cards — Task UI optimized for phone.
+Mobile calendar — Calendar optimized for phone.
+Mobile forms — Forms optimized for phone.
+Mobile requests — Request UI optimized for phone.
+Mobile timeclock — Clock in/out from phone.
+Mobile approvals — Approve requests/timesheets/assets from phone.
+Mobile file access — View/download files from phone.
+Installable app behavior — Add app to home screen.
+Push notification foundation — Prepare for push alerts.
+Offline strategy later — Future support for limited use without connection.
+Audit trail — Accountability log across the system.
+Created by — User who created record.
+Updated by — User who last changed record.
+Created timestamp — When record was created.
+Updated timestamp — When record was updated.
+Status change history — Log of status changes.
+Assignment change history — Log of assignment changes.
+Calendar move history — Log of dragged/rescheduled calendar items.
+Approval history — Log of approvals/denials.
+Deleted/archived history — Log of removals/archives.
+Admin action history — Log of admin-level changes.
+Deployment/admin ops — Technical operations needed to keep app live.
+Production deployment — Live app environment.
+Staging deployment — Test/preview environment.
+PM2 process — Node process manager on server.
+nginx reverse proxy — Routes domain traffic to app server.
+Database connection — App connection to PostgreSQL.
+Environment variables — Secure config for secrets/settings.
+Error states — UI when something fails.
+Loading states — UI while data loads.
+Empty states — UI when no data exists yet.
+404 handling — Page not found handling.
+Responsive QA — Testing across phone/tablet/desktop.
+Build verification — Confirm app builds without errors.
+Walkthrough/handoff notes — Notes for client/team handoff.
+Basic user training flow — Simple guide/training path for team rollout.
