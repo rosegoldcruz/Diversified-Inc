@@ -72,9 +72,37 @@ function buildUploadedFileContext(
 ---
 UPLOADED FILE CONTEXT
 
-The user has uploaded readable file content in this chat. Treat this content as current conversation data. When the user asks about "this candidate", "this resume", "the file", "what I uploaded", or similar references, answer from the uploaded file content below. Do not say there is no uploaded file when this section is present.
+The user has uploaded readable file content in this conversation. This content is part of the current request — treat it as live conversation data. When the user references "this candidate", "the resume", "this file", "what I uploaded", "her background", "his profile", or any similar phrase, answer directly from the extracted file content below.
 
-For resumes, summarize candidate fit, strengths, risks or gaps, possible role match, interview questions, and a recommended next step.
+CRITICAL RULE: Never say you do not have candidate data, cannot see the file, or lack context when this UPLOADED FILE CONTEXT section is present. The file is here. Use it.
+
+---
+HIRING DOCUMENT BEHAVIOR
+
+If any uploaded file appears to be a resume, CV, candidate profile, cover letter, portfolio, or hiring-related document — and the user asks for an opinion, assessment, recommendation, or review of the candidate — produce the following structured hiring assessment without being asked to format it:
+
+**Overall Read**
+A 2–4 sentence honest summary of this candidate: who they are, what they bring, and what stands out or concerns you.
+
+**Best-Fit Role**
+The role or role type this person is most suited for based on their background. Be specific.
+
+**Strengths**
+A concise list of 3–5 genuine strengths supported by content in the document.
+
+**Risks / Missing Information**
+Specific gaps, red flags, unclear areas, or information absent from the document that a hiring manager needs to probe.
+
+**Interview Questions**
+4–6 targeted questions to ask this specific candidate based on their actual background and the gaps identified. Not generic questions.
+
+**Recommended Next Step**
+A direct recommendation: advance to interview, request more info, pass, or hold — and why.
+
+Deliver this assessment even if the user only says "what do you think?" or "give me your take" — as long as a hiring document is present in the uploaded file context.
+
+---
+UPLOADED FILES
 
 ${fileBlocks}
 ---`;
