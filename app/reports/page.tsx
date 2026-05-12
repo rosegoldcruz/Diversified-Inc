@@ -2,6 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { FadeContent } from "@/components/ui/FadeContent";
+import { ShinyText } from "@/components/ui/ShinyText";
 
 type Task = {
   id: number;
@@ -210,15 +212,21 @@ export default function ReportsPage() {
   ];
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">
-          Reports
+    <div className="space-y-8">
+      <FadeContent
+        as="section"
+        blur={true}
+        duration={800}
+        delay={50}
+        className="space-y-2"
+      >
+        <h1 className="text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
+          <ShinyText>Reports</ShinyText>
         </h1>
-        <p className="max-w-3xl text-sm text-textSecondary">
+        <p className="max-w-3xl text-base text-textSecondary">
           Live reporting across tasks, work orders, employees, and inventory.
         </p>
-      </header>
+      </FadeContent>
 
       {error ? <ErrorPanel message={error} /> : null}
 
@@ -226,11 +234,17 @@ export default function ReportsPage() {
         <LoadingPanel label="Loading reports..." />
       ) : (
         <>
-          <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+          <FadeContent
+            as="section"
+            blur={true}
+            duration={800}
+            delay={90}
+            className="grid gap-5 md:grid-cols-2 xl:grid-cols-4"
+          >
             {cards.map((card) => (
               <article
                 key={card.label}
-                className="rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl"
+                className="glass-surface glass-surface-hover p-6"
               >
                 <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">
                   {card.label}
@@ -240,9 +254,15 @@ export default function ReportsPage() {
                 </p>
               </article>
             ))}
-          </section>
+          </FadeContent>
 
-          <section className="rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl md:p-8">
+          <FadeContent
+            as="section"
+            blur={true}
+            duration={800}
+            delay={120}
+            className="glass-surface p-6 md:p-8"
+          >
             <h2 className="text-lg font-semibold text-textPrimary">
               Task Breakdown by Status
             </h2>
@@ -251,16 +271,16 @@ export default function ReportsPage() {
             </p>
             <div className="mt-4 overflow-x-auto">
               <table className="min-w-full text-left text-sm">
-                <thead className="bg-surfaceSoft text-xs uppercase tracking-wide text-textMuted">
+                <thead className="bg-white/35 text-xs uppercase tracking-wide text-textMuted dark:bg-white/5">
                   <tr>
                     <th className="px-4 py-3 font-semibold">Status</th>
                     <th className="px-4 py-3 font-semibold">Count</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-borderSubtle">
+                <tbody className="divide-y divide-white/30 dark:divide-white/10">
                   <tr
                     onClick={() => router.push("/tasks?status=todo")}
-                    className="cursor-pointer transition-colors hover:bg-bgDark"
+                    className="cursor-pointer transition-colors hover:bg-white/45 dark:hover:bg-white/5"
                   >
                     <td className="px-4 py-3 text-textSecondary">todo</td>
                     <td className="px-4 py-3 font-medium text-textPrimary">
@@ -269,7 +289,7 @@ export default function ReportsPage() {
                   </tr>
                   <tr
                     onClick={() => router.push("/tasks?status=in_progress")}
-                    className="cursor-pointer transition-colors hover:bg-bgDark"
+                    className="cursor-pointer transition-colors hover:bg-white/45 dark:hover:bg-white/5"
                   >
                     <td className="px-4 py-3 text-textSecondary">
                       in_progress
@@ -280,7 +300,7 @@ export default function ReportsPage() {
                   </tr>
                   <tr
                     onClick={() => router.push("/tasks?status=completed")}
-                    className="cursor-pointer transition-colors hover:bg-bgDark"
+                    className="cursor-pointer transition-colors hover:bg-white/45 dark:hover:bg-white/5"
                   >
                     <td className="px-4 py-3 text-textSecondary">completed</td>
                     <td className="px-4 py-3 font-medium text-textPrimary">
@@ -289,7 +309,7 @@ export default function ReportsPage() {
                   </tr>
                   <tr
                     onClick={() => router.push("/tasks?status=blocked")}
-                    className="cursor-pointer transition-colors hover:bg-bgDark"
+                    className="cursor-pointer transition-colors hover:bg-white/45 dark:hover:bg-white/5"
                   >
                     <td className="px-4 py-3 text-textSecondary">blocked</td>
                     <td className="px-4 py-3 font-medium text-textPrimary">
@@ -299,9 +319,15 @@ export default function ReportsPage() {
                 </tbody>
               </table>
             </div>
-          </section>
+          </FadeContent>
 
-          <section className="rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl md:p-8">
+          <FadeContent
+            as="section"
+            blur={true}
+            duration={800}
+            delay={150}
+            className="glass-surface p-6 md:p-8"
+          >
             <h2 className="text-lg font-semibold text-textPrimary">
               Work Order Breakdown by Status
             </h2>
@@ -310,16 +336,16 @@ export default function ReportsPage() {
             </p>
             <div className="mt-4 overflow-x-auto">
               <table className="min-w-full text-left text-sm">
-                <thead className="bg-surfaceSoft text-xs uppercase tracking-wide text-textMuted">
+                <thead className="bg-white/35 text-xs uppercase tracking-wide text-textMuted dark:bg-white/5">
                   <tr>
                     <th className="px-4 py-3 font-semibold">Status</th>
                     <th className="px-4 py-3 font-semibold">Count</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-borderSubtle">
+                <tbody className="divide-y divide-white/30 dark:divide-white/10">
                   <tr
                     onClick={() => router.push("/work-orders?status=open")}
-                    className="cursor-pointer transition-colors hover:bg-bgDark"
+                    className="cursor-pointer transition-colors hover:bg-white/45 dark:hover:bg-white/5"
                   >
                     <td className="px-4 py-3 text-textSecondary">open</td>
                     <td className="px-4 py-3 font-medium text-textPrimary">
@@ -330,7 +356,7 @@ export default function ReportsPage() {
                     onClick={() =>
                       router.push("/work-orders?status=in_progress")
                     }
-                    className="cursor-pointer transition-colors hover:bg-bgDark"
+                    className="cursor-pointer transition-colors hover:bg-white/45 dark:hover:bg-white/5"
                   >
                     <td className="px-4 py-3 text-textSecondary">
                       in_progress
@@ -341,7 +367,7 @@ export default function ReportsPage() {
                   </tr>
                   <tr
                     onClick={() => router.push("/work-orders?status=pending")}
-                    className="cursor-pointer transition-colors hover:bg-bgDark"
+                    className="cursor-pointer transition-colors hover:bg-white/45 dark:hover:bg-white/5"
                   >
                     <td className="px-4 py-3 text-textSecondary">pending</td>
                     <td className="px-4 py-3 font-medium text-textPrimary">
@@ -350,7 +376,7 @@ export default function ReportsPage() {
                   </tr>
                   <tr
                     onClick={() => router.push("/work-orders?status=completed")}
-                    className="cursor-pointer transition-colors hover:bg-bgDark"
+                    className="cursor-pointer transition-colors hover:bg-white/45 dark:hover:bg-white/5"
                   >
                     <td className="px-4 py-3 text-textSecondary">completed</td>
                     <td className="px-4 py-3 font-medium text-textPrimary">
@@ -360,9 +386,15 @@ export default function ReportsPage() {
                 </tbody>
               </table>
             </div>
-          </section>
+          </FadeContent>
 
-          <section className="rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl md:p-8">
+          <FadeContent
+            as="section"
+            blur={true}
+            duration={800}
+            delay={180}
+            className="glass-surface p-6 md:p-8"
+          >
             <h2 className="text-lg font-semibold text-textPrimary">
               Inventory Alerts
             </h2>
@@ -377,7 +409,7 @@ export default function ReportsPage() {
             ) : (
               <div className="mt-4 overflow-x-auto">
                 <table className="min-w-full text-left text-sm">
-                  <thead className="bg-surfaceSoft text-xs uppercase tracking-wide text-textMuted">
+                  <thead className="bg-white/35 text-xs uppercase tracking-wide text-textMuted dark:bg-white/5">
                     <tr>
                       <th className="px-4 py-3 font-semibold">Item</th>
                       <th className="px-4 py-3 font-semibold">Quantity</th>
@@ -386,12 +418,12 @@ export default function ReportsPage() {
                       <th className="px-4 py-3 font-semibold">Status</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-borderSubtle">
+                  <tbody className="divide-y divide-white/30 dark:divide-white/10">
                     {inventoryAlerts.map((item) => (
                       <tr
                         key={item.id}
                         onClick={() => router.push(`/inventory/${item.id}`)}
-                        className="cursor-pointer transition-colors hover:bg-bgDark"
+                        className="cursor-pointer transition-colors hover:bg-white/45 dark:hover:bg-white/5"
                       >
                         <td className="px-4 py-3 font-medium text-textPrimary">
                           {item.item_name}
@@ -414,7 +446,7 @@ export default function ReportsPage() {
                 </table>
               </div>
             )}
-          </section>
+          </FadeContent>
         </>
       )}
     </div>
@@ -445,7 +477,7 @@ function InventoryStatusBadge({ status }: { status: string | null }) {
 
 function LoadingPanel({ label }: { label: string }) {
   return (
-    <div className="rounded-xl border border-borderSubtle bg-surface/95 p-12 text-center text-sm text-textSecondary shadow-soft backdrop-blur-xl">
+    <div className="glass-surface p-12 text-center text-sm text-textSecondary">
       {label}
     </div>
   );
@@ -453,7 +485,7 @@ function LoadingPanel({ label }: { label: string }) {
 
 function ErrorPanel({ message }: { message: string }) {
   return (
-    <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 shadow-soft dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+    <div className="rounded-2xl border border-red-200/70 bg-red-50/70 p-5 text-sm text-red-700 shadow-glass backdrop-blur-2xl dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
       {message}
     </div>
   );

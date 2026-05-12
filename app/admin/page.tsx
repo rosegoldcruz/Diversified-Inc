@@ -10,6 +10,8 @@ import {
   Users,
   Zap,
 } from "lucide-react";
+import { FadeContent } from "@/components/ui/FadeContent";
+import { ShinyText } from "@/components/ui/ShinyText";
 
 const employees = [
   { name: "Terry Strasser", role: "Admin" },
@@ -32,15 +34,21 @@ export default function AdminPage() {
   const [timesheetReminder, setTimesheetReminder] = useState(true);
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">
-          Admin Settings
+    <div className="space-y-8">
+      <FadeContent
+        as="section"
+        blur={true}
+        duration={800}
+        delay={50}
+        className="space-y-2"
+      >
+        <h1 className="text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
+          <ShinyText>Admin Settings</ShinyText>
         </h1>
-        <p className="max-w-3xl text-sm text-textSecondary">
+        <p className="max-w-3xl text-base text-textSecondary">
           System configuration, user management, and platform preferences.
         </p>
-      </header>
+      </FadeContent>
 
       <section className="space-y-5 rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

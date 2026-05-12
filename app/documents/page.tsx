@@ -1,5 +1,8 @@
 "use client";
 
+import { FadeContent } from "@/components/ui/FadeContent";
+import { ShinyText } from "@/components/ui/ShinyText";
+
 type DocumentStatus = "Signed" | "Pending" | "Draft";
 type DocumentType =
   | "Contract"
@@ -109,25 +112,27 @@ export default function DocumentsPage() {
   ).length;
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold text-navy">Documents</h1>
-        <p className="text-sm text-textMuted">
+    <div className="space-y-8">
+      <FadeContent as="section" blur={true} duration={800} delay={50} className="space-y-2">
+        <h1 className="text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
+          <ShinyText>Documents</ShinyText>
+        </h1>
+        <p className="max-w-3xl text-base text-textSecondary">
           Internal contracts, quotes, permits, completion records, and QC photos
           linked to active work.
         </p>
-      </div>
+      </FadeContent>
 
-      <section className="grid gap-3 sm:grid-cols-3">
+      <FadeContent as="section" blur={true} duration={800} delay={90} className="grid gap-3 sm:grid-cols-3">
         <SummaryCard label="Signed" value={signedCount} />
         <SummaryCard label="Pending" value={pendingCount} />
         <SummaryCard label="Draft" value={draftCount} />
-      </section>
+      </FadeContent>
 
-      <section className="overflow-hidden rounded-xl border border-borderSubtle bg-surface/95 shadow-soft backdrop-blur-xl">
+      <FadeContent as="section" blur={true} duration={800} delay={120} className="glass-surface overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-[920px] w-full text-left text-sm">
-            <thead className="bg-surfaceSoft text-xs uppercase tracking-wide text-textMuted">
+            <thead className="bg-white/35 text-xs uppercase tracking-wide text-textMuted dark:bg-white/5">
               <tr>
                 <th className="px-4 py-3 font-semibold">ID</th>
                 <th className="px-4 py-3 font-semibold">Document Name</th>
@@ -137,11 +142,11 @@ export default function DocumentsPage() {
                 <th className="px-4 py-3 font-semibold">Uploaded Date</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-borderSubtle">
+            <tbody className="divide-y divide-white/30 dark:divide-white/10">
               {documents.map((document) => (
                 <tr
                   key={document.id}
-                  className="transition-colors hover:bg-bgDark"
+                  className="transition-colors hover:bg-white/45 dark:hover:bg-white/5"
                 >
                   <td className="px-4 py-3 text-textMuted">{document.id}</td>
                   <td className="px-4 py-3 font-medium text-textPrimary">
@@ -172,14 +177,14 @@ export default function DocumentsPage() {
             </tbody>
           </table>
         </div>
-      </section>
+      </FadeContent>
     </div>
   );
 }
 
 function SummaryCard({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-xl border border-borderSubtle bg-surface/95 p-5 shadow-soft backdrop-blur-xl">
+    <div className="glass-surface p-5">
       <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">
         {label}
       </p>

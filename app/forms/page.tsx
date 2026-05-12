@@ -2,6 +2,8 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import { ClipboardList, FileText, Plus, Upload } from "lucide-react";
+import { FadeContent } from "@/components/ui/FadeContent";
+import { ShinyText } from "@/components/ui/ShinyText";
 
 type FormName =
   | "Work Order Request"
@@ -166,18 +168,29 @@ export default function FormsCenterPage() {
 
   return (
     <div className="space-y-8 font-sans">
-      <div className="space-y-2">
+      <FadeContent
+        as="section"
+        blur={true}
+        duration={800}
+        delay={50}
+        className="space-y-2"
+      >
         <h1 className="text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
-          Forms Center
+          <ShinyText>Forms Center</ShinyText>
         </h1>
         <p className="max-w-3xl text-base text-textSecondary">
           Submit operational requests and track each record through assignment
           and review.
         </p>
-      </div>
+      </FadeContent>
 
-      <div className="grid gap-5 lg:grid-cols-[19rem_minmax(0,1fr)]">
-        <aside className="rounded-xl border border-borderSubtle bg-surface/95 p-4 shadow-soft backdrop-blur-xl">
+      <FadeContent
+        blur={true}
+        duration={800}
+        delay={100}
+        className="grid gap-5 lg:grid-cols-[19rem_minmax(0,1fr)]"
+      >
+        <aside className="glass-surface p-4">
           <div className="mb-3 flex items-center gap-2 px-2 text-sm font-semibold text-textPrimary">
             <ClipboardList className="h-4 w-4" />
             Forms
@@ -191,8 +204,8 @@ export default function FormsCenterPage() {
                 className={[
                   "w-full rounded-xl border px-4 py-4 text-left transition-all duration-200",
                   activeForm === form.name
-                    ? "border-accent bg-blue-50 text-accent dark:bg-blue-500/10 dark:text-blue-300"
-                    : "border-borderSubtle bg-bgDark/80 text-textPrimary hover:border-borderHover hover:bg-surfaceHover",
+                    ? "border-white/50 bg-white/80 text-accent shadow-glass dark:border-white/20 dark:bg-white/10 dark:text-blue-300"
+                    : "border-white/25 bg-white/35 text-textPrimary hover:border-white/45 hover:bg-white/60 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10",
                 ].join(" ")}
               >
                 <div className="space-y-2">
@@ -252,8 +265,8 @@ export default function FormsCenterPage() {
           </div>
         </aside>
 
-        <section className="rounded-xl border border-borderSubtle bg-surface/95 shadow-soft backdrop-blur-xl">
-          <div className="border-b border-borderSubtle px-6 py-5">
+        <section className="glass-surface overflow-hidden">
+          <div className="border-b border-white/30 px-6 py-5 dark:border-white/10">
             <h2 className="text-lg font-semibold text-textPrimary">
               {activeForm}
             </h2>
@@ -272,17 +285,23 @@ export default function FormsCenterPage() {
             )}
             <button
               type="submit"
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-accent bg-accent px-5 text-sm font-semibold text-white shadow-soft transition-all hover:-translate-y-px hover:bg-accentSoft hover:shadow-cyberMd"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-xl border border-white/30 bg-accent/90 px-5 text-sm font-semibold text-white shadow-glass ring-1 ring-white/20 backdrop-blur-2xl transition-all hover:-translate-y-px hover:border-white/50 hover:bg-accent hover:shadow-glassHover"
             >
               <Plus className="h-4 w-4" />
               Submit
             </button>
           </form>
         </section>
-      </div>
+      </FadeContent>
 
-      <section className="overflow-hidden rounded-xl border border-borderSubtle bg-surface/95 shadow-soft backdrop-blur-xl">
-        <div className="flex items-center gap-2 border-b border-borderSubtle px-6 py-5">
+      <FadeContent
+        as="section"
+        blur={true}
+        duration={800}
+        delay={140}
+        className="glass-surface overflow-hidden"
+      >
+        <div className="flex items-center gap-2 border-b border-white/30 px-6 py-5 dark:border-white/10">
           <FileText className="h-4 w-4 text-accent" />
           <h2 className="text-sm font-semibold text-textPrimary">
             Trackable Records
@@ -290,7 +309,7 @@ export default function FormsCenterPage() {
         </div>
         <div className="overflow-x-auto">
           <table className="min-w-[760px] w-full text-left text-sm">
-            <thead className="bg-surfaceSoft text-xs uppercase tracking-wide text-textMuted">
+            <thead className="bg-white/35 text-xs uppercase tracking-wide text-textMuted dark:bg-white/5">
               <tr>
                 <th className="px-5 py-4 font-semibold">ID</th>
                 <th className="px-5 py-4 font-semibold">Form</th>
@@ -299,9 +318,12 @@ export default function FormsCenterPage() {
                 <th className="px-5 py-4 font-semibold">Submitted Date</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-borderSubtle">
+            <tbody className="divide-y divide-white/30 dark:divide-white/10">
               {activeRecords.map((record) => (
-                <tr key={record.id} className="hover:bg-surfaceHover">
+                <tr
+                  key={record.id}
+                  className="hover:bg-white/45 dark:hover:bg-white/5"
+                >
                   <td className="px-5 py-4 font-semibold text-accent">
                     {record.id}
                   </td>
@@ -330,7 +352,7 @@ export default function FormsCenterPage() {
             </tbody>
           </table>
         </div>
-      </section>
+      </FadeContent>
     </div>
   );
 }

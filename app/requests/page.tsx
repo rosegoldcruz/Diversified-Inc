@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { X } from "lucide-react";
+import { FadeContent } from "@/components/ui/FadeContent";
+import { ShinyText } from "@/components/ui/ShinyText";
 
 type RequestPriority = "Low" | "Medium" | "High" | "Urgent";
 type RequestStatus =
@@ -88,31 +90,49 @@ export default function RequestsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">
-          Requests
+    <div className="space-y-8">
+      <FadeContent
+        as="section"
+        blur={true}
+        duration={800}
+        delay={50}
+        className="space-y-2"
+      >
+        <h1 className="text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
+          <ShinyText>Requests</ShinyText>
         </h1>
-        <p className="max-w-3xl text-sm text-textSecondary">
+        <p className="max-w-3xl text-base text-textSecondary">
           Internal requests from submission through approval.
         </p>
-      </header>
+      </FadeContent>
 
-      <section className="grid gap-4 sm:grid-cols-3">
+      <FadeContent
+        as="section"
+        blur={true}
+        duration={800}
+        delay={90}
+        className="grid gap-4 sm:grid-cols-3"
+      >
         <StatCard label="Total" value={metrics.total} />
         <StatCard label="Under Review" value={metrics.underReview} />
         <StatCard label="Approved" value={metrics.approved} />
-      </section>
+      </FadeContent>
 
       {error ? <ErrorPanel message={error} /> : null}
 
       {loading ? (
         <LoadingPanel label="Loading requests..." />
       ) : (
-        <section className="overflow-hidden rounded-xl border border-borderSubtle bg-surface/95 shadow-soft backdrop-blur-xl">
+        <FadeContent
+          as="section"
+          blur={true}
+          duration={800}
+          delay={120}
+          className="glass-surface overflow-hidden"
+        >
           <div className="hidden overflow-x-auto md:block">
             <table className="min-w-[980px] w-full text-left text-sm">
-              <thead className="bg-surfaceSoft text-xs uppercase tracking-wide text-textMuted">
+              <thead className="bg-white/35 text-xs uppercase tracking-wide text-textMuted dark:bg-white/5">
                 <tr>
                   <th className="px-4 py-3 font-semibold">Requester</th>
                   <th className="px-4 py-3 font-semibold">Category</th>
@@ -122,12 +142,12 @@ export default function RequestsPage() {
                   <th className="px-4 py-3 font-semibold">Reviewer</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-borderSubtle">
+              <tbody className="divide-y divide-white/30 dark:divide-white/10">
                 {requests.map((request) => (
                   <tr
                     key={request.id}
                     onClick={() => openRequest(request)}
-                    className="cursor-pointer transition-colors hover:bg-bgDark"
+                    className="cursor-pointer transition-colors hover:bg-white/45 dark:hover:bg-white/5"
                   >
                     <td className="px-4 py-3">
                       <div className="font-semibold text-textPrimary">
@@ -174,7 +194,7 @@ export default function RequestsPage() {
               <article
                 key={request.id}
                 onClick={() => openRequest(request)}
-                className="cursor-pointer rounded-lg border border-borderSubtle bg-bgDark p-4"
+                className="glass-surface cursor-pointer p-5"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
@@ -210,16 +230,16 @@ export default function RequestsPage() {
             ))}
 
             {requests.length === 0 ? (
-              <article className="rounded-xl border border-dashed border-borderSubtle bg-bgDark/80 p-8 text-center text-sm text-textSecondary">
+              <article className="rounded-2xl border border-dashed border-white/30 bg-white/45 p-8 text-center text-sm text-textSecondary shadow-glass backdrop-blur-2xl dark:border-white/10 dark:bg-white/5">
                 No requests are available.
               </article>
             ) : null}
           </div>
-        </section>
+        </FadeContent>
       )}
 
       <aside
-        className={`fixed right-0 top-0 z-50 h-full w-80 border-l border-borderSubtle bg-surface/95 p-6 shadow-cyberLg backdrop-blur-xl transition-transform duration-200 ${
+        className={`fixed right-0 top-0 z-50 h-full w-80 border-l border-white/30 bg-white/75 p-6 shadow-glass ring-1 ring-white/20 backdrop-blur-2xl transition-transform duration-200 dark:border-white/10 dark:bg-slate-950/75 dark:ring-white/10 ${
           selectedRequest ? "translate-x-0" : "translate-x-full"
         }`}
         aria-hidden={selectedRequest ? "false" : "true"}

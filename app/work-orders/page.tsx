@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
+import { FadeContent } from "@/components/ui/FadeContent";
+import { ShinyText } from "@/components/ui/ShinyText";
 
 type WorkOrder = {
   id: number;
@@ -87,12 +89,18 @@ function WorkOrdersPageContent() {
 
   return (
     <div className="space-y-8">
-      <header className="space-y-2">
+      <FadeContent
+        as="section"
+        blur={true}
+        duration={800}
+        delay={50}
+        className="space-y-2"
+      >
         <div className="flex flex-wrap items-center gap-3">
           <h1 className="text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
-            Work Orders
+            <ShinyText>Work Orders</ShinyText>
           </h1>
-          <span className="inline-flex rounded-md border border-borderSubtle bg-bgDark px-3 py-1 text-xs font-medium text-textMuted">
+          <span className="inline-flex rounded-xl border border-white/30 bg-white/55 px-3 py-1 text-xs font-medium text-textMuted shadow-glass backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
             {filteredWorkOrders.length} of {workOrders.length} Work Orders
           </span>
         </div>
@@ -100,15 +108,21 @@ function WorkOrdersPageContent() {
           Live work orders with type, priority, ownership, and due dates from
           PostgreSQL.
         </p>
-      </header>
+      </FadeContent>
 
-      <section className="rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl">
+      <FadeContent
+        as="section"
+        blur={true}
+        duration={800}
+        delay={90}
+        className="glass-surface p-6"
+      >
         <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-textMuted sm:max-w-xs">
           Status Filter
           <select
             value={statusFilter}
             onChange={(event) => setStatusFilter(event.target.value)}
-            className="h-11 rounded-xl border border-borderSubtle bg-bgDark/80 px-3 text-sm font-medium normal-case text-textPrimary outline-none transition-all focus:border-accent focus:bg-surface focus:ring-4 focus:ring-accent/10"
+            className="h-11 rounded-xl border border-white/30 bg-white/55 px-3 text-sm font-medium normal-case text-textPrimary shadow-[inset_0_1px_0_rgba(255,255,255,0.42)] outline-none backdrop-blur-xl transition-all focus:border-white/60 focus:bg-white/80 focus:ring-4 focus:ring-white/25 dark:border-white/10 dark:bg-white/5"
           >
             <option>All</option>
             <option>Open</option>
@@ -119,17 +133,23 @@ function WorkOrdersPageContent() {
             <option>Canceled</option>
           </select>
         </label>
-      </section>
+      </FadeContent>
 
       {error ? <ErrorPanel message={error} /> : null}
 
       {loading ? (
         <LoadingPanel label="Loading work orders..." />
       ) : (
-        <section className="overflow-hidden rounded-xl border border-borderSubtle bg-surface/95 shadow-soft backdrop-blur-xl">
+        <FadeContent
+          as="section"
+          blur={true}
+          duration={800}
+          delay={120}
+          className="glass-surface overflow-hidden"
+        >
           <div className="hidden overflow-x-auto md:block">
             <table className="min-w-full text-left text-sm">
-              <thead className="bg-surfaceSoft text-xs uppercase tracking-wide text-textMuted">
+              <thead className="bg-white/35 text-xs uppercase tracking-wide text-textMuted dark:bg-white/5">
                 <tr>
                   <th className="px-5 py-4 font-semibold">Title</th>
                   <th className="px-5 py-4 font-semibold">Type</th>
@@ -139,12 +159,12 @@ function WorkOrdersPageContent() {
                   <th className="px-5 py-4 font-semibold">Due Date</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-borderSubtle">
+              <tbody className="divide-y divide-white/30 dark:divide-white/10">
                 {filteredWorkOrders.map((workOrder) => (
                   <tr
                     key={workOrder.id}
                     onClick={() => router.push(`/work-orders/${workOrder.id}`)}
-                    className="cursor-pointer transition-colors hover:bg-surfaceHover"
+                    className="cursor-pointer transition-colors hover:bg-white/45 dark:hover:bg-white/5"
                   >
                     <td className="px-5 py-4 font-medium text-textPrimary">
                       {workOrder.title}
@@ -184,7 +204,7 @@ function WorkOrdersPageContent() {
           <div className="grid gap-3 p-4 md:hidden">
             {filteredWorkOrders.map((workOrder) => (
               <Link key={workOrder.id} href={`/work-orders/${workOrder.id}`}>
-                <article className="rounded-xl border border-borderSubtle bg-bgDark/80 p-6 shadow-soft">
+                <article className="glass-surface p-6">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <h2 className="text-lg font-semibold text-textPrimary">
@@ -214,12 +234,12 @@ function WorkOrdersPageContent() {
             ))}
 
             {filteredWorkOrders.length === 0 ? (
-              <article className="rounded-xl border border-dashed border-borderSubtle bg-bgDark/80 p-8 text-center text-sm text-textSecondary">
+              <article className="rounded-2xl border border-dashed border-white/30 bg-white/45 p-8 text-center text-sm text-textSecondary shadow-glass backdrop-blur-2xl dark:border-white/10 dark:bg-white/5">
                 No work orders match this status filter.
               </article>
             ) : null}
           </div>
-        </section>
+        </FadeContent>
       )}
     </div>
   );

@@ -19,8 +19,8 @@
 
   /* === BACKGROUNDS === */
   --color-bg: #ffffff;
-  --color-bg-subtle: #f6f7fb;
-  --color-bg-muted: #f1f3f8;
+  --color-bg-subtle: #eef2f8;
+  --color-bg-muted: #e7edf6;
 
   /* === BORDERS === */
   --color-border: #e2e6ee;
@@ -40,6 +40,9 @@
     0 1px 3px rgba(15, 23, 42, 0.05), 0 18px 38px rgba(15, 23, 42, 0.07);
   --shadow-lg:
     0 2px 6px rgba(15, 23, 42, 0.06), 0 28px 60px rgba(15, 23, 42, 0.1);
+  --shadow-glass:
+    0 24px 80px rgba(15, 23, 42, 0.12), 0 8px 28px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
 
 /* === TYPOGRAPHY BASE === */

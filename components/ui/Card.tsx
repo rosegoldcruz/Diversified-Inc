@@ -1,4 +1,5 @@
 import * as React from "react";
+import { GlassCard } from "@/components/ui/GlassCard";
 import { cn } from "@/lib/utils";
 
 type CardProps = React.HTMLAttributes<HTMLDivElement> & {
@@ -21,18 +22,14 @@ export function Card({
   ...props
 }: CardProps) {
   return (
-    <div
-      className={cn(
-        "rounded-xl border border-borderSubtle bg-surface/95 shadow-soft backdrop-blur-xl",
-        interactive &&
-          "transition-all duration-200 hover:-translate-y-0.5 hover:border-borderHover hover:bg-surface hover:shadow-cyberMd",
-        paddingClasses[padding],
-        className,
-      )}
+    <GlassCard
+      className={className}
+      padding="none"
+      interactive={interactive}
       {...props}
     >
-      {children}
-    </div>
+      <div className={paddingClasses[padding]}>{children}</div>
+    </GlassCard>
   );
 }
 

@@ -68,7 +68,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <div className="flex h-dvh bg-bgDark text-textPrimary">
+    <div className="flex h-dvh bg-transparent text-textPrimary">
       <Sidebar
         mobileOpen={sidebarOpen}
         onClose={closeSidebar}
@@ -106,7 +106,7 @@ function MobileBottomNav({ pathname, onMoreClick }: MobileBottomNavProps) {
         initial={{ y: 56, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ type: "spring", stiffness: 360, damping: 32, mass: 0.85 }}
-        className="mx-auto grid max-w-lg grid-cols-5 gap-1 rounded-2xl border border-borderSubtle bg-surface/90 p-1.5 shadow-cyberMd backdrop-blur-xl"
+        className="mx-auto grid max-w-lg grid-cols-5 gap-1 rounded-2xl border border-white/30 bg-white/70 p-1.5 shadow-glass ring-1 ring-white/20 backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/70 dark:ring-white/10"
       >
         {MOBILE_PRIMARY_NAV.map((item) => {
           const Icon = item.icon;
@@ -121,8 +121,8 @@ function MobileBottomNav({ pathname, onMoreClick }: MobileBottomNavProps) {
               className={[
                 "relative flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl px-2 text-[10px] font-medium transition-colors",
                 active
-                  ? "bg-blue-50 text-accent dark:bg-blue-500/10 dark:text-blue-300"
-                  : "text-textMuted hover:bg-bgMedium hover:text-textPrimary",
+                  ? "bg-white/80 text-accent shadow-[inset_0_1px_0_rgba(255,255,255,0.56)] dark:bg-white/10 dark:text-blue-300"
+                  : "text-textMuted hover:bg-white/55 hover:text-textPrimary dark:hover:bg-white/5",
               ].join(" ")}
             >
               {active ? (
@@ -134,7 +134,7 @@ function MobileBottomNav({ pathname, onMoreClick }: MobileBottomNavProps) {
                     damping: 35,
                     mass: 0.9,
                   }}
-                  className="absolute inset-0 rounded-xl bg-blue-50 dark:bg-blue-500/10"
+                  className="absolute inset-0 rounded-xl border border-white/35 bg-white/80 shadow-glass backdrop-blur-2xl dark:border-white/10 dark:bg-white/10"
                 />
               ) : null}
               <Icon className="relative z-10 h-4 w-4" />
@@ -145,7 +145,7 @@ function MobileBottomNav({ pathname, onMoreClick }: MobileBottomNavProps) {
         <button
           type="button"
           onClick={onMoreClick}
-          className="flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl px-2 text-[10px] font-medium text-textMuted transition-colors hover:bg-bgMedium hover:text-textPrimary"
+          className="flex min-h-12 flex-col items-center justify-center gap-1 rounded-xl px-2 text-[10px] font-medium text-textMuted transition-colors hover:bg-white/55 hover:text-textPrimary dark:hover:bg-white/5"
           aria-label="Open full navigation"
         >
           <MoreHorizontal className="h-4 w-4" />
@@ -191,7 +191,7 @@ function MobileNavigationSheet({
               damping: 34,
               mass: 0.9,
             }}
-            className="fixed inset-x-0 bottom-0 z-50 rounded-t-2xl border border-borderSubtle bg-surface/95 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-4 shadow-cyberLg backdrop-blur-xl lg:hidden"
+            className="fixed inset-x-0 bottom-0 z-50 rounded-t-2xl border border-white/30 bg-white/75 px-4 pb-[calc(env(safe-area-inset-bottom)+1rem)] pt-4 shadow-glass ring-1 ring-white/20 backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/75 dark:ring-white/10 lg:hidden"
           >
             <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-borderHover" />
             <p className="px-1 text-sm text-textMuted">All destinations</p>
@@ -210,8 +210,8 @@ function MobileNavigationSheet({
                     className={[
                       "flex min-h-12 items-center gap-2 rounded-xl border px-3 text-sm font-medium",
                       active
-                        ? "border-blue-200 bg-blue-50 text-accent dark:border-blue-500/30 dark:bg-blue-500/10 dark:text-blue-300"
-                        : "border-borderSubtle text-textPrimary",
+                        ? "border-white/50 bg-white/80 text-accent shadow-glass dark:border-white/20 dark:bg-white/10 dark:text-blue-300"
+                        : "border-white/25 bg-white/35 text-textPrimary dark:border-white/10 dark:bg-white/5",
                     ].join(" ")}
                   >
                     <Icon className="h-4 w-4" />

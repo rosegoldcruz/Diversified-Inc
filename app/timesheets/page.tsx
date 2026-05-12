@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { FadeContent } from "@/components/ui/FadeContent";
+import { ShinyText } from "@/components/ui/ShinyText";
 
 interface Timesheet {
   id: number;
@@ -112,21 +114,33 @@ export default function TimesheetsPage() {
   ).length;
 
   return (
-    <div className="space-y-5 font-sans">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">
-          Timesheets
+    <div className="space-y-8 font-sans">
+      <FadeContent
+        as="section"
+        blur={true}
+        duration={800}
+        delay={50}
+        className="space-y-2"
+      >
+        <h1 className="text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
+          <ShinyText>Timesheets</ShinyText>
         </h1>
-        <p className="max-w-3xl text-sm text-textSecondary">
+        <p className="max-w-3xl text-base text-textSecondary">
           Weekly hour logs by employee, submitted for payroll approval.
         </p>
-      </div>
+      </FadeContent>
 
-      <section className="grid gap-3 sm:grid-cols-3">
+      <FadeContent
+        as="section"
+        blur={true}
+        duration={800}
+        delay={90}
+        className="grid gap-3 sm:grid-cols-3"
+      >
         <SummaryCard label="Total Timesheets" value={totalTimesheets} />
         <SummaryCard label="Pending Approval" value={pendingApproval} />
         <SummaryCard label="Approved This Week" value={approvedThisWeek} />
-      </section>
+      </FadeContent>
 
       {error && <ErrorPanel message={error} />}
 

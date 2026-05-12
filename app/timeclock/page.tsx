@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { FadeContent } from "@/components/ui/FadeContent";
+import { ShinyText } from "@/components/ui/ShinyText";
 
 const EMPLOYEES = [
   "Terry Strasser",
@@ -242,19 +244,31 @@ export default function TimeclockPage() {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* Header */}
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">
-          Timeclock
+      <FadeContent
+        as="section"
+        blur={true}
+        duration={800}
+        delay={50}
+        className="space-y-2"
+      >
+        <h1 className="text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
+          <ShinyText>Timeclock</ShinyText>
         </h1>
-        <p className="max-w-3xl text-sm text-textSecondary">
+        <p className="max-w-3xl text-base text-textSecondary">
           Log employee clock-ins and clock-outs in real time.
         </p>
-      </header>
+      </FadeContent>
 
       {/* SECTION A: Punch Panel */}
-      <section className="space-y-5 rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl md:p-8">
+      <FadeContent
+        as="section"
+        blur={true}
+        duration={800}
+        delay={100}
+        className="glass-surface space-y-5 p-6 md:p-8"
+      >
         <div>
           <h2 className="text-lg font-semibold text-textPrimary">
             Clock In / Clock Out
@@ -317,7 +331,7 @@ export default function TimeclockPage() {
             </button>
           </div>
         </div>
-      </section>
+      </FadeContent>
 
       {/* SECTION B: Currently Clocked In */}
       <section className="space-y-4">

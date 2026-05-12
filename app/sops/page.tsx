@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { FadeContent } from "@/components/ui/FadeContent";
+import { ShinyText } from "@/components/ui/ShinyText";
 
 type Sop = {
   id: number;
@@ -72,30 +74,41 @@ export default function SopsPage() {
   }, []);
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-1">
+    <div className="space-y-8">
+      <FadeContent
+        as="section"
+        blur={true}
+        duration={800}
+        delay={50}
+        className="space-y-2"
+      >
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">
-            SOPs
+          <h1 className="text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
+            <ShinyText>SOPs</ShinyText>
           </h1>
-          <span className="inline-flex rounded-md border border-borderSubtle bg-bgDark px-3 py-1 text-xs font-medium text-textMuted">
+          <span className="inline-flex rounded-xl border border-white/30 bg-white/55 px-3 py-1 text-xs font-medium text-textMuted shadow-glass backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
             {filteredSops.length} of {sops.length} SOPs
           </span>
         </div>
-        <p className="max-w-3xl text-sm text-textSecondary">
+        <p className="max-w-3xl text-base text-textSecondary">
           Live standard operating procedures from PostgreSQL with ownership,
           versioning, and review status.
         </p>
-      </header>
+      </FadeContent>
 
-      <div className="rounded-xl border border-borderSubtle bg-surface/95 p-5 shadow-soft backdrop-blur-xl">
+      <FadeContent
+        blur={true}
+        duration={800}
+        delay={90}
+        className="glass-surface p-5"
+      >
         <div className="relative">
           <input
             type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search SOPs..."
-            className="h-10 w-full rounded-md border border-borderSubtle bg-bgDark px-3 pr-10 text-sm text-textPrimary outline-none transition-colors placeholder:text-textDisabled focus:border-accent focus:ring-2 focus:ring-accent/20"
+            className="h-10 w-full rounded-xl border border-white/30 bg-white/55 px-3 pr-10 text-sm text-textPrimary outline-none backdrop-blur-xl transition-colors placeholder:text-textDisabled focus:border-white/60 focus:bg-white/80 focus:ring-4 focus:ring-white/25 dark:border-white/10 dark:bg-white/5"
           />
           {search.trim() ? (
             <button
@@ -108,18 +121,24 @@ export default function SopsPage() {
             </button>
           ) : null}
         </div>
-      </div>
+      </FadeContent>
 
       {error ? <ErrorPanel message={error} /> : null}
 
       {loading ? (
         <LoadingPanel label="Loading SOPs..." />
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+        <FadeContent
+          as="section"
+          blur={true}
+          duration={800}
+          delay={120}
+          className="grid gap-4 lg:grid-cols-2 xl:grid-cols-3"
+        >
           {filteredSops.map((sop) => (
             <article
               key={sop.id}
-              className="rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl"
+              className="glass-surface glass-surface-hover p-6"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -142,11 +161,11 @@ export default function SopsPage() {
           ))}
 
           {filteredSops.length === 0 ? (
-            <article className="rounded-lg border border-dashed border-borderSubtle bg-surface p-8 text-center text-sm text-textSecondary lg:col-span-2 xl:col-span-3">
+            <article className="rounded-2xl border border-dashed border-white/30 bg-white/45 p-8 text-center text-sm text-textSecondary shadow-glass backdrop-blur-2xl dark:border-white/10 dark:bg-white/5 lg:col-span-2 xl:col-span-3">
               No SOPs match this search.
             </article>
           ) : null}
-        </div>
+        </FadeContent>
       )}
     </div>
   );

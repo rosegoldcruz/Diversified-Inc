@@ -57,6 +57,10 @@ const config: Config = {
       },
       boxShadow: {
         soft: "0 1px 2px rgba(15, 23, 42, 0.04), 0 10px 28px rgba(15, 23, 42, 0.04)",
+        glass:
+          "0 24px 80px rgba(15, 23, 42, 0.12), 0 8px 28px rgba(15, 23, 42, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.72)",
+        glassHover:
+          "0 34px 110px rgba(15, 23, 42, 0.16), 0 12px 36px rgba(37, 99, 235, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.86)",
         cyberSm:
           "0 1px 2px rgba(15, 23, 42, 0.04), 0 8px 20px rgba(15, 23, 42, 0.04)",
         cyberMd:
@@ -73,10 +77,10 @@ const config: Config = {
       borderRadius: {
         md: "0.625rem",
         lg: "0.75rem",
-        xl: "0.875rem",
-        "2xl": "0.875rem",
-        "3xl": "0.875rem",
-        cyber: "0.75rem",
+        xl: "0.9375rem",
+        "2xl": "1rem",
+        "3xl": "1rem",
+        cyber: "0.9375rem",
       },
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
@@ -87,11 +91,29 @@ const config: Config = {
       animation: {
         "pulse-glow": "pulse 2s infinite",
         shimmer: "shimmer 2s infinite",
+        "shine-sweep": "shine-sweep 3.2s ease-in-out infinite",
+        "fade-blur-in": "fade-blur-in 800ms cubic-bezier(0.16, 1, 0.3, 1) both",
       },
       keyframes: {
         shimmer: {
           "0%": { transform: "translateX(-100%)" },
           "100%": { transform: "translateX(100%)" },
+        },
+        "shine-sweep": {
+          "0%, 52%": { backgroundPosition: "200% center" },
+          "100%": { backgroundPosition: "-200% center" },
+        },
+        "fade-blur-in": {
+          "0%": {
+            opacity: "0",
+            transform: "translateY(14px)",
+            filter: "blur(14px)",
+          },
+          "100%": {
+            opacity: "1",
+            transform: "translateY(0)",
+            filter: "blur(0)",
+          },
         },
       },
     },

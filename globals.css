@@ -6,16 +6,32 @@
 
 html,
 body {
-  background: rgb(var(--color-bg-dark));
+  background:
+    radial-gradient(
+      circle at 12% 8%,
+      rgb(255 255 255 / 0.86),
+      transparent 30rem
+    ),
+    radial-gradient(
+      circle at 82% 0%,
+      rgb(191 219 254 / 0.48),
+      transparent 32rem
+    ),
+    radial-gradient(
+      circle at 52% 95%,
+      rgb(226 232 240 / 0.74),
+      transparent 34rem
+    ),
+    rgb(var(--color-bg-dark));
   overscroll-behavior: none;
 }
 
 :root {
   color-scheme: light;
-  --color-background: 246 247 251;
+  --color-background: 238 242 248;
   --color-surface: 255 255 255;
-  --color-surface-soft: 250 251 253;
-  --color-surface-hover: 246 248 252;
+  --color-surface-soft: 248 250 253;
+  --color-surface-hover: 255 255 255;
   --color-cyber-cyan: 37 99 235;
   --color-cyber-cyan-dim: 29 78 216;
   --color-cyber-magenta: 124 58 237;
@@ -25,8 +41,8 @@ body {
   --color-cyber-red: 220 38 38;
   --color-cyber-green: 16 185 129;
   --color-bg-darkest: 255 255 255;
-  --color-bg-dark: 246 247 251;
-  --color-bg-medium: 241 243 248;
+  --color-bg-dark: 238 242 248;
+  --color-bg-medium: 231 237 246;
   --color-bg-light: 229 233 240;
   --color-bg-lighter: 207 213 224;
   --color-border-subtle: 226 230 238;
@@ -39,6 +55,10 @@ body {
   --color-navy: 26 43 74;
   --color-accent: 37 99 235;
   --color-accent-soft: 29 78 216;
+  --glass-light: 255 255 255;
+  --glass-dark: 2 6 23;
+  --glass-border: 255 255 255;
+  --glass-glow: 255 255 255;
 }
 
 .dark {
@@ -70,6 +90,28 @@ body {
   --color-navy: 96 165 250;
   --color-accent: 96 165 250;
   --color-accent-soft: 59 130 246;
+  --glass-light: 255 255 255;
+  --glass-dark: 2 6 23;
+  --glass-border: 255 255 255;
+  --glass-glow: 125 211 252;
+}
+
+.dark html,
+.dark body,
+html.dark body {
+  background:
+    radial-gradient(circle at 12% 8%, rgb(30 41 59 / 0.78), transparent 30rem),
+    radial-gradient(
+      circle at 78% 0%,
+      rgb(59 130 246 / 0.22),
+      transparent 32rem
+    ),
+    radial-gradient(
+      circle at 50% 100%,
+      rgb(15 23 42 / 0.92),
+      transparent 34rem
+    ),
+    rgb(var(--color-bg-dark));
 }
 
 body {
@@ -118,10 +160,96 @@ body {
 .dark .shadow-cyberSm,
 .dark .shadow-cyberMd,
 .dark .shadow-cyberLg,
-.dark .shadow-cyberInset {
+.dark .shadow-cyberInset,
+.dark .shadow-glass,
+.dark .shadow-glassHover {
   box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.28),
-    0 18px 44px rgba(0, 0, 0, 0.22);
+    0 30px 100px rgba(0, 0, 0, 0.44),
+    0 10px 36px rgba(15, 23, 42, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.glass-surface {
+  @apply rounded-2xl border border-white/30 bg-white/70 shadow-glass ring-1 ring-white/20 backdrop-blur-2xl transition-all duration-300 dark:border-white/10 dark:bg-slate-950/70 dark:ring-white/10;
+}
+
+.glass-surface-hover {
+  @apply hover:-translate-y-0.5 hover:border-white/50 hover:bg-white/80 hover:shadow-glassHover hover:backdrop-blur-3xl dark:hover:border-white/20 dark:hover:bg-zinc-950/75;
+}
+
+.glass-panel {
+  @apply rounded-2xl border border-white/30 bg-white/70 shadow-glass ring-1 ring-white/20 backdrop-blur-2xl transition-all duration-300 dark:border-white/10 dark:bg-slate-950/70 dark:ring-white/10;
+}
+
+.glass-edge {
+  @apply ring-1 ring-white/25 dark:ring-white/10;
+}
+
+.glass-inner-highlight {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.72),
+    inset 0 -1px 0 rgb(15 23 42 / 0.04);
+}
+
+.bg-surface,
+.bg-surface\/80,
+.bg-surface\/90,
+.bg-surface\/95 {
+  background-color: rgb(255 255 255 / 0.7) !important;
+  -webkit-backdrop-filter: blur(40px) saturate(160%);
+  backdrop-filter: blur(40px) saturate(160%);
+}
+
+.bg-bgDark,
+.bg-bgDark\/80 {
+  background-color: rgb(255 255 255 / 0.42) !important;
+  -webkit-backdrop-filter: blur(32px) saturate(150%);
+  backdrop-filter: blur(32px) saturate(150%);
+}
+
+.border-borderSubtle {
+  border-color: rgb(255 255 255 / 0.3) !important;
+}
+
+.shadow-soft,
+.shadow-cyberSm,
+.shadow-cyberMd,
+.shadow-cyberLg {
+  box-shadow:
+    0 24px 80px rgba(15, 23, 42, 0.12),
+    0 8px 28px rgba(15, 23, 42, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72) !important;
+}
+
+.dark .glass-inner-highlight {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.11),
+    inset 0 -1px 0 rgb(0 0 0 / 0.22);
+}
+
+.dark .bg-surface,
+.dark .bg-surface\/80,
+.dark .bg-surface\/90,
+.dark .bg-surface\/95,
+.dark .bg-bgDark,
+.dark .bg-bgDark\/80 {
+  background-color: rgb(2 6 23 / 0.72) !important;
+}
+
+.dark .border-borderSubtle {
+  border-color: rgb(255 255 255 / 0.1) !important;
+}
+
+.dark .shadow-soft,
+.dark .shadow-cyberSm,
+.dark .shadow-cyberMd,
+.dark .shadow-cyberLg,
+.dark .shadow-glass,
+.dark .shadow-glassHover {
+  box-shadow:
+    0 30px 100px rgba(0, 0, 0, 0.44),
+    0 10px 36px rgba(15, 23, 42, 0.32),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12) !important;
 }
 
 .dark .bg-white {
@@ -136,14 +264,9 @@ body {
   color: rgb(var(--color-text-primary));
 }
 
-/* Card — clean white with subtle shadow */
-.glass-panel {
-  @apply rounded-xl border border-borderSubtle bg-surface/95 shadow-soft backdrop-blur-xl;
-}
-
 /* Cyber card — remapped to clean corporate card */
 .cyber-card-tw {
-  @apply relative rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl;
+  @apply relative rounded-2xl border border-white/30 bg-white/70 p-6 shadow-glass ring-1 ring-white/20 backdrop-blur-2xl transition-all duration-300 dark:border-white/10 dark:bg-slate-950/70 dark:ring-white/10;
 }
 
 .cyber-card-tw::before {
@@ -182,7 +305,7 @@ body {
 /* Cyber input — remapped to corporate input */
 .input-cyber {
   @apply w-full px-3 py-2.5 font-sans text-sm;
-  @apply bg-surface border border-borderSubtle text-textPrimary rounded-md;
+  @apply rounded-xl border border-white/30 bg-white/70 text-textPrimary shadow-glass backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/70;
   @apply transition-colors duration-150;
 }
 

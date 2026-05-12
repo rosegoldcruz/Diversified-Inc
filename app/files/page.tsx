@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Archive, FileText, Image } from "lucide-react";
+import { FadeContent } from "@/components/ui/FadeContent";
+import { ShinyText } from "@/components/ui/ShinyText";
 
 type FileRecord = {
   id: number;
@@ -93,13 +95,19 @@ export default function FilesPage() {
   }, [files]);
 
   return (
-    <div className="space-y-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div className="space-y-8">
+      <FadeContent
+        as="section"
+        blur={true}
+        duration={800}
+        delay={50}
+        className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+      >
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">
-            Files
+          <h1 className="text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
+            <ShinyText>Files</ShinyText>
           </h1>
-          <p className="max-w-3xl text-sm text-textSecondary">
+          <p className="max-w-3xl text-base text-textSecondary">
             Internal file records linked to jobs and work orders.
           </p>
         </div>
@@ -107,32 +115,43 @@ export default function FilesPage() {
           type="button"
           disabled
           title="Coming soon"
-          className="inline-flex h-10 cursor-not-allowed items-center justify-center rounded-md border border-accent bg-accent px-4 text-sm font-semibold text-white opacity-50"
+          className="inline-flex h-10 cursor-not-allowed items-center justify-center rounded-xl border border-white/30 bg-accent/80 px-4 text-sm font-semibold text-white opacity-60 shadow-glass backdrop-blur-2xl"
         >
           Upload File
         </button>
-      </header>
+      </FadeContent>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <FadeContent
+        as="section"
+        blur={true}
+        duration={800}
+        delay={90}
+        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+      >
         <StatCard label="Total Files" value={metrics.total} />
         <StatCard label="Contracts" value={metrics.contracts} />
         <StatCard label="Photos" value={metrics.photos} />
         <StatCard label="Permits" value={metrics.permits} />
-      </section>
+      </FadeContent>
 
-      <div className="rounded-xl border border-borderSubtle bg-surface/95 p-5 shadow-soft backdrop-blur-xl">
+      <FadeContent
+        blur={true}
+        duration={800}
+        delay={120}
+        className="glass-surface p-5"
+      >
         <div className="flex flex-col gap-3 md:flex-row md:items-center">
           <input
             type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search files or linked jobs"
-            className="h-10 w-full rounded-md border border-borderSubtle bg-bgDark px-3 text-sm text-textPrimary outline-none transition-colors placeholder:text-textDisabled focus:border-accent focus:ring-2 focus:ring-accent/20 md:w-64"
+            className="h-10 w-full rounded-xl border border-white/30 bg-white/55 px-3 text-sm text-textPrimary outline-none backdrop-blur-xl transition-colors placeholder:text-textDisabled focus:border-white/60 focus:bg-white/80 focus:ring-4 focus:ring-white/25 dark:border-white/10 dark:bg-white/5 md:w-64"
           />
           <select
             value={typeFilter}
             onChange={(event) => setTypeFilter(event.target.value)}
-            className="h-10 rounded-md border border-borderSubtle bg-bgDark px-3 text-sm text-textPrimary outline-none transition-colors focus:border-accent focus:ring-2 focus:ring-accent/20"
+            className="h-10 rounded-xl border border-white/30 bg-white/55 px-3 text-sm text-textPrimary outline-none backdrop-blur-xl transition-colors focus:border-white/60 focus:bg-white/80 focus:ring-4 focus:ring-white/25 dark:border-white/10 dark:bg-white/5"
           >
             <option value="">All Types</option>
             {FILE_TYPES.map((type) => (
@@ -145,17 +164,23 @@ export default function FilesPage() {
             {filteredFiles.length} / {files.length} files
           </span>
         </div>
-      </div>
+      </FadeContent>
 
       {error ? <ErrorPanel message={error} /> : null}
 
       {loading ? (
         <LoadingPanel label="Loading files..." />
       ) : (
-        <section className="overflow-hidden rounded-xl border border-borderSubtle bg-surface/95 shadow-soft backdrop-blur-xl">
+        <FadeContent
+          as="section"
+          blur={true}
+          duration={800}
+          delay={150}
+          className="glass-surface overflow-hidden"
+        >
           <div className="hidden overflow-x-auto md:block">
             <table className="min-w-[980px] w-full text-left text-sm">
-              <thead className="bg-surfaceSoft text-xs uppercase tracking-wide text-textMuted">
+              <thead className="bg-white/35 text-xs uppercase tracking-wide text-textMuted dark:bg-white/5">
                 <tr>
                   <th className="px-4 py-3 font-semibold">ID</th>
                   <th className="px-4 py-3 font-semibold">File Name</th>
@@ -165,13 +190,13 @@ export default function FilesPage() {
                   <th className="px-4 py-3 font-semibold">Date</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-borderSubtle">
+              <tbody className="divide-y divide-white/30 dark:divide-white/10">
                 {filteredFiles.map((file) => {
                   const Icon = getFileIcon(file.file_type);
                   return (
                     <tr
                       key={file.id}
-                      className="transition-colors hover:bg-bgDark"
+                      className="transition-colors hover:bg-white/45 dark:hover:bg-white/5"
                     >
                       <td className="px-4 py-3 text-textMuted">
                         {file.file_id}
@@ -218,10 +243,7 @@ export default function FilesPage() {
             {filteredFiles.map((file) => {
               const Icon = getFileIcon(file.file_type);
               return (
-                <article
-                  key={file.id}
-                  className="rounded-lg border border-borderSubtle bg-bgDark p-4"
-                >
+                <article key={file.id} className="glass-surface p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex min-w-0 items-start gap-2">
                       <Icon className="mt-0.5 h-4 w-4 shrink-0 text-accent" />
@@ -264,7 +286,7 @@ export default function FilesPage() {
               </article>
             ) : null}
           </div>
-        </section>
+        </FadeContent>
       )}
     </div>
   );

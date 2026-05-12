@@ -26,6 +26,7 @@ import {
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
+import { GlassIcons } from "@/components/ui/GlassIcons";
 import { SidebarItem } from "@/components/ui/SidebarItem";
 
 type NavItem = {
@@ -107,14 +108,14 @@ export function Sidebar({
       />
       <aside
         className={[
-          "fixed inset-y-0 left-0 z-50 flex h-dvh w-[min(20rem,85vw)] flex-col border-r border-borderSubtle bg-surface/80 backdrop-blur-xl transition-all duration-300 lg:static lg:z-auto lg:h-full lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 flex h-dvh w-[min(20rem,85vw)] flex-col border-r border-white/25 bg-white/55 shadow-glass ring-1 ring-white/20 backdrop-blur-2xl transition-all duration-300 dark:border-white/10 dark:bg-slate-950/70 dark:ring-white/10 lg:static lg:z-auto lg:h-full lg:translate-x-0",
           mobileOpen ? "translate-x-0" : "-translate-x-full",
           desktopCollapsed ? "lg:w-16" : "lg:w-64",
         ].join(" ")}
       >
         {/* Logo Section */}
-        <div className="relative border-b border-borderSubtle px-3 py-3">
-          <div className="relative h-16 w-full overflow-hidden rounded-2xl border border-white/20 shadow-soft">
+        <div className="relative border-b border-white/25 px-3 py-3 dark:border-white/10">
+          <div className="relative h-16 w-full overflow-hidden rounded-2xl border border-white/30 shadow-glass ring-1 ring-white/20 backdrop-blur-2xl dark:border-white/10 dark:ring-white/10">
             <Image
               src="/divco.gif"
               alt="Diversified OS"
@@ -191,15 +192,24 @@ export function Sidebar({
         {/* Footer */}
         <div
           className={[
-            "border-t border-borderSubtle px-4 py-3",
+            "space-y-3 border-t border-white/25 px-3 py-3 dark:border-white/10",
             desktopCollapsed ? "lg:hidden" : "",
           ].join(" ")}
         >
-          <div className="text-[10px] font-medium text-textDisabled">
-            Diversified OS
-          </div>
-          <div className="mt-0.5 text-[10px] text-borderHover">
-            Internal Operations Platform
+          <GlassIcons
+            items={[
+              { label: "Tasks", href: "/tasks", icon: CheckSquare },
+              { label: "Reports", href: "/reports", icon: BarChart3 },
+            ]}
+            className="grid-cols-2"
+          />
+          <div className="px-1">
+            <div className="text-[10px] font-medium text-textDisabled">
+              Diversified OS
+            </div>
+            <div className="mt-0.5 text-[10px] text-borderHover">
+              Internal Operations Platform
+            </div>
           </div>
         </div>
       </aside>

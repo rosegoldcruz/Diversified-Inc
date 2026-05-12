@@ -22,7 +22,7 @@ const toneClasses: Record<StatTone, string> = {
   warning:
     "bg-amber-50/80 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300",
   danger: "bg-red-50/80 text-red-700 dark:bg-red-500/10 dark:text-red-300",
-  neutral: "bg-bgDark text-textSecondary",
+  neutral: "bg-white/45 text-textSecondary dark:bg-white/5",
 };
 
 export function StatCard({
@@ -48,7 +48,7 @@ export function StatCard({
         {icon ? (
           <div
             className={cn(
-              "grid h-10 w-10 shrink-0 place-items-center rounded-lg",
+              "grid h-10 w-10 shrink-0 place-items-center rounded-xl border border-white/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.42)] backdrop-blur-xl dark:border-white/10",
               toneClasses[tone],
             )}
           >

@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react"
 import { FileText, FileSignature, CheckCircle, Clock, User, History } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { ShinyText } from "@/components/ui/ShinyText"
 
 type Signature = {
   id: number
@@ -184,7 +185,9 @@ export default function DocumentESignPage() {
     return (
       <div className="flex flex-col gap-6 p-6">
         <header>
-          <h1 className="text-2xl font-semibold text-white">Documents & E-Sign</h1>
+          <h1 className="text-2xl font-semibold text-white">
+            <ShinyText>Documents &amp; E-Sign</ShinyText>
+          </h1>
           <p className="text-sm text-neutral-400">Select a document to view signatures</p>
         </header>
 

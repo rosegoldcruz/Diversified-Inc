@@ -3,6 +3,8 @@
 import { AlertTriangle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { FadeContent } from "@/components/ui/FadeContent";
+import { ShinyText } from "@/components/ui/ShinyText";
 
 type InventoryItem = {
   id: number;
@@ -61,26 +63,38 @@ export default function InventoryPage() {
   }, []);
 
   return (
-    <div className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">
-          Inventory
+    <div className="space-y-8">
+      <FadeContent
+        as="section"
+        blur={true}
+        duration={800}
+        delay={50}
+        className="space-y-2"
+      >
+        <h1 className="text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
+          <ShinyText>Inventory</ShinyText>
         </h1>
-        <p className="max-w-3xl text-sm text-textSecondary">
+        <p className="max-w-3xl text-base text-textSecondary">
           Live stock levels, locations, and reorder warnings from PostgreSQL
           inventory records.
         </p>
-      </header>
+      </FadeContent>
 
       {error ? <ErrorPanel message={error} /> : null}
 
       {loading ? (
         <LoadingPanel label="Loading inventory..." />
       ) : (
-        <section className="overflow-hidden rounded-xl border border-borderSubtle bg-surface/95 shadow-soft backdrop-blur-xl">
+        <FadeContent
+          as="section"
+          blur={true}
+          duration={800}
+          delay={100}
+          className="glass-surface overflow-hidden"
+        >
           <div className="hidden overflow-x-auto md:block">
             <table className="min-w-full text-left text-sm">
-              <thead className="bg-surfaceSoft text-xs uppercase tracking-wide text-textMuted">
+              <thead className="bg-white/35 text-xs uppercase tracking-wide text-textMuted dark:bg-white/5">
                 <tr>
                   <th className="px-4 py-3 font-semibold">Item</th>
                   <th className="px-4 py-3 font-semibold">Category</th>
@@ -90,7 +104,7 @@ export default function InventoryPage() {
                   <th className="px-4 py-3 font-semibold">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-borderSubtle">
+              <tbody className="divide-y divide-white/30 dark:divide-white/10">
                 {items.map((item) => {
                   const quantity = item.quantity ?? 0;
                   const reorderThreshold = item.reorder_threshold ?? 0;
@@ -102,7 +116,7 @@ export default function InventoryPage() {
                     <tr
                       key={item.id}
                       onClick={() => router.push(`/inventory/${item.id}`)}
-                      className="cursor-pointer transition-colors hover:bg-bgDark"
+                      className="cursor-pointer transition-colors hover:bg-white/45 dark:hover:bg-white/5"
                     >
                       <td className="px-4 py-3 font-medium text-textPrimary">
                         <div className="flex items-center gap-2">
@@ -148,7 +162,7 @@ export default function InventoryPage() {
                 <article
                   key={item.id}
                   onClick={() => router.push(`/inventory/${item.id}`)}
-                  className="cursor-pointer rounded-lg border border-borderSubtle bg-bgDark p-4 transition-colors hover:bg-surface"
+                  className="glass-surface cursor-pointer p-5 transition-colors"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -177,7 +191,7 @@ export default function InventoryPage() {
               );
             })}
           </div>
-        </section>
+        </FadeContent>
       )}
     </div>
   );
@@ -205,7 +219,7 @@ function InventoryStatusBadge({ status }: { status: string | null }) {
 
 function LoadingPanel({ label }: { label: string }) {
   return (
-    <div className="rounded-xl border border-borderSubtle bg-surface/95 p-12 text-center text-sm text-textSecondary shadow-soft backdrop-blur-xl">
+    <div className="glass-surface p-12 text-center text-sm text-textSecondary">
       {label}
     </div>
   );
@@ -213,7 +227,7 @@ function LoadingPanel({ label }: { label: string }) {
 
 function ErrorPanel({ message }: { message: string }) {
   return (
-    <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 shadow-soft dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+    <div className="rounded-2xl border border-red-200/70 bg-red-50/70 p-5 text-sm text-red-700 shadow-glass backdrop-blur-2xl dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
       {message}
     </div>
   );

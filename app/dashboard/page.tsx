@@ -10,6 +10,8 @@ import {
   Flame,
   Ban,
 } from "lucide-react";
+import { FadeContent } from "@/components/ui/FadeContent";
+import { ShinyText } from "@/components/ui/ShinyText";
 
 type DashboardStats = {
   total_tasks: number;
@@ -162,14 +164,20 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <header className="space-y-2">
+      <FadeContent
+        as="section"
+        blur={true}
+        duration={800}
+        delay={50}
+        className="space-y-2"
+      >
         <h1 className="text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
-          Dashboard
+          <ShinyText>Dashboard</ShinyText>
         </h1>
         <p className="max-w-3xl text-base text-textSecondary">
           Your team&apos;s daily command center.
         </p>
-      </header>
+      </FadeContent>
 
       {error ? <ErrorPanel message={error} /> : null}
 
@@ -177,14 +185,20 @@ export default function DashboardPage() {
         <LoadingPanel label="Loading dashboard..." />
       ) : (
         <>
-          <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          <FadeContent
+            as="section"
+            blur={true}
+            duration={800}
+            delay={50}
+            className="grid gap-5 md:grid-cols-2 xl:grid-cols-3"
+          >
             {statCards.map((card) => {
               const Icon = card.icon;
               return (
                 <Link
                   key={card.label}
                   href={card.href}
-                  className="block cursor-pointer rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-borderHover hover:bg-surface hover:shadow-cyberMd"
+                  className="glass-surface glass-surface-hover block cursor-pointer p-6"
                 >
                   <div className="flex items-center gap-2.5">
                     <Icon className={`h-5 w-5 ${card.color}`} />
@@ -198,9 +212,15 @@ export default function DashboardPage() {
                 </Link>
               );
             })}
-          </section>
+          </FadeContent>
 
-          <section className="rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl md:p-8">
+          <FadeContent
+            as="section"
+            blur={true}
+            duration={800}
+            delay={120}
+            className="glass-surface p-6 md:p-8"
+          >
             <div className="flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-lg font-semibold text-textPrimary">
@@ -225,7 +245,7 @@ export default function DashboardPage() {
                   <Link
                     key={task.id}
                     href={`/tasks/${task.id}`}
-                    className="block rounded-xl border border-borderSubtle bg-bgDark/80 p-5 transition-all duration-200 hover:-translate-y-0.5 hover:border-borderHover hover:bg-surface hover:shadow-soft"
+                    className="glass-surface glass-surface-hover block p-5"
                   >
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div>
@@ -248,7 +268,7 @@ export default function DashboardPage() {
                 ))
               )}
             </div>
-          </section>
+          </FadeContent>
         </>
       )}
     </div>

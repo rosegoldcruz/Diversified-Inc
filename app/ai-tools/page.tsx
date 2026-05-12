@@ -3,6 +3,8 @@
 import { useState } from "react";
 import type { LucideIcon } from "lucide-react";
 import { ClipboardList, FileText, Mail, Shield } from "lucide-react";
+import { FadeContent } from "@/components/ui/FadeContent";
+import { ShinyText } from "@/components/ui/ShinyText";
 
 type ToolConfig = {
   title: string;
@@ -60,21 +62,33 @@ const tools: ToolConfig[] = [
 
 export default function AiToolsPage() {
   return (
-    <div className="space-y-6">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">
-          AI Tools
+    <div className="space-y-8">
+      <FadeContent
+        as="section"
+        blur={true}
+        duration={800}
+        delay={50}
+        className="space-y-2"
+      >
+        <h1 className="text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
+          <ShinyText>AI Tools</ShinyText>
         </h1>
-        <p className="max-w-3xl text-sm text-textSecondary">
+        <p className="max-w-3xl text-base text-textSecondary">
           AEON-powered tools built for Diversified operations.
         </p>
-      </header>
+      </FadeContent>
 
-      <section className="grid gap-5 xl:grid-cols-2">
+      <FadeContent
+        as="section"
+        blur={true}
+        duration={800}
+        delay={100}
+        className="grid gap-5 xl:grid-cols-2"
+      >
         {tools.map((tool) => (
           <ToolCard key={tool.title} tool={tool} />
         ))}
-      </section>
+      </FadeContent>
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Lock, X } from "lucide-react";
+import { ShinyText } from "@/components/ui/ShinyText";
 
 type ViewMode = "Day" | "Week" | "Month";
 
@@ -379,10 +380,10 @@ export default function CalendarPage() {
         </div>
       </aside>
 
-      <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-surface/95">
-        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-borderSubtle px-5 py-4">
+      <main className="flex min-w-0 flex-1 flex-col overflow-hidden bg-white/45 backdrop-blur-2xl dark:bg-white/5">
+        <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/30 px-5 py-4 dark:border-white/10">
           <h1 className="text-2xl font-semibold tracking-normal text-textPrimary">
-            Projection Calendar
+            <ShinyText>Projection Calendar</ShinyText>
           </h1>
           <p className="text-sm font-medium text-textSecondary">
             {formatWeekHeader(weekDays)}

@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { CreditCard, Bell, Settings, Shield } from "lucide-react";
+import { FadeContent } from "@/components/ui/FadeContent";
+import { ShinyText } from "@/components/ui/ShinyText";
 
 function KpiCard({
   label,
@@ -79,29 +81,29 @@ const SETTINGS_SECTIONS = [
 
 export default function SettingsPage() {
   return (
-    <div className="space-y-6">
-      <div className="space-y-1">
+    <div className="space-y-8">
+      <FadeContent as="section" blur={true} duration={800} delay={50} className="space-y-2">
         <h1 className="text-3xl font-semibold tracking-normal text-textPrimary">
-          Settings
+          <ShinyText>Settings</ShinyText>
         </h1>
-        <p className="text-sm text-textSecondary">
+        <p className="text-base text-textSecondary">
           System configuration, billing, and preferences
         </p>
-      </div>
+      </FadeContent>
 
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <FadeContent as="section" blur={true} duration={800} delay={90} className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard label="Plan" value="Pro" variant="cyan" />
         <KpiCard label="Users" value="8" variant="green" />
         <KpiCard label="Integrations" value="3" variant="yellow" />
         <KpiCard label="API Keys" value="2 active" variant="magenta" />
-      </div>
+      </FadeContent>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <FadeContent as="section" blur={true} duration={800} delay={120} className="grid gap-4 sm:grid-cols-2">
         {SETTINGS_SECTIONS.map((section) => {
           const Icon = section.icon;
           return (
             <Link key={section.href} href={section.href}>
-              <div className="cursor-pointer rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-borderHover hover:bg-surface hover:shadow-cyberMd">
+              <div className="glass-surface glass-surface-hover cursor-pointer p-6">
                 <div className="flex items-start gap-4">
                   <div
                     className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md border ${section.border} ${section.iconBg}`}
@@ -121,7 +123,7 @@ export default function SettingsPage() {
             </Link>
           );
         })}
-      </div>
+      </FadeContent>
     </div>
   );
 }

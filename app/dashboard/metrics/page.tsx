@@ -12,6 +12,7 @@ import {
   RefreshCw,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { ShinyText } from "@/components/ui/ShinyText"
 
 type MetricValue = {
   metric_key: string
@@ -91,7 +92,9 @@ export default function MetricsDashboard() {
       {/* Header */}
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-white">Metrics Dashboard</h1>
+          <h1 className="text-2xl font-semibold text-white">
+            <ShinyText>Metrics Dashboard</ShinyText>
+          </h1>
           <p className="text-sm text-neutral-400">
             Real-time business metrics • Last updated: {lastRefresh.toLocaleTimeString()}
           </p>

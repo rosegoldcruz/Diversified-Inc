@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { AlertTriangle, ArrowRightCircle, Clock, Zap } from "lucide-react";
+import { FadeContent } from "@/components/ui/FadeContent";
+import { ShinyText } from "@/components/ui/ShinyText";
 
 const automations = [
   {
@@ -42,13 +44,19 @@ const automations = [
 
 export default function AutomationsPage() {
   return (
-    <div className="space-y-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div className="space-y-8">
+      <FadeContent
+        as="section"
+        blur={true}
+        duration={800}
+        delay={50}
+        className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+      >
         <div className="space-y-1">
-          <h1 className="text-2xl font-semibold text-textPrimary md:text-3xl">
-            Automations
+          <h1 className="text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
+            <ShinyText>Automations</ShinyText>
           </h1>
-          <p className="max-w-3xl text-sm text-textSecondary">
+          <p className="max-w-3xl text-base text-textSecondary">
             Workflow automations managed via n8n.
           </p>
         </div>
@@ -56,22 +64,28 @@ export default function AutomationsPage() {
           href="https://auto.snrglabs.com"
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 rounded-md border border-accent bg-accent px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-accentSoft"
+          className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-accent/90 px-4 py-2 text-sm font-semibold text-white shadow-glass ring-1 ring-white/20 backdrop-blur-2xl transition-all hover:-translate-y-px hover:border-white/50 hover:bg-accent hover:shadow-glassHover"
         >
           Open n8n Dashboard -&gt;
         </Link>
-      </header>
+      </FadeContent>
 
-      <section className="grid gap-5 md:grid-cols-2">
+      <FadeContent
+        as="section"
+        blur={true}
+        duration={800}
+        delay={100}
+        className="grid gap-5 md:grid-cols-2"
+      >
         {automations.map((automation) => {
           const Icon = automation.icon;
           return (
             <article
               key={automation.title}
-              className="rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl"
+              className="glass-surface glass-surface-hover p-6"
             >
               <div className="flex items-start justify-between gap-4">
-                <div className="rounded-lg bg-bgDark p-2">
+                <div className="rounded-xl border border-white/30 bg-white/45 p-2 shadow-glass backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
                   <Icon className={`h-5 w-5 ${automation.iconClassName}`} />
                 </div>
                 <StatusBadge status={automation.status} />
@@ -82,13 +96,13 @@ export default function AutomationsPage() {
               <p className="mt-2 text-sm leading-6 text-textSecondary">
                 {automation.description}
               </p>
-              <p className="mt-4 border-t border-borderSubtle pt-3 text-sm text-textMuted">
+              <p className="mt-4 border-t border-white/30 pt-3 text-sm text-textMuted dark:border-white/10">
                 {automation.meta}
               </p>
             </article>
           );
         })}
-      </section>
+      </FadeContent>
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { Save, Settings, Palette, Plug, ToggleLeft, Shield } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { ShinyText } from "@/components/ui/ShinyText"
 
 type BrandingSettings = {
   company_name?: string
@@ -132,7 +133,9 @@ export default function SystemSettingsPage() {
     <div className="flex flex-col gap-6 p-6 max-w-5xl">
       {/* Header */}
       <header>
-        <h1 className="text-2xl font-semibold text-white">System Settings</h1>
+        <h1 className="text-2xl font-semibold text-white">
+          <ShinyText>System Settings</ShinyText>
+        </h1>
         <p className="text-sm text-neutral-400">
           Configure system branding, integrations, and features
         </p>

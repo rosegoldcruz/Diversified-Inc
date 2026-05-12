@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react"
 import { Bell, Mail, MessageSquare, Smartphone } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { ShinyText } from "@/components/ui/ShinyText"
 
 type Preference = {
   id: number
@@ -133,7 +134,9 @@ export default function NotificationPreferencesPage() {
     <div className="flex flex-col gap-6 p-6 max-w-5xl">
       {/* Header */}
       <header>
-        <h1 className="text-2xl font-semibold text-white">Notification Preferences</h1>
+        <h1 className="text-2xl font-semibold text-white">
+          <ShinyText>Notification Preferences</ShinyText>
+        </h1>
         <p className="text-sm text-neutral-400">
           Choose how you want to receive notifications
         </p>

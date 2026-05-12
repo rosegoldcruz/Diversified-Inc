@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import { Mail, Phone, Users } from "lucide-react";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
+import { FadeContent } from "@/components/ui/FadeContent";
+import { ShinyText } from "@/components/ui/ShinyText";
 
 type Employee = {
   id: number;
@@ -63,13 +65,19 @@ export default function EmployeesPage() {
 
   return (
     <div className="space-y-8">
-      <header className="flex flex-col gap-6 border-b border-borderSubtle pb-6 lg:flex-row lg:items-end lg:justify-between">
+      <FadeContent
+        as="section"
+        blur={true}
+        duration={800}
+        delay={50}
+        className="flex flex-col gap-6 border-b border-white/30 pb-6 dark:border-white/10 lg:flex-row lg:items-end lg:justify-between"
+      >
         <div className="space-y-2">
           <p className="text-xs font-medium uppercase tracking-wide text-textMuted">
             Operations directory
           </p>
           <h1 className="text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
-            Employees
+            <ShinyText>Employees</ShinyText>
           </h1>
           <p className="max-w-3xl text-base text-textSecondary">
             Live employee records from PostgreSQL, including role, department,
@@ -87,19 +95,25 @@ export default function EmployeesPage() {
             }
           />
         </div>
-      </header>
+      </FadeContent>
 
       {error ? <ErrorPanel message={error} /> : null}
 
       {loading ? (
         <LoadingPanel label="Loading employees..." />
       ) : (
-        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+        <FadeContent
+          as="section"
+          blur={true}
+          duration={800}
+          delay={100}
+          className="grid gap-5 md:grid-cols-2 xl:grid-cols-3"
+        >
           {employees.map((employee) => (
             <Link
               key={employee.id}
               href={`/employees/${employee.id}`}
-              className="group rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl transition-all duration-200 hover:-translate-y-0.5 hover:border-borderHover hover:bg-surface hover:shadow-cyberMd"
+              className="glass-surface glass-surface-hover group p-6"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex min-w-0 items-start gap-3">
@@ -117,7 +131,7 @@ export default function EmployeesPage() {
                 </div>
                 <StatusBadge status={employee.status} />
               </div>
-              <dl className="mt-5 space-y-3 border-t border-borderSubtle pt-4 text-sm">
+              <dl className="mt-5 space-y-3 border-t border-white/30 pt-4 text-sm dark:border-white/10">
                 <InfoRow
                   label="Department"
                   value={employee.department || "Unassigned"}
@@ -135,7 +149,7 @@ export default function EmployeesPage() {
               </dl>
             </Link>
           ))}
-        </div>
+        </FadeContent>
       )}
     </div>
   );
