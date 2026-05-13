@@ -1,30 +1,24 @@
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "crypto";
+import {
+  ROLES,
+  SESSION_COOKIE,
+  SESSION_COOKIE_OPTIONS,
+  SESSION_TTL_SECONDS,
+  SessionPayload,
+  roleSatisfies,
+} from "@/lib/auth-shared";
 
 /**
  * Role hierarchy. Higher index = more authority.
  * `requireRole` accepts any of the provided roles OR any higher role.
  */
-export const ROLES = ["Employee", "Manager", "Admin", "Leadership"] as const;
-export type Role = (typeof ROLES)[number];
-
-export const SESSION_COOKIE = "divos_session";
-const SESSION_TTL_SECONDS = 60 * 60 * 24 * 14; // 14 days
-
-export type SessionPayload = {
-  userId: number;
-  email: string;
-  name: string;
-  role: Role;
-  iat: number;
-  exp: number;
-};
+export { ROLES, SESSION_COOKIE, SESSION_COOKIE_OPTIONS, roleSatisfies };
+export type { Role, SessionPayload } from "@/lib/auth-shared";
 
 function getSecret(): string {
-  const secret = process.env.SESSION_SECRET || process.env.DATABASE_PASSWORD;
+  const secret = process.env.SESSION_SECRET;
   if (!secret) {
-    throw new Error(
-      "SESSION_SECRET (or DATABASE_PASSWORD fallback) must be set for auth.",
-    );
+    throw new Error("SESSION_SECRET must be set for auth.");
   }
   return secret;
 }
@@ -129,25 +123,3 @@ export function verifyPassword(password: string, stored: string): boolean {
     return false;
   }
 }
-
-/**
- * Returns true if `userRole` satisfies any of the `required` roles based on
- * the ROLES hierarchy (Leadership > Admin > Manager > Employee).
- */
-export function roleSatisfies(
-  userRole: Role,
-  required: Role | Role[],
-): boolean {
-  const requiredList = Array.isArray(required) ? required : [required];
-  const userIdx = ROLES.indexOf(userRole);
-  if (userIdx === -1) return false;
-  return requiredList.some((r) => userIdx >= ROLES.indexOf(r));
-}
-
-export const SESSION_COOKIE_OPTIONS = {
-  httpOnly: true as const,
-  sameSite: "lax" as const,
-  path: "/",
-  secure: process.env.NODE_ENV === "production",
-  maxAge: SESSION_TTL_SECONDS,
-};

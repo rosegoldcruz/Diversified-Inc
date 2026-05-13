@@ -1,12 +1,11 @@
 import { query } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import { ensureSchema } from "@/lib/schema";
-import { hashPassword, Role } from "@/lib/auth";
+import { Role } from "@/lib/auth";
 import { HttpError, getSession, requireRole } from "@/lib/session";
 import {
   ValidationError,
   optionalString,
-  parsePassword,
   requireEmail,
   requireEnum,
   requireRoleValue,
@@ -169,9 +168,13 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       body.password !== undefined &&
       body.password !== ""
     ) {
-      const password = parsePassword(body.password);
-      updates.push(`password_hash = $${idx++}`);
-      values.push(hashPassword(password));
+      return NextResponse.json(
+        {
+          error:
+            "Passwords are managed in Zitadel. Do not set a local password in Diversified OS.",
+        },
+        { status: 400 },
+      );
     }
 
     if (updates.length === 0) {

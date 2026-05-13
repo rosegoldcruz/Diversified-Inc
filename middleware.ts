@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { SESSION_COOKIE, verifySession } from "@/lib/auth";
+import { SESSION_COOKIE } from "@/lib/auth-shared";
+import { verifySessionEdge } from "@/lib/auth-edge";
 
 /**
  * Edge middleware: gate every route behind a valid session except for a small
@@ -10,7 +11,7 @@ import { SESSION_COOKIE, verifySession } from "@/lib/auth";
 
 const PUBLIC_PATHS: RegExp[] = [
   /^\/login(?:\/.*)?$/,
-  /^\/api\/auth\/(login|logout|me)$/,
+  /^\/api\/auth\/(login|logout|me|callback)$/,
   /^\/api\/health$/,
   /^\/manifest\.webmanifest$/,
   /^\/favicon\.ico$/,
@@ -21,7 +22,7 @@ function isPublic(pathname: string): boolean {
   return PUBLIC_PATHS.some((re) => re.test(pathname));
 }
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   if (isPublic(pathname)) {
@@ -29,7 +30,7 @@ export function middleware(request: NextRequest) {
   }
 
   const token = request.cookies.get(SESSION_COOKIE)?.value;
-  const session = verifySession(token);
+  const session = await verifySessionEdge(token);
 
   if (!session) {
     // For API routes, return JSON 401 so the client can handle it gracefully.

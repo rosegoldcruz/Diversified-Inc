@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { ensureSchema } from "@/lib/schema";
-import { hashPassword, Role } from "@/lib/auth";
+import { Role } from "@/lib/auth";
 import { HttpError, getSession, requireRole } from "@/lib/session";
 import {
   ValidationError,
   optionalString,
-  parsePassword,
   requireEmail,
   requireRoleValue,
   requireString,
@@ -80,11 +79,24 @@ export async function POST(request: NextRequest) {
     const email = requireEmail(body.email);
     const department = optionalString(body.department, "department", 200);
     const phone = optionalString(body.phone, "phone", 50);
-    const password = body.password ? parsePassword(body.password) : null;
     const status =
       optionalString(body.status, "status", 50) === "inactive"
         ? "inactive"
         : "active";
+
+    if (
+      body.password !== undefined &&
+      body.password !== null &&
+      body.password !== ""
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Passwords are managed in Zitadel. Do not set a local password in Diversified OS.",
+        },
+        { status: 400 },
+      );
+    }
 
     const existing = await query(
       `SELECT id FROM employees WHERE LOWER(email) = $1 LIMIT 1`,
@@ -96,15 +108,12 @@ export async function POST(request: NextRequest) {
         { status: 409 },
       );
     }
-
-    const passwordHash = password ? hashPassword(password) : null;
-
     const rows = await query<EmployeeRow>(
       `INSERT INTO employees
-        (name, role, department, status, email, phone, password_hash, hire_date)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, CURRENT_DATE)
+        (name, role, department, status, email, phone, hire_date)
+       VALUES ($1, $2, $3, $4, $5, $6, CURRENT_DATE)
        RETURNING ${EMPLOYEE_COLUMNS}`,
-      [name, role, department, status, email, phone, passwordHash],
+      [name, role, department, status, email, phone],
     );
 
     return NextResponse.json(rows[0], { status: 201 });

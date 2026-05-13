@@ -207,15 +207,22 @@ export async function uploadAndExtractFile(
   }
 
   if (result.status < 200 || result.status >= 300) {
+    const responseMessage =
+      parsed && typeof parsed === "object"
+        ? typeof (parsed as { message?: unknown }).message === "string"
+          ? (parsed as { message: string }).message
+          : typeof (parsed as { error?: unknown }).error === "string"
+            ? (parsed as { error: string }).error
+            : ""
+        : "";
+
     const message =
-      (parsed &&
-        typeof (parsed as { error?: unknown }).error === "string" &&
-        ((parsed as { error: string }).error as string)) ||
-      (result.status === 413
+      result.status === 413
         ? `File is larger than ${MAX_AI_ATTACHMENT_LABEL}. Please upload a smaller file or split the document.`
         : result.status >= 500
           ? "Upload failed on backend. The file was not processed."
-          : "File uploaded, but text extraction failed. Try a smaller PDF or split the document.");
+          : responseMessage ||
+            "File uploaded, but text extraction failed. Try a smaller PDF or split the document.";
     const kind: AiUploadError["kind"] =
       result.status === 413
         ? "size"

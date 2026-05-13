@@ -1,5 +1,4 @@
 import { query } from "./db";
-import { hashPassword } from "./auth";
 
 /**
  * Idempotent schema bootstrap. Runs once per server process.
@@ -24,13 +23,22 @@ async function bootstrap(): Promise<void> {
   await query(`
     ALTER TABLE employees
       ADD COLUMN IF NOT EXISTS password_hash TEXT,
-      ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ
+      ADD COLUMN IF NOT EXISTS last_login_at TIMESTAMPTZ,
+      ADD COLUMN IF NOT EXISTS auth_provider TEXT,
+      ADD COLUMN IF NOT EXISTS auth_subject TEXT,
+      ADD COLUMN IF NOT EXISTS auth_last_synced_at TIMESTAMPTZ
   `);
 
   await query(`
     CREATE UNIQUE INDEX IF NOT EXISTS employees_email_unique
       ON employees ((LOWER(email)))
       WHERE email IS NOT NULL
+  `);
+
+  await query(`
+    CREATE UNIQUE INDEX IF NOT EXISTS employees_auth_subject_unique
+      ON employees (auth_provider, auth_subject)
+      WHERE auth_subject IS NOT NULL
   `);
 
   // 2) Internal OS notifications table (separate from the NocoDB `notification` table).
@@ -63,26 +71,25 @@ async function bootstrap(): Promise<void> {
   const seedEmail = (
     process.env.SEED_ADMIN_EMAIL || "admin@diversified.local"
   ).toLowerCase();
-  const seedPassword = process.env.SEED_ADMIN_PASSWORD || "ChangeMe!2026";
   const seedName = process.env.SEED_ADMIN_NAME || "Diversified Admin";
 
-  const existing = await query<{ id: number; password_hash: string | null }>(
-    `SELECT id, password_hash FROM employees WHERE LOWER(email) = $1 LIMIT 1`,
+  const existing = await query<{ id: number; role: string | null }>(
+    `SELECT id, role FROM employees WHERE LOWER(email) = $1 LIMIT 1`,
     [seedEmail],
   );
 
   if (existing.length === 0) {
     await query(
-      `INSERT INTO employees (name, role, department, status, email, password_hash, hire_date)
-       VALUES ($1, 'Leadership', 'Leadership', 'active', $2, $3, CURRENT_DATE)`,
-      [seedName, seedEmail, hashPassword(seedPassword)],
+      `INSERT INTO employees (name, role, department, status, email, hire_date)
+       VALUES ($1, 'Leadership', 'Leadership', 'active', $2, CURRENT_DATE)`,
+      [seedName, seedEmail],
     );
-  } else if (!existing[0].password_hash) {
+  } else if (!existing[0].role) {
     await query(
       `UPDATE employees
-       SET password_hash = $1, role = COALESCE(NULLIF(role,''), 'Leadership')
+       SET role = COALESCE(NULLIF(role,''), 'Leadership')
        WHERE id = $2`,
-      [hashPassword(seedPassword), existing[0].id],
+      [existing[0].id],
     );
   }
 }

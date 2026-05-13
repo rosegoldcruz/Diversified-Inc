@@ -57,12 +57,7 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
   };
 
   async function signOut() {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-    } catch {
-      // ignore network errors; cookie may already be gone
-    }
-    router.replace("/login");
+    window.location.assign("/api/auth/logout");
   }
 
   const initials = user
