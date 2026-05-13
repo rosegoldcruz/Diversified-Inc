@@ -1,11 +1,32 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
-import { X } from "phosphor-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  CheckCircle,
+  ProhibitInset,
+  ClockClockwise,
+  Flag,
+  X,
+} from "phosphor-react";
 import { FadeContent } from "@/components/ui/FadeContent";
 import { ShinyText } from "@/components/ui/ShinyText";
+
+type SessionUser = {
+  id: number;
+  email: string;
+  name: string;
+  role: "Employee" | "Manager" | "Admin" | "Leadership";
+};
+
+type Reviewer = {
+  id: number;
+  name: string;
+  role: string;
+  status: string;
+};
+
+const REVIEWER_ROLES = new Set(["Manager", "Admin", "Leadership"]);
 
 type RequestPriority = "Low" | "Medium" | "High" | "Urgent";
 type RequestStatus =
@@ -18,6 +39,7 @@ type RequestStatus =
 type Request = {
   id: number;
   request_id: string;
+  title: string;
   requester: string;
   category: string;
   priority: RequestPriority;
@@ -27,66 +49,104 @@ type Request = {
   description: string | null;
 };
 
+const TRANSITIONS: Record<RequestStatus, RequestStatus[]> = {
+  Submitted: ["Under Review", "Approved", "Denied"],
+  "Under Review": ["Approved", "Denied"],
+  Approved: ["Completed"],
+  Denied: [],
+  Completed: [],
+};
+
 export default function RequestsPage() {
-  const router = useRouter();
   const [requests, setRequests] = useState<Request[]>([]);
+  const [reviewers, setReviewers] = useState<Reviewer[]>([]);
+  const [me, setMe] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedRequest, setSelectedRequest] = useState<Request | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionBusy, setActionBusy] = useState(false);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadRequests() {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const response = await fetch("/api/requests", { cache: "no-store" });
-        if (!response.ok) {
-          throw new Error(`Failed to load requests (${response.status})`);
-        }
-
-        const data = (await response.json()) as Request[];
-        if (!cancelled) {
-          setRequests(data);
-        }
-      } catch (loadError) {
-        if (!cancelled) {
-          setError(
-            loadError instanceof Error
-              ? loadError.message
-              : "Failed to load requests",
-          );
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+  const loadAll = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [meRes, reqRes, empRes] = await Promise.all([
+        fetch("/api/auth/me", { cache: "no-store" }),
+        fetch("/api/requests", { cache: "no-store" }),
+        fetch("/api/employees", { cache: "no-store" }),
+      ]);
+      if (!reqRes.ok)
+        throw new Error(`Failed to load requests (${reqRes.status})`);
+      if (meRes.ok) {
+        const meJson = (await meRes.json()) as { user: SessionUser | null };
+        setMe(meJson.user);
       }
+      const reqs = (await reqRes.json()) as Request[];
+      setRequests(reqs);
+      if (empRes.ok) {
+        const emps = (await empRes.json()) as Reviewer[];
+        setReviewers(
+          emps.filter(
+            (e) => e.status === "active" && REVIEWER_ROLES.has(e.role),
+          ),
+        );
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load requests");
+    } finally {
+      setLoading(false);
     }
-
-    loadRequests();
-
-    return () => {
-      cancelled = true;
-    };
   }, []);
 
-  const metrics = useMemo(() => {
-    return {
-      total: requests.length,
-      underReview: requests.filter(
-        (request) => request.status === "Under Review",
-      ).length,
-      approved: requests.filter((request) => request.status === "Approved")
-        .length,
-    };
-  }, [requests]);
+  useEffect(() => {
+    void loadAll();
+  }, [loadAll]);
 
-  function openRequest(request: Request) {
-    router.prefetch("/requests");
-    setSelectedRequest(request);
+  const metrics = useMemo(
+    () => ({
+      total: requests.length,
+      underReview: requests.filter((r) => r.status === "Under Review").length,
+      approved: requests.filter((r) => r.status === "Approved").length,
+    }),
+    [requests],
+  );
+
+  const selectedRequest = useMemo(
+    () => requests.find((r) => r.id === selectedId) ?? null,
+    [requests, selectedId],
+  );
+
+  const canManage =
+    me?.role === "Manager" || me?.role === "Admin" || me?.role === "Leadership";
+
+  async function patchRequest(id: number, payload: Record<string, unknown>) {
+    setActionBusy(true);
+    setActionError(null);
+    try {
+      const res = await fetch(`/api/requests/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = (await res.json().catch(() => ({}))) as Record<
+        string,
+        unknown
+      >;
+      if (!res.ok) {
+        throw new Error(
+          (data?.error as string) ?? `Update failed (${res.status})`,
+        );
+      }
+      const updated = data as Request;
+      setRequests((prev) =>
+        prev.map((r) => (r.id === id ? { ...r, ...updated } : r)),
+      );
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : "Update failed");
+    } finally {
+      setActionBusy(false);
+    }
   }
 
   return (
@@ -146,7 +206,7 @@ export default function RequestsPage() {
                 {requests.map((request) => (
                   <tr
                     key={request.id}
-                    onClick={() => openRequest(request)}
+                    onClick={() => setSelectedId(request.id)}
                     className="cursor-pointer transition-colors hover:bg-white/45 dark:hover:bg-white/5"
                   >
                     <td className="px-4 py-3">
@@ -193,7 +253,7 @@ export default function RequestsPage() {
             {requests.map((request) => (
               <article
                 key={request.id}
-                onClick={() => openRequest(request)}
+                onClick={() => setSelectedId(request.id)}
                 className="glass-surface cursor-pointer p-5"
               >
                 <div className="flex items-start justify-between gap-3">
@@ -239,7 +299,7 @@ export default function RequestsPage() {
       )}
 
       <aside
-        className={`fixed right-0 top-0 z-50 h-full w-80 border-l border-white/30 bg-white/75 p-6 shadow-glass ring-1 ring-white/20 backdrop-blur-2xl transition-transform duration-200 dark:border-white/10 dark:bg-slate-950/75 dark:ring-white/10 ${
+        className={`fixed right-0 top-0 z-50 h-full w-96 max-w-[100vw] overflow-y-auto border-l border-white/30 bg-white/85 p-6 shadow-glass ring-1 ring-white/20 backdrop-blur-2xl transition-transform duration-200 dark:border-white/10 dark:bg-slate-950/85 dark:ring-white/10 ${
           selectedRequest ? "translate-x-0" : "translate-x-full"
         }`}
         aria-hidden={selectedRequest ? "false" : "true"}
@@ -248,7 +308,10 @@ export default function RequestsPage() {
           <div className="flex h-full flex-col">
             <button
               type="button"
-              onClick={() => setSelectedRequest(null)}
+              onClick={() => {
+                setSelectedId(null);
+                setActionError(null);
+              }}
               className="absolute right-4 top-4 rounded-md border border-borderSubtle p-1.5 text-textSecondary transition-colors hover:bg-bgDark hover:text-textPrimary"
               aria-label="Close request details"
             >
@@ -260,15 +323,14 @@ export default function RequestsPage() {
                 {selectedRequest.request_id}
               </h2>
               <p className="mt-1 text-sm text-textSecondary">
+                {selectedRequest.title}
+              </p>
+              <p className="mt-0.5 text-xs text-textMuted">
                 {selectedRequest.requester}
               </p>
             </div>
 
             <dl className="mt-6 space-y-4 text-sm">
-              <SlideOverRow
-                label="Requester"
-                value={selectedRequest.requester}
-              />
               <SlideOverRow label="Category" value={selectedRequest.category} />
               <SlideOverRow
                 label="Priority"
@@ -296,10 +358,124 @@ export default function RequestsPage() {
                 {selectedRequest.description || "No description provided."}
               </p>
             </div>
+
+            {canManage ? (
+              <div className="mt-6 space-y-4 border-t border-borderSubtle pt-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">
+                    Assign reviewer
+                  </p>
+                  <select
+                    className="mt-2 w-full rounded-lg border border-borderSubtle bg-white/85 px-3 py-2 text-sm text-textPrimary shadow-sm focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent dark:bg-slate-900/70"
+                    value={selectedRequest.assigned_reviewer ?? ""}
+                    disabled={actionBusy}
+                    onChange={(e) =>
+                      patchRequest(selectedRequest.id, {
+                        assigned_reviewer: e.target.value || null,
+                      })
+                    }
+                  >
+                    <option value="">Unassigned</option>
+                    {reviewers.map((r) => (
+                      <option key={r.id} value={r.name}>
+                        {r.name} — {r.role}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">
+                    Workflow
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {(TRANSITIONS[selectedRequest.status] ?? []).map((next) => (
+                      <TransitionButton
+                        key={next}
+                        target={next}
+                        busy={actionBusy}
+                        onClick={() =>
+                          patchRequest(selectedRequest.id, { status: next })
+                        }
+                      />
+                    ))}
+                    {TRANSITIONS[selectedRequest.status].length === 0 ? (
+                      <p className="text-xs text-textMuted">
+                        No further transitions available.
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+
+                {actionError ? (
+                  <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300">
+                    {actionError}
+                  </p>
+                ) : null}
+              </div>
+            ) : (
+              <p className="mt-6 rounded-lg border border-dashed border-borderSubtle bg-bgDark/30 px-3 py-2 text-xs text-textMuted">
+                Sign in as a Manager, Admin, or Leadership user to manage this
+                request.
+              </p>
+            )}
           </div>
         ) : null}
       </aside>
     </div>
+  );
+}
+
+function TransitionButton({
+  target,
+  busy,
+  onClick,
+}: {
+  target: RequestStatus;
+  busy: boolean;
+  onClick: () => void;
+}) {
+  const map: Record<
+    RequestStatus,
+    { label: string; icon: ReactNode; cls: string }
+  > = {
+    "Under Review": {
+      label: "Move to Review",
+      icon: <ClockClockwise className="h-4 w-4" weight="bold" />,
+      cls: "border-amber-400/40 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 dark:text-amber-300",
+    },
+    Approved: {
+      label: "Approve",
+      icon: <CheckCircle className="h-4 w-4" weight="bold" />,
+      cls: "border-emerald-400/40 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-300",
+    },
+    Denied: {
+      label: "Deny",
+      icon: <ProhibitInset className="h-4 w-4" weight="bold" />,
+      cls: "border-red-400/40 bg-red-500/10 text-red-700 hover:bg-red-500/20 dark:text-red-300",
+    },
+    Completed: {
+      label: "Mark Complete",
+      icon: <Flag className="h-4 w-4" weight="bold" />,
+      cls: "border-slate-400/40 bg-slate-500/10 text-slate-700 hover:bg-slate-500/20 dark:text-slate-300",
+    },
+    Submitted: {
+      label: "Reset to Submitted",
+      icon: <ClockClockwise className="h-4 w-4" weight="bold" />,
+      cls: "border-blue-400/40 bg-blue-500/10 text-blue-700 hover:bg-blue-500/20 dark:text-blue-300",
+    },
+  };
+  const cfg = map[target];
+  return (
+    <button
+      type="button"
+      disabled={busy}
+      onClick={onClick}
+      className={`inline-flex items-center gap-1.5 rounded-lg border px-3 py-1.5 text-xs font-semibold shadow-sm transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${cfg.cls}`}
+    >
+      {cfg.icon}
+      {cfg.label}
+    </button>
   );
 }
 

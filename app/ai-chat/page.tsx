@@ -25,6 +25,12 @@ import {
 import { DefaultChatTransport, type FileUIPart } from "ai";
 import { useChat } from "@ai-sdk/react";
 import { AnimatePresence, motion } from "framer-motion";
+import {
+  AiUploadError,
+  MAX_AI_ATTACHMENT_BYTES,
+  MAX_AI_ATTACHMENT_LABEL,
+  uploadAndExtractFile,
+} from "@/lib/ai-file-upload";
 
 type ChatModel = "deepseek-v4-flash" | "deepseek-v4-pro";
 
@@ -81,7 +87,6 @@ type SpeechRecognitionWindow = Window & {
   webkitSpeechRecognition?: SpeechRecognitionConstructor;
 };
 
-const MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024;
 const MAX_ATTACHMENT_CONTEXT_CHARS = 40_000;
 
 const TEXT_LIKE_EXTENSIONS = new Set(["txt", "md", "csv", "json", "log"]);
@@ -193,9 +198,11 @@ async function toFileUIParts(files: ChatAttachment[]): Promise<FileUIPart[]> {
 }
 
 async function extractTextFromAttachment(file: File): Promise<string> {
-  if (file.size > MAX_FILE_SIZE_BYTES) {
-    throw new Error(
-      `${file.name} is larger than 8MB. Please upload a smaller file.`,
+  if (file.size > MAX_AI_ATTACHMENT_BYTES) {
+    throw new AiUploadError(
+      `${file.name} is larger than ${MAX_AI_ATTACHMENT_LABEL}. Please upload a smaller file or split the document.`,
+      "size",
+      413,
     );
   }
 
@@ -209,31 +216,11 @@ async function extractTextFromAttachment(file: File): Promise<string> {
     );
   }
 
-  const formData = new FormData();
-  formData.append("file", file);
-
-  const response = await fetch("/api/ai-chat/extract-file", {
-    method: "POST",
-    body: formData,
-  });
-
-  const payload = (await response.json()) as {
-    extractedText?: string;
-    error?: string;
-  };
-
-  if (!response.ok) {
-    throw new Error(
-      payload.error ?? `Failed to extract text from ${file.name}.`,
-    );
-  }
-
-  const extractedText = (payload.extractedText ?? "").trim();
-  if (!extractedText) {
-    throw new Error(`No readable text was found in ${file.name}.`);
-  }
-
-  return truncateAttachmentText(extractedText);
+  // Large binary extraction goes to the VPS backend. When
+  // NEXT_PUBLIC_BACKEND_API_URL is unset, the helper falls back to the
+  // in-app /api/ai-chat/extract-file route (also Node runtime).
+  const result = await uploadAndExtractFile(file);
+  return truncateAttachmentText(result.extractedText);
 }
 
 function formatBytes(bytes: number): string {

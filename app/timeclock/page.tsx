@@ -5,18 +5,20 @@ import { useEffect, useState } from "react";
 import { FadeContent } from "@/components/ui/FadeContent";
 import { ShinyText } from "@/components/ui/ShinyText";
 
-const EMPLOYEES = [
-  "Terry Strasser",
-  "Jordan Strasser",
-  "Cathy Kraft",
-  "Jill Strasser",
-  "Marcus Johnson",
-  "Sarah Chen",
-  "David Rodriguez",
-  "Lisa Thompson",
-  "James Wilson",
-  "Emma Davis",
-];
+type SessionUser = {
+  id: number;
+  email: string;
+  name: string;
+  role: "Employee" | "Manager" | "Admin" | "Leadership";
+};
+
+type EmployeeOption = {
+  id: number;
+  name: string;
+  status: string;
+};
+
+const SUPERVISOR_ROLES = new Set(["Manager", "Admin", "Leadership"]);
 
 interface TimeclockEntry {
   id: number;
@@ -35,7 +37,11 @@ interface PunchMessage {
 }
 
 export default function TimeclockPage() {
-  const [selectedEmployee, setSelectedEmployee] = useState("");
+  const [me, setMe] = useState<SessionUser | null>(null);
+  const [employees, setEmployees] = useState<EmployeeOption[]>([]);
+  const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(
+    null,
+  );
   const [entries, setEntries] = useState<TimeclockEntry[]>([]);
   const [activeEntries, setActiveEntries] = useState<TimeclockEntry[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,6 +50,39 @@ export default function TimeclockPage() {
   const [errorActive, setErrorActive] = useState<string | null>(null);
   const [message, setMessage] = useState<PunchMessage | null>(null);
   const [elapsedTimes, setElapsedTimes] = useState<Record<number, string>>({});
+
+  const isSupervisor = me ? SUPERVISOR_ROLES.has(me.role) : false;
+
+  // Load session + employee directory.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const [meRes, empRes] = await Promise.all([
+          fetch("/api/auth/me", { cache: "no-store" }),
+          fetch("/api/employees", { cache: "no-store" }),
+        ]);
+        if (meRes.ok) {
+          const data = (await meRes.json()) as { user: SessionUser | null };
+          if (!cancelled && data.user) {
+            setMe(data.user);
+            setSelectedEmployeeId(data.user.id);
+          }
+        }
+        if (empRes.ok) {
+          const list = (await empRes.json()) as EmployeeOption[];
+          if (!cancelled) {
+            setEmployees(list.filter((e) => e.status === "active"));
+          }
+        }
+      } catch {
+        // swallow; UI shows error state separately
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Fetch all entries (all time)
   useEffect(() => {
@@ -183,52 +222,52 @@ export default function TimeclockPage() {
   };
 
   const handlePunch = async (action: "in" | "out") => {
-    if (!selectedEmployee) {
-      setMessage({ type: "error", text: "Please select an employee" });
+    if (!me) {
+      setMessage({ type: "error", text: "You must be signed in to punch" });
       return;
     }
+    const targetId = isSupervisor ? (selectedEmployeeId ?? me.id) : me.id;
+    const targetEmployee = employees.find((e) => e.id === targetId);
+    const targetName = targetEmployee?.name ?? me.name;
 
     try {
       const response = await fetch("/api/timeclock", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          employee_name: selectedEmployee,
-          action,
-        }),
+        body: JSON.stringify({ employee_id: targetId, action }),
       });
+
+      const result = (await response.json().catch(() => ({}))) as Record<
+        string,
+        unknown
+      >;
 
       if (!response.ok) {
         setMessage({
           type: "error",
-          text: `Failed to clock ${action === "in" ? "in" : "out"} ${selectedEmployee}`,
+          text:
+            (result?.error as string) ??
+            `Failed to clock ${action === "in" ? "in" : "out"} ${targetName}`,
         });
         return;
       }
 
-      const result = await response.json();
-      const time = formatTime(result.clock_in);
-
+      const time = formatTime(
+        (result.clock_in as string) ?? new Date().toISOString(),
+      );
       setMessage({
         type: "success",
-        text: `✓ ${selectedEmployee} clocked ${action === "in" ? "in" : "out"} at ${time}`,
+        text: `✓ ${targetName} clocked ${action === "in" ? "in" : "out"} at ${time}`,
       });
 
-      // Refresh both sections
       await Promise.all([
         (async () => {
-          const response = await fetch("/api/timeclock", { cache: "no-store" });
-          if (response.ok) {
-            setEntries(await response.json());
-          }
+          const r = await fetch("/api/timeclock", { cache: "no-store" });
+          if (r.ok) setEntries(await r.json());
         })(),
         (async () => {
-          const response = await fetch("/api/timeclock/active", {
-            cache: "no-store",
-          });
-          if (response.ok) {
-            setActiveEntries(await response.json());
-          }
+          const r = await fetch("/api/timeclock/active", { cache: "no-store" });
+          if (r.ok) setActiveEntries(await r.json());
         })(),
       ]);
     } catch {
@@ -299,21 +338,41 @@ export default function TimeclockPage() {
               htmlFor="employee-select"
               className="block text-sm font-medium text-textPrimary"
             >
-              Select Employee
+              Employee
             </label>
-            <select
-              id="employee-select"
-              value={selectedEmployee}
-              onChange={(e) => setSelectedEmployee(e.target.value)}
-              className="mt-2 w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary shadow-soft transition-colors focus:border-borderFocus focus:outline-none dark:bg-bgDark"
-            >
-              <option value="">-- Choose an employee --</option>
-              {EMPLOYEES.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
+            {isSupervisor ? (
+              <select
+                id="employee-select"
+                value={selectedEmployeeId ?? ""}
+                onChange={(e) =>
+                  setSelectedEmployeeId(
+                    e.target.value ? Number(e.target.value) : null,
+                  )
+                }
+                className="mt-2 w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary shadow-soft transition-colors focus:border-borderFocus focus:outline-none dark:bg-bgDark"
+              >
+                {me ? (
+                  <option value={me.id}>{me.name} (you)</option>
+                ) : (
+                  <option value="">-- Choose an employee --</option>
+                )}
+                {employees
+                  .filter((emp) => !me || emp.id !== me.id)
+                  .map((emp) => (
+                    <option key={emp.id} value={emp.id}>
+                      {emp.name}
+                    </option>
+                  ))}
+              </select>
+            ) : (
+              <div
+                id="employee-select"
+                className="mt-2 w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary shadow-soft dark:bg-bgDark"
+              >
+                {me?.name ?? "Sign in to punch"}
+                <span className="ml-2 text-xs text-textMuted">{me?.role}</span>
+              </div>
+            )}
           </div>
 
           <div className="flex gap-2">

@@ -67,6 +67,11 @@ export function DashboardShell({ children }: { children: ReactNode }) {
     setDesktopCollapsed((collapsed) => !collapsed);
   }, []);
 
+  // Auth pages render outside the dashboard chrome.
+  if (pathname === "/login" || pathname?.startsWith("/login/")) {
+    return <>{children}</>;
+  }
+
   return (
     <div className="flex h-dvh bg-transparent text-textPrimary">
       <Sidebar

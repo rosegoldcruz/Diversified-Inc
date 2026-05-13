@@ -1,10 +1,22 @@
+/**
+ * Legacy / fallback file extraction endpoint.
+ *
+ * The primary AI Chat upload path is now `lib/ai-file-upload.ts`, which
+ * sends the file directly to the VPS backend at
+ * `${NEXT_PUBLIC_BACKEND_API_URL}/api/ai-chat/extract-file`. This Next.js
+ * route still handles same-origin uploads when the env var is unset
+ * (e.g. when the app itself is hosted on the VPS) and serves as a
+ * fallback for tests. Do NOT rely on this route from a Vercel
+ * deployment for files larger than the platform body-size limit.
+ */
 import { NextResponse } from "next/server";
 import mammoth from "mammoth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const MAX_FILE_SIZE_BYTES = 8 * 1024 * 1024;
+const MAX_FILE_SIZE_BYTES = 25 * 1024 * 1024;
+const MAX_FILE_SIZE_LABEL = "25MB";
 const MAX_EXTRACTED_CHARS = 40_000;
 const TEXT_LIKE_EXTENSIONS = new Set(["txt", "md", "csv", "json", "log"]);
 const TEXT_LIKE_MIME_TYPES = new Set([
@@ -59,7 +71,7 @@ export async function POST(request: Request) {
 
     if (file.size > MAX_FILE_SIZE_BYTES) {
       return NextResponse.json(
-        { error: `${file.name} is larger than 8MB.` },
+        { error: `${file.name} is larger than ${MAX_FILE_SIZE_LABEL}.` },
         { status: 413 },
       );
     }
@@ -101,8 +113,11 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json({
+      ok: true,
       fileName: file.name,
       mimeType,
+      sizeBytes: file.size,
+      // Backwards-compatible aliases for older callers:
       size: file.size,
       extractedText: readableText,
     });
