@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
+import { HttpError, requireRole } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -11,13 +12,13 @@ type IntegrationStatus = {
     | "Configured"
     | "Missing"
     | "Partial"
-    | "Coming Later"
+    | "Not Configured"
     | "Error";
   configured: boolean;
   purpose: string;
   lastChecked: string;
   notes: string;
-  clientDemoVisibility: "visible" | "internal";
+  clientProductionVisibility: "visible" | "internal";
 };
 
 function getAiConfigured() {
@@ -27,6 +28,7 @@ function getAiConfigured() {
 export async function GET() {
   const checkedAt = new Date().toISOString();
   try {
+    requireRole(["Admin", "Leadership"]);
     let dbHealthy = false;
     try {
       await query("SELECT 1");
@@ -56,7 +58,7 @@ export async function GET() {
         notes: dbHealthy
           ? "Database connection responds to health queries."
           : "Database check failed; verify DATABASE_URL and server availability.",
-        clientDemoVisibility: "visible",
+        clientProductionVisibility: "visible",
       },
       {
         key: "nocodb",
@@ -68,7 +70,7 @@ export async function GET() {
         notes: process.env.NOCODB_BASE_URL
           ? "Base URL is configured for admin access."
           : "No base URL configured in env; app can still run with PostgreSQL only.",
-        clientDemoVisibility: "internal",
+        clientProductionVisibility: "internal",
       },
       {
         key: "n8n",
@@ -84,7 +86,7 @@ export async function GET() {
         notes: !n8nBaseConfigured
           ? "N8N_BASE_URL is missing."
           : `${n8nWebhookCount} webhook categories configured.`,
-        clientDemoVisibility: "internal",
+        clientProductionVisibility: "internal",
       },
       {
         key: "ai_provider",
@@ -96,35 +98,29 @@ export async function GET() {
         notes: getAiConfigured()
           ? "At least one AI provider key is configured."
           : "No supported AI API key found.",
-        clientDemoVisibility: "visible",
+        clientProductionVisibility: "visible",
       },
       {
         key: "microsoft_365",
         name: "Outlook / Microsoft 365",
-        status: "Coming Later",
+        status: "Not Configured",
         configured: false,
-        purpose: "Future calendar and mailbox sync",
+        purpose: "Calendar and mailbox sync",
         lastChecked: checkedAt,
-        notes: "Planned integration; not wired in this repository yet.",
-        clientDemoVisibility: "internal",
+        notes: "No Microsoft 365 sync is configured in this repository.",
+        clientProductionVisibility: "internal",
       },
       {
         key: "file_storage",
         name: "File Storage",
-        status:
-          process.env.STORAGE_BUCKET || process.env.S3_BUCKET
-            ? "Configured"
-            : "Coming Later",
-        configured: Boolean(
-          process.env.STORAGE_BUCKET || process.env.S3_BUCKET,
-        ),
+        status: "Configured",
+        configured: true,
         purpose: "Structured document storage and attachments",
         lastChecked: checkedAt,
-        notes:
-          process.env.STORAGE_BUCKET || process.env.S3_BUCKET
-            ? "External storage env is set."
-            : "Using local/default flow until dedicated storage is finalized.",
-        clientDemoVisibility: "internal",
+        notes: process.env.FILE_STORAGE_DIR
+          ? "Local file storage directory is configured."
+          : "Using local file storage under the application storage directory.",
+        clientProductionVisibility: "internal",
       },
     ];
 
@@ -133,6 +129,12 @@ export async function GET() {
       integrations: integrationCards,
     });
   } catch (error) {
+    if (error instanceof HttpError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
+    }
     const message =
       error instanceof Error
         ? error.message

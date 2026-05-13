@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { Archive, FileText, Image } from "phosphor-react";
 import { FadeContent } from "@/components/ui/FadeContent";
 import { ShinyText } from "@/components/ui/ShinyText";
@@ -12,6 +12,10 @@ type FileRecord = {
   file_type: string;
   linked_job: string | null;
   file_size: string | null;
+  mime_type: string | null;
+  download_url: string;
+  linked_entity_type: string | null;
+  linked_entity_id: number | null;
   uploaded_by: string | null;
   uploaded_at: string;
 };
@@ -29,6 +33,13 @@ export default function FilesPage() {
   const [files, setFiles] = useState<FileRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadSuccess, setUploadSuccess] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [uploadCategory, setUploadCategory] = useState("document");
+  const [linkedEntityType, setLinkedEntityType] = useState("");
+  const [linkedEntityId, setLinkedEntityId] = useState("");
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
 
@@ -94,6 +105,62 @@ export default function FilesPage() {
     };
   }, [files]);
 
+  async function uploadFile(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setUploadError(null);
+    setUploadSuccess(null);
+
+    if (!selectedFile) {
+      setUploadError("Choose a file to upload.");
+      return;
+    }
+
+    try {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append("file", selectedFile);
+      formData.append("category", uploadCategory);
+      if (linkedEntityType && linkedEntityId) {
+        formData.append("linked_entity_type", linkedEntityType);
+        formData.append("linked_entity_id", linkedEntityId);
+      }
+
+      const response = await fetch("/api/files", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(
+          data && typeof data.error === "string"
+            ? data.error
+            : `Failed to upload file (${response.status})`,
+        );
+      }
+
+      const created = data as FileRecord;
+      setFiles((current) => [created, ...current]);
+      setSelectedFile(null);
+      setUploadCategory("document");
+      setLinkedEntityType("");
+      setLinkedEntityId("");
+      const input = document.getElementById(
+        "file-upload",
+      ) as HTMLInputElement | null;
+      if (input) input.value = "";
+      setUploadSuccess(`Uploaded ${created.file_name}.`);
+    } catch (uploadErrorValue) {
+      setUploadError(
+        uploadErrorValue instanceof Error
+          ? uploadErrorValue.message
+          : "Failed to upload file",
+      );
+    } finally {
+      setUploading(false);
+    }
+  }
+
   return (
     <div className="space-y-8">
       <FadeContent
@@ -101,24 +168,14 @@ export default function FilesPage() {
         blur={true}
         duration={800}
         delay={50}
-        className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between"
+        className="space-y-1"
       >
-        <div className="space-y-1">
-          <h1 className="text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
-            <ShinyText>Files</ShinyText>
-          </h1>
-          <p className="max-w-3xl text-base text-textSecondary">
-            Internal file records linked to jobs and work orders.
-          </p>
-        </div>
-        <button
-          type="button"
-          disabled
-          title="Coming soon"
-          className="inline-flex h-10 cursor-not-allowed items-center justify-center rounded-xl border border-white/30 bg-accent/80 px-4 text-sm font-semibold text-white opacity-60 shadow-glass backdrop-blur-2xl"
-        >
-          Upload File
-        </button>
+        <h1 className="text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
+          <ShinyText>Files</ShinyText>
+        </h1>
+        <p className="max-w-3xl text-base text-textSecondary">
+          Internal file records linked to operational records and work orders.
+        </p>
       </FadeContent>
 
       <FadeContent
@@ -140,12 +197,104 @@ export default function FilesPage() {
         delay={120}
         className="glass-surface p-5"
       >
+        <form onSubmit={uploadFile} className="space-y-4">
+          <div>
+            <h2 className="text-lg font-semibold text-textPrimary">
+              Upload File
+            </h2>
+            <p className="mt-1 text-sm text-textSecondary">
+              Store supporting files with metadata and optional work links.
+            </p>
+          </div>
+
+          {uploadError ? <ErrorPanel message={uploadError} /> : null}
+          {uploadSuccess ? (
+            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700 shadow-soft dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300">
+              {uploadSuccess}
+            </div>
+          ) : null}
+
+          <div className="grid gap-3 md:grid-cols-[minmax(0,1.4fr)_minmax(10rem,0.5fr)_minmax(10rem,0.5fr)_minmax(8rem,0.4fr)]">
+            <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-textMuted">
+              File
+              <input
+                id="file-upload"
+                type="file"
+                onChange={(event) =>
+                  setSelectedFile(event.target.files?.[0] ?? null)
+                }
+                className="h-11 rounded-xl border border-white/30 bg-white/55 px-3 py-2 text-sm font-medium normal-case text-textPrimary outline-none backdrop-blur-xl transition-all file:mr-3 file:rounded-lg file:border-0 file:bg-accent file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-white focus:border-white/60 focus:bg-white/80 focus:ring-4 focus:ring-white/25 dark:border-white/10 dark:bg-white/5"
+              />
+            </label>
+
+            <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-textMuted">
+              Type
+              <select
+                value={uploadCategory}
+                onChange={(event) => setUploadCategory(event.target.value)}
+                className="h-11 rounded-xl border border-white/30 bg-white/55 px-3 text-sm font-medium normal-case text-textPrimary outline-none backdrop-blur-xl transition-all focus:border-white/60 focus:bg-white/80 focus:ring-4 focus:ring-white/25 dark:border-white/10 dark:bg-white/5"
+              >
+                {FILE_TYPES.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-textMuted">
+              Linked Type
+              <select
+                value={linkedEntityType}
+                onChange={(event) => setLinkedEntityType(event.target.value)}
+                className="h-11 rounded-xl border border-white/30 bg-white/55 px-3 text-sm font-medium normal-case text-textPrimary outline-none backdrop-blur-xl transition-all focus:border-white/60 focus:bg-white/80 focus:ring-4 focus:ring-white/25 dark:border-white/10 dark:bg-white/5"
+              >
+                <option value="">None</option>
+                <option value="task">Task</option>
+                <option value="request">Request</option>
+                <option value="work_order">Work Order</option>
+                <option value="sop">SOP</option>
+                <option value="inventory">Inventory</option>
+                <option value="employee">Employee</option>
+                <option value="document">Document</option>
+              </select>
+            </label>
+
+            <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-wide text-textMuted">
+              Linked ID
+              <input
+                type="number"
+                min="1"
+                value={linkedEntityId}
+                onChange={(event) => setLinkedEntityId(event.target.value)}
+                disabled={!linkedEntityType}
+                className="h-11 rounded-xl border border-white/30 bg-white/55 px-3 text-sm font-medium normal-case text-textPrimary outline-none backdrop-blur-xl transition-all disabled:cursor-not-allowed disabled:opacity-60 focus:border-white/60 focus:bg-white/80 focus:ring-4 focus:ring-white/25 dark:border-white/10 dark:bg-white/5"
+              />
+            </label>
+          </div>
+
+          <button
+            type="submit"
+            disabled={uploading}
+            className="inline-flex h-11 items-center justify-center rounded-xl border border-white/30 bg-accent/90 px-5 text-sm font-semibold text-white shadow-glass ring-1 ring-white/20 backdrop-blur-2xl transition-all hover:-translate-y-px hover:border-white/50 hover:bg-accent hover:shadow-glassHover disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {uploading ? "Uploading..." : "Upload File"}
+          </button>
+        </form>
+      </FadeContent>
+
+      <FadeContent
+        blur={true}
+        duration={800}
+        delay={140}
+        className="glass-surface p-5"
+      >
         <div className="flex flex-col gap-3 md:flex-row md:items-center">
           <input
             type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search files or linked jobs"
+            placeholder="Search files or linked records"
             className="h-10 w-full rounded-xl border border-white/30 bg-white/55 px-3 text-sm text-textPrimary outline-none backdrop-blur-xl transition-colors placeholder:text-textDisabled focus:border-white/60 focus:bg-white/80 focus:ring-4 focus:ring-white/25 dark:border-white/10 dark:bg-white/5 md:w-64"
           />
           <select
@@ -185,9 +334,10 @@ export default function FilesPage() {
                   <th className="px-4 py-3 font-semibold">ID</th>
                   <th className="px-4 py-3 font-semibold">File Name</th>
                   <th className="px-4 py-3 font-semibold">Type</th>
-                  <th className="px-4 py-3 font-semibold">Linked Job</th>
+                  <th className="px-4 py-3 font-semibold">Linked Record</th>
                   <th className="px-4 py-3 font-semibold">Uploaded By</th>
                   <th className="px-4 py-3 font-semibold">Date</th>
+                  <th className="px-4 py-3 font-semibold">Download</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/30 dark:divide-white/10">
@@ -224,6 +374,14 @@ export default function FilesPage() {
                       <td className="px-4 py-3 text-textSecondary">
                         {formatDate(file.uploaded_at)}
                       </td>
+                      <td className="px-4 py-3">
+                        <a
+                          href={file.download_url}
+                          className="text-sm font-semibold text-accent hover:text-accentSoft"
+                        >
+                          Download
+                        </a>
+                      </td>
                     </tr>
                   );
                 })}
@@ -231,7 +389,7 @@ export default function FilesPage() {
                 {filteredFiles.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={6}
+                      colSpan={7}
                       className="px-4 py-8 text-center text-sm text-textSecondary"
                     >
                       No files match the selected filters.
@@ -266,7 +424,7 @@ export default function FilesPage() {
                   </div>
                   <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
                     <MobileField
-                      label="Linked Job"
+                      label="Linked Record"
                       value={file.linked_job || "-"}
                     />
                     <MobileField
@@ -282,6 +440,12 @@ export default function FilesPage() {
                       value={file.uploaded_by || "Unknown"}
                     />
                   </dl>
+                  <a
+                    href={file.download_url}
+                    className="mt-4 inline-flex text-sm font-semibold text-accent hover:text-accentSoft"
+                  >
+                    Download
+                  </a>
                 </article>
               );
             })}

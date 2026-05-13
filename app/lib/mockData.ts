@@ -1,6 +1,7 @@
-// TODO: reconnect to Postgres/Supabase when backend is available.
-// This file provides local mock data so the UI works as a portfolio-ready MVP
-// without a live database connection.
+// Legacy/future-scope seed data.
+// Active production modules should prefer PostgreSQL-backed API routes.
+// Keep this file only for SOP fallback data and out-of-scope Revenue Engine
+// reference datasets until those lanes are formally designed.
 
 import type { Sop } from "@/types/workspace";
 
@@ -16,7 +17,12 @@ export type Lead = {
   budgetRange: string;
   status: "new" | "contacted" | "qualified" | "hot" | "quote-ready" | "lost";
   priority: "high" | "medium" | "low";
-  callDisposition: "no-answer" | "left-voicemail" | "follow-up-booked" | "quoted" | "not-interested";
+  callDisposition:
+    | "no-answer"
+    | "left-voicemail"
+    | "follow-up-booked"
+    | "quoted"
+    | "not-interested";
   notes: string;
   createdAt: string;
   nextFollowUp: string;
@@ -42,10 +48,20 @@ export type Job = {
   projectType: string;
   installer: string;
   supplier: string;
-  materialStatus: "ordered" | "in-transit" | "delivered" | "missing" | "delayed";
+  materialStatus:
+    | "ordered"
+    | "in-transit"
+    | "delivered"
+    | "missing"
+    | "delayed";
   paymentStatus: "paid" | "partial" | "hold" | "pending" | "overdue";
   qcStatus: "pending" | "passed" | "failed" | "photos-due";
-  stage: "scheduled" | "in-progress" | "awaiting-installer" | "completed" | "on-hold";
+  stage:
+    | "scheduled"
+    | "in-progress"
+    | "awaiting-installer"
+    | "completed"
+    | "on-hold";
   installDate: string;
   nextAction: string;
 };
@@ -244,7 +260,8 @@ export const mockLeads: Lead[] = [
     status: "hot",
     priority: "high",
     callDisposition: "follow-up-booked",
-    notes: "Asked for white shaker with soft-close upgrade. Wants install before end of month.",
+    notes:
+      "Asked for white shaker with soft-close upgrade. Wants install before end of month.",
     createdAt: "2025-05-01",
     nextFollowUp: "2025-05-08",
   },
@@ -261,7 +278,8 @@ export const mockLeads: Lead[] = [
     status: "quote-ready",
     priority: "high",
     callDisposition: "quoted",
-    notes: "Requested premium hardware options and financing terms before signing quote.",
+    notes:
+      "Requested premium hardware options and financing terms before signing quote.",
     createdAt: "2025-05-02",
     nextFollowUp: "2025-05-07",
   },
@@ -278,7 +296,8 @@ export const mockLeads: Lead[] = [
     status: "contacted",
     priority: "medium",
     callDisposition: "left-voicemail",
-    notes: "Could not connect live. Sent follow-up text with booking link for consult.",
+    notes:
+      "Could not connect live. Sent follow-up text with booking link for consult.",
     createdAt: "2025-05-03",
     nextFollowUp: "2025-05-10",
   },
@@ -312,7 +331,8 @@ export const mockLeads: Lead[] = [
     status: "new",
     priority: "low",
     callDisposition: "no-answer",
-    notes: "Lead form submitted late night. No pickup yet; queued for second call attempt.",
+    notes:
+      "Lead form submitted late night. No pickup yet; queued for second call attempt.",
     createdAt: "2025-05-05",
     nextFollowUp: "2025-05-11",
   },
@@ -329,7 +349,8 @@ export const mockLeads: Lead[] = [
     status: "hot",
     priority: "high",
     callDisposition: "follow-up-booked",
-    notes: "Interested in cabinet reface + island wrap. Requested Saturday consultation.",
+    notes:
+      "Interested in cabinet reface + island wrap. Requested Saturday consultation.",
     createdAt: "2025-05-05",
     nextFollowUp: "2025-05-08",
   },
@@ -346,7 +367,8 @@ export const mockLeads: Lead[] = [
     status: "contacted",
     priority: "medium",
     callDisposition: "left-voicemail",
-    notes: "Needs custom storage layout. Waiting on callback to confirm measurements.",
+    notes:
+      "Needs custom storage layout. Waiting on callback to confirm measurements.",
     createdAt: "2025-05-06",
     nextFollowUp: "2025-05-12",
   },
@@ -363,7 +385,8 @@ export const mockLeads: Lead[] = [
     status: "qualified",
     priority: "high",
     callDisposition: "follow-up-booked",
-    notes: "Wants full-home package estimate. Requested references and financing sheet.",
+    notes:
+      "Wants full-home package estimate. Requested references and financing sheet.",
     createdAt: "2025-05-06",
     nextFollowUp: "2025-05-09",
   },
@@ -547,77 +570,451 @@ export const mockJobs: Job[] = [
 
 // ─── Homeowners ────────────────────────────────────────────────────────────
 export const mockHomeowners: Homeowner[] = [
-  { id: "HO-001", name: "Emma Castillo", city: "Scottsdale, AZ", phone: "(602) 555-0191", email: "emma.c@email.com", activeProject: "Kitchen Reface", status: "active" },
-  { id: "HO-002", name: "Marcus Wilson", city: "Mesa, AZ", phone: "(480) 555-0342", email: "mwilson@email.com", activeProject: "Cabinet Replacement", status: "active" },
-  { id: "HO-003", name: "Diane Alvarez", city: "Phoenix, AZ", phone: "(623) 555-0784", email: "d.alvarez@email.com", activeProject: "Closet Build-Out", status: "active" },
-  { id: "HO-004", name: "James Park", city: "Tempe, AZ", phone: "(602) 555-0456", email: "jpark@email.com", activeProject: "Full Kitchen Remodel", status: "active" },
-  { id: "HO-005", name: "Rachel Kim", city: "Chandler, AZ", phone: "(480) 555-0988", email: "rkim@email.com", activeProject: "Bathroom Vanity", status: "active" },
-  { id: "HO-006", name: "Tony Nguyen", city: "Gilbert, AZ", phone: "(602) 555-0123", email: "tnguyen@email.com", activeProject: "Kitchen Reface", status: "active" },
-  { id: "HO-007", name: "Linda Flores", city: "Glendale, AZ", phone: "(623) 555-0211", email: "lflores@email.com", activeProject: "—", status: "completed" },
-  { id: "HO-008", name: "Steve Morales", city: "Surprise, AZ", phone: "(623) 555-0654", email: "smorales@email.com", activeProject: "—", status: "prospecting" },
+  {
+    id: "HO-001",
+    name: "Emma Castillo",
+    city: "Scottsdale, AZ",
+    phone: "(602) 555-0191",
+    email: "emma.c@email.com",
+    activeProject: "Kitchen Reface",
+    status: "active",
+  },
+  {
+    id: "HO-002",
+    name: "Marcus Wilson",
+    city: "Mesa, AZ",
+    phone: "(480) 555-0342",
+    email: "mwilson@email.com",
+    activeProject: "Cabinet Replacement",
+    status: "active",
+  },
+  {
+    id: "HO-003",
+    name: "Diane Alvarez",
+    city: "Phoenix, AZ",
+    phone: "(623) 555-0784",
+    email: "d.alvarez@email.com",
+    activeProject: "Closet Build-Out",
+    status: "active",
+  },
+  {
+    id: "HO-004",
+    name: "James Park",
+    city: "Tempe, AZ",
+    phone: "(602) 555-0456",
+    email: "jpark@email.com",
+    activeProject: "Full Kitchen Remodel",
+    status: "active",
+  },
+  {
+    id: "HO-005",
+    name: "Rachel Kim",
+    city: "Chandler, AZ",
+    phone: "(480) 555-0988",
+    email: "rkim@email.com",
+    activeProject: "Bathroom Vanity",
+    status: "active",
+  },
+  {
+    id: "HO-006",
+    name: "Tony Nguyen",
+    city: "Gilbert, AZ",
+    phone: "(602) 555-0123",
+    email: "tnguyen@email.com",
+    activeProject: "Kitchen Reface",
+    status: "active",
+  },
+  {
+    id: "HO-007",
+    name: "Linda Flores",
+    city: "Glendale, AZ",
+    phone: "(623) 555-0211",
+    email: "lflores@email.com",
+    activeProject: "—",
+    status: "completed",
+  },
+  {
+    id: "HO-008",
+    name: "Steve Morales",
+    city: "Surprise, AZ",
+    phone: "(623) 555-0654",
+    email: "smorales@email.com",
+    activeProject: "—",
+    status: "prospecting",
+  },
 ];
 
 // ─── Installers ────────────────────────────────────────────────────────────
 export const mockInstallers: Installer[] = [
-  { id: "IN-001", name: "Botta Install Co.", coverageArea: "Scottsdale / Gilbert", availability: "busy", activeJobs: 3, slaScore: 97, rating: 4.9, status: "active" },
-  { id: "IN-002", name: "Southwest Installs", coverageArea: "Mesa / Chandler", availability: "available", activeJobs: 1, slaScore: 94, rating: 4.7, status: "active" },
-  { id: "IN-003", name: "Precision Kitchen Co.", coverageArea: "Tempe / Phoenix", availability: "busy", activeJobs: 2, slaScore: 99, rating: 5.0, status: "active" },
-  { id: "IN-004", name: "Desert Finish Pros", coverageArea: "Chandler / Gilbert", availability: "available", activeJobs: 1, slaScore: 91, rating: 4.6, status: "active" },
-  { id: "IN-005", name: "AZ Home Crew", coverageArea: "Peoria / Glendale", availability: "available", activeJobs: 0, slaScore: 89, rating: 4.5, status: "active" },
-  { id: "IN-006", name: "Valley Cabinet Pros", coverageArea: "All Metro Phoenix", availability: "unavailable", activeJobs: 4, slaScore: 96, rating: 4.8, status: "active" },
-  { id: "IN-007", name: "NextGen Installs", coverageArea: "Scottsdale / Paradise Valley", availability: "available", activeJobs: 0, slaScore: 93, rating: 4.7, status: "active" },
+  {
+    id: "IN-001",
+    name: "Botta Install Co.",
+    coverageArea: "Scottsdale / Gilbert",
+    availability: "busy",
+    activeJobs: 3,
+    slaScore: 97,
+    rating: 4.9,
+    status: "active",
+  },
+  {
+    id: "IN-002",
+    name: "Southwest Installs",
+    coverageArea: "Mesa / Chandler",
+    availability: "available",
+    activeJobs: 1,
+    slaScore: 94,
+    rating: 4.7,
+    status: "active",
+  },
+  {
+    id: "IN-003",
+    name: "Precision Kitchen Co.",
+    coverageArea: "Tempe / Phoenix",
+    availability: "busy",
+    activeJobs: 2,
+    slaScore: 99,
+    rating: 5.0,
+    status: "active",
+  },
+  {
+    id: "IN-004",
+    name: "Desert Finish Pros",
+    coverageArea: "Chandler / Gilbert",
+    availability: "available",
+    activeJobs: 1,
+    slaScore: 91,
+    rating: 4.6,
+    status: "active",
+  },
+  {
+    id: "IN-005",
+    name: "AZ Home Crew",
+    coverageArea: "Peoria / Glendale",
+    availability: "available",
+    activeJobs: 0,
+    slaScore: 89,
+    rating: 4.5,
+    status: "active",
+  },
+  {
+    id: "IN-006",
+    name: "Valley Cabinet Pros",
+    coverageArea: "All Metro Phoenix",
+    availability: "unavailable",
+    activeJobs: 4,
+    slaScore: 96,
+    rating: 4.8,
+    status: "active",
+  },
+  {
+    id: "IN-007",
+    name: "NextGen Installs",
+    coverageArea: "Scottsdale / Paradise Valley",
+    availability: "available",
+    activeJobs: 0,
+    slaScore: 93,
+    rating: 4.7,
+    status: "active",
+  },
 ];
 
 // ─── Suppliers ─────────────────────────────────────────────────────────────
 export const mockSuppliers: Supplier[] = [
-  { id: "SP-001", name: "AZ Cabinet Supply", materialCategory: "Cabinet Doors / Panels", fulfillmentRate: 96, openOrders: 4, status: "active" },
-  { id: "SP-002", name: "ProPanel AZ", materialCategory: "Cabinet Boxes / Panels", fulfillmentRate: 98, openOrders: 2, status: "active" },
-  { id: "SP-003", name: "Southwest Cabinet Group", materialCategory: "Full Kitchen Units", fulfillmentRate: 94, openOrders: 3, status: "active" },
-  { id: "SP-004", name: "Closet Depot", materialCategory: "Closet Systems", fulfillmentRate: 91, openOrders: 1, status: "active" },
-  { id: "SP-005", name: "Vanity Pro Supply", materialCategory: "Bath Vanities / Fixtures", fulfillmentRate: 87, openOrders: 2, status: "delayed" },
-  { id: "SP-006", name: "Phoenix Hardware Co.", materialCategory: "Hardware / Accessories", fulfillmentRate: 99, openOrders: 6, status: "active" },
+  {
+    id: "SP-001",
+    name: "AZ Cabinet Supply",
+    materialCategory: "Cabinet Doors / Panels",
+    fulfillmentRate: 96,
+    openOrders: 4,
+    status: "active",
+  },
+  {
+    id: "SP-002",
+    name: "ProPanel AZ",
+    materialCategory: "Cabinet Boxes / Panels",
+    fulfillmentRate: 98,
+    openOrders: 2,
+    status: "active",
+  },
+  {
+    id: "SP-003",
+    name: "Southwest Cabinet Group",
+    materialCategory: "Full Kitchen Units",
+    fulfillmentRate: 94,
+    openOrders: 3,
+    status: "active",
+  },
+  {
+    id: "SP-004",
+    name: "Closet Depot",
+    materialCategory: "Closet Systems",
+    fulfillmentRate: 91,
+    openOrders: 1,
+    status: "active",
+  },
+  {
+    id: "SP-005",
+    name: "Vanity Pro Supply",
+    materialCategory: "Bath Vanities / Fixtures",
+    fulfillmentRate: 87,
+    openOrders: 2,
+    status: "delayed",
+  },
+  {
+    id: "SP-006",
+    name: "Phoenix Hardware Co.",
+    materialCategory: "Hardware / Accessories",
+    fulfillmentRate: 99,
+    openOrders: 6,
+    status: "active",
+  },
 ];
 
 // ─── Materials ─────────────────────────────────────────────────────────────
 export const mockMaterials: Material[] = [
-  { sku: "CAB-DOR-001", name: 'Shaker Door 12"', category: "Cabinet Doors", supplier: "AZ Cabinet Supply", dimensions: '12"W x 30"H x 0.75"D', imageLabel: "White Shaker Door Panel", stockStatus: "in-stock", eta: "—" },
-  { sku: "CAB-DOR-002", name: 'Shaker Door 18"', category: "Cabinet Doors", supplier: "AZ Cabinet Supply", dimensions: '18"W x 30"H x 0.75"D', imageLabel: "White Shaker Door Panel", stockStatus: "low-stock", eta: "2025-05-10" },
-  { sku: "CAB-PNL-001", name: "Side Panel 36H", category: "Panels", supplier: "ProPanel AZ", dimensions: '24"W x 36"H x 0.75"D', imageLabel: "Cabinet Side Panel", stockStatus: "in-stock", eta: "—" },
-  { sku: "CLO-SYS-001", name: "Closet Tower 84H", category: "Closet Systems", supplier: "Closet Depot", dimensions: '30"W x 84"H x 16"D', imageLabel: "Laminate Closet Tower", stockStatus: "on-order", eta: "2025-05-11" },
-  { sku: "VAN-001", name: 'Vanity Unit 36"', category: "Bath Vanities", supplier: "Vanity Pro Supply", dimensions: '36"W x 34.5"H x 21"D', imageLabel: "Single Sink Vanity Unit", stockStatus: "out-of-stock", eta: "2025-05-18" },
-  { sku: "HDW-001", name: "Euro Hinge 110°", category: "Hardware", supplier: "Phoenix Hardware Co.", dimensions: '2.5"W x 1.25"H x 0.6"D', imageLabel: "Concealed Cabinet Hinge", stockStatus: "in-stock", eta: "—" },
-  { sku: "HDW-002", name: "Soft-Close Drawer Slide", category: "Hardware", supplier: "Phoenix Hardware Co.", dimensions: '18"L x 1.8"H x 0.5"D', imageLabel: "Ball-Bearing Drawer Slide", stockStatus: "in-stock", eta: "—" },
-  { sku: "CAB-BOX-001", name: 'Base Cabinet 24"', category: "Cabinet Boxes", supplier: "Southwest Cabinet Group", dimensions: '24"W x 34.5"H x 24"D', imageLabel: "Plywood Base Cabinet Box", stockStatus: "low-stock", eta: "2025-05-13" },
+  {
+    sku: "CAB-DOR-001",
+    name: 'Shaker Door 12"',
+    category: "Cabinet Doors",
+    supplier: "AZ Cabinet Supply",
+    dimensions: '12"W x 30"H x 0.75"D',
+    imageLabel: "White Shaker Door Panel",
+    stockStatus: "in-stock",
+    eta: "—",
+  },
+  {
+    sku: "CAB-DOR-002",
+    name: 'Shaker Door 18"',
+    category: "Cabinet Doors",
+    supplier: "AZ Cabinet Supply",
+    dimensions: '18"W x 30"H x 0.75"D',
+    imageLabel: "White Shaker Door Panel",
+    stockStatus: "low-stock",
+    eta: "2025-05-10",
+  },
+  {
+    sku: "CAB-PNL-001",
+    name: "Side Panel 36H",
+    category: "Panels",
+    supplier: "ProPanel AZ",
+    dimensions: '24"W x 36"H x 0.75"D',
+    imageLabel: "Cabinet Side Panel",
+    stockStatus: "in-stock",
+    eta: "—",
+  },
+  {
+    sku: "CLO-SYS-001",
+    name: "Closet Tower 84H",
+    category: "Closet Systems",
+    supplier: "Closet Depot",
+    dimensions: '30"W x 84"H x 16"D',
+    imageLabel: "Laminate Closet Tower",
+    stockStatus: "on-order",
+    eta: "2025-05-11",
+  },
+  {
+    sku: "VAN-001",
+    name: 'Vanity Unit 36"',
+    category: "Bath Vanities",
+    supplier: "Vanity Pro Supply",
+    dimensions: '36"W x 34.5"H x 21"D',
+    imageLabel: "Single Sink Vanity Unit",
+    stockStatus: "out-of-stock",
+    eta: "2025-05-18",
+  },
+  {
+    sku: "HDW-001",
+    name: "Euro Hinge 110°",
+    category: "Hardware",
+    supplier: "Phoenix Hardware Co.",
+    dimensions: '2.5"W x 1.25"H x 0.6"D',
+    imageLabel: "Concealed Cabinet Hinge",
+    stockStatus: "in-stock",
+    eta: "—",
+  },
+  {
+    sku: "HDW-002",
+    name: "Soft-Close Drawer Slide",
+    category: "Hardware",
+    supplier: "Phoenix Hardware Co.",
+    dimensions: '18"L x 1.8"H x 0.5"D',
+    imageLabel: "Ball-Bearing Drawer Slide",
+    stockStatus: "in-stock",
+    eta: "—",
+  },
+  {
+    sku: "CAB-BOX-001",
+    name: 'Base Cabinet 24"',
+    category: "Cabinet Boxes",
+    supplier: "Southwest Cabinet Group",
+    dimensions: '24"W x 34.5"H x 24"D',
+    imageLabel: "Plywood Base Cabinet Box",
+    stockStatus: "low-stock",
+    eta: "2025-05-13",
+  },
 ];
 
 // ─── Payments ──────────────────────────────────────────────────────────────
 export const mockPayments: Payment[] = [
-  { invoiceId: "INV-5501", customerName: "James Park", amount: 34500, status: "paid", dueDate: "2025-04-30" },
-  { invoiceId: "INV-5502", customerName: "Emma Castillo", amount: 5700, status: "partial", dueDate: "2025-05-07" },
-  { invoiceId: "INV-5503", customerName: "Marcus Wilson", amount: 17800, status: "hold", dueDate: "2025-05-05" },
-  { invoiceId: "INV-5504", customerName: "Tony Nguyen", amount: 12600, status: "paid", dueDate: "2025-05-06" },
-  { invoiceId: "INV-5505", customerName: "Rachel Kim", amount: 4900, status: "overdue", dueDate: "2025-05-01" },
-  { invoiceId: "INV-5506", customerName: "Diane Alvarez", amount: 5800, status: "pending", dueDate: "2025-05-14" },
-  { invoiceId: "INV-5507", customerName: "Sarah Bennett", amount: 2900, status: "pending", dueDate: "2025-05-15" },
+  {
+    invoiceId: "INV-5501",
+    customerName: "James Park",
+    amount: 34500,
+    status: "paid",
+    dueDate: "2025-04-30",
+  },
+  {
+    invoiceId: "INV-5502",
+    customerName: "Emma Castillo",
+    amount: 5700,
+    status: "partial",
+    dueDate: "2025-05-07",
+  },
+  {
+    invoiceId: "INV-5503",
+    customerName: "Marcus Wilson",
+    amount: 17800,
+    status: "hold",
+    dueDate: "2025-05-05",
+  },
+  {
+    invoiceId: "INV-5504",
+    customerName: "Tony Nguyen",
+    amount: 12600,
+    status: "paid",
+    dueDate: "2025-05-06",
+  },
+  {
+    invoiceId: "INV-5505",
+    customerName: "Rachel Kim",
+    amount: 4900,
+    status: "overdue",
+    dueDate: "2025-05-01",
+  },
+  {
+    invoiceId: "INV-5506",
+    customerName: "Diane Alvarez",
+    amount: 5800,
+    status: "pending",
+    dueDate: "2025-05-14",
+  },
+  {
+    invoiceId: "INV-5507",
+    customerName: "Sarah Bennett",
+    amount: 2900,
+    status: "pending",
+    dueDate: "2025-05-15",
+  },
 ];
 
 // ─── Documents ─────────────────────────────────────────────────────────────
 export const mockDocuments: Document[] = [
-  { id: "DOC-001", name: "Emma Castillo — Install Contract", type: "contract", linkedJob: "VK-2041", status: "signed", uploadedAt: "2025-05-02" },
-  { id: "DOC-002", name: "Marcus Wilson — Quote PDF", type: "quote", linkedJob: "VK-2033", status: "pending", uploadedAt: "2025-05-04" },
-  { id: "DOC-003", name: "James Park — Completion Record", type: "completion", linkedJob: "VK-2038", status: "signed", uploadedAt: "2025-05-07" },
-  { id: "DOC-004", name: "Diane Alvarez — Permit AZ-48821", type: "permit", linkedJob: "VK-2050", status: "pending", uploadedAt: "2025-05-03" },
-  { id: "DOC-005", name: "Tony Nguyen — Install Contract", type: "contract", linkedJob: "VK-2044", status: "signed", uploadedAt: "2025-05-05" },
-  { id: "DOC-006", name: "Rachel Kim — QC Photos", type: "qc-photo", linkedJob: "VK-2029", status: "draft", uploadedAt: "2025-05-06" },
-  { id: "DOC-007", name: "Marcus Wilson — QC Photos", type: "qc-photo", linkedJob: "VK-2033", status: "pending", uploadedAt: "2025-05-06" },
+  {
+    id: "DOC-001",
+    name: "Emma Castillo — Install Contract",
+    type: "contract",
+    linkedJob: "VK-2041",
+    status: "signed",
+    uploadedAt: "2025-05-02",
+  },
+  {
+    id: "DOC-002",
+    name: "Marcus Wilson — Quote PDF",
+    type: "quote",
+    linkedJob: "VK-2033",
+    status: "pending",
+    uploadedAt: "2025-05-04",
+  },
+  {
+    id: "DOC-003",
+    name: "James Park — Completion Record",
+    type: "completion",
+    linkedJob: "VK-2038",
+    status: "signed",
+    uploadedAt: "2025-05-07",
+  },
+  {
+    id: "DOC-004",
+    name: "Diane Alvarez — Permit AZ-48821",
+    type: "permit",
+    linkedJob: "VK-2050",
+    status: "pending",
+    uploadedAt: "2025-05-03",
+  },
+  {
+    id: "DOC-005",
+    name: "Tony Nguyen — Install Contract",
+    type: "contract",
+    linkedJob: "VK-2044",
+    status: "signed",
+    uploadedAt: "2025-05-05",
+  },
+  {
+    id: "DOC-006",
+    name: "Rachel Kim — QC Photos",
+    type: "qc-photo",
+    linkedJob: "VK-2029",
+    status: "draft",
+    uploadedAt: "2025-05-06",
+  },
+  {
+    id: "DOC-007",
+    name: "Marcus Wilson — QC Photos",
+    type: "qc-photo",
+    linkedJob: "VK-2033",
+    status: "pending",
+    uploadedAt: "2025-05-06",
+  },
 ];
 
 // ─── Work Orders ───────────────────────────────────────────────────────────
 export const mockWorkOrders: WorkOrder[] = [
-  { id: "WO-8801", jobId: "VK-2041", installer: "Botta Install Co.", status: "scheduled", scheduledDate: "2025-05-09", notes: "Panels delayed — confirm AM delivery before dispatch." },
-  { id: "WO-8802", jobId: "VK-2033", installer: "Southwest Installs", status: "pending", scheduledDate: "2025-05-06", notes: "On hold — payment dispute under review." },
-  { id: "WO-8803", jobId: "VK-2050", installer: "TBD", status: "pending", scheduledDate: "2025-05-12", notes: "Awaiting installer assignment." },
-  { id: "WO-8804", jobId: "VK-2038", installer: "Precision Kitchen Co.", status: "in-progress", scheduledDate: "2025-05-07", notes: "Day 2 of 3. Final walkthrough tomorrow." },
-  { id: "WO-8805", jobId: "VK-2044", installer: "Botta Install Co.", status: "scheduled", scheduledDate: "2025-05-14", notes: "Material delivery confirmed for 5/13." },
-  { id: "WO-8806", jobId: "VK-2029", installer: "Desert Finish Pros", status: "scheduled", scheduledDate: "2025-05-16", notes: "Vanity ETA delayed to 5/15. Monitor." },
+  {
+    id: "WO-8801",
+    jobId: "VK-2041",
+    installer: "Botta Install Co.",
+    status: "scheduled",
+    scheduledDate: "2025-05-09",
+    notes: "Panels delayed — confirm AM delivery before dispatch.",
+  },
+  {
+    id: "WO-8802",
+    jobId: "VK-2033",
+    installer: "Southwest Installs",
+    status: "pending",
+    scheduledDate: "2025-05-06",
+    notes: "On hold — payment dispute under review.",
+  },
+  {
+    id: "WO-8803",
+    jobId: "VK-2050",
+    installer: "TBD",
+    status: "pending",
+    scheduledDate: "2025-05-12",
+    notes: "Awaiting installer assignment.",
+  },
+  {
+    id: "WO-8804",
+    jobId: "VK-2038",
+    installer: "Precision Kitchen Co.",
+    status: "in-progress",
+    scheduledDate: "2025-05-07",
+    notes: "Day 2 of 3. Final walkthrough tomorrow.",
+  },
+  {
+    id: "WO-8805",
+    jobId: "VK-2044",
+    installer: "Botta Install Co.",
+    status: "scheduled",
+    scheduledDate: "2025-05-14",
+    notes: "Material delivery confirmed for 5/13.",
+  },
+  {
+    id: "WO-8806",
+    jobId: "VK-2029",
+    installer: "Desert Finish Pros",
+    status: "scheduled",
+    scheduledDate: "2025-05-16",
+    notes: "Vanity ETA delayed to 5/15. Monitor.",
+  },
 ];

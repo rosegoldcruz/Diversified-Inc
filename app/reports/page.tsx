@@ -1,26 +1,24 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import { DownloadSimple } from "phosphor-react";
 import { FadeContent } from "@/components/ui/FadeContent";
 import { ShinyText } from "@/components/ui/ShinyText";
 
-type Task = {
-  id: number;
-  status: string | null;
-  priority: string | null;
+type CountRow = {
+  label: string;
+  count: number;
 };
 
-type WorkOrder = {
-  id: number;
-  status: string | null;
+type EmployeeWorkloadRow = {
+  employee_id: number;
+  employee_name: string;
+  department: string | null;
+  open_tasks: number;
+  open_work_orders: number;
 };
 
-type Employee = {
-  id: number;
-};
-
-type InventoryItem = {
+type InventoryAlertRow = {
   id: number;
   item_name: string;
   quantity: number | null;
@@ -29,24 +27,43 @@ type InventoryItem = {
   status: string | null;
 };
 
-type ReportData = {
-  tasks: Task[];
-  workOrders: WorkOrder[];
-  employees: Employee[];
-  inventory: InventoryItem[];
+type ActivityRow = {
+  action: string;
+  module: string;
+  entity_type: string | null;
+  entity_id: string | null;
+  created_at: string;
 };
 
-const EMPTY_DATA: ReportData = {
-  tasks: [],
-  workOrders: [],
-  employees: [],
-  inventory: [],
+type ReportData = {
+  generatedAt: string;
+  summary: {
+    totalTasks: number;
+    overdueTasks: number;
+    blockedTasks: number;
+    completedTasksThisWeek: number;
+    openRequests: number;
+    openWorkOrders: number;
+    lowInventory: number;
+    timesheetsPendingApproval: number;
+    sopsNeedingReview: number | null;
+    weeklyCompletedWork: number;
+  };
+  tasksByStatus: CountRow[];
+  tasksByPriority: CountRow[];
+  requestsByStatus: CountRow[];
+  workOrdersByStatus: CountRow[];
+  employeeWorkload: EmployeeWorkloadRow[];
+  timesheetApprovalCounts: CountRow[];
+  lowInventory: InventoryAlertRow[];
+  sopsNeedingReview: CountRow[];
+  recentOperationalActivity: ActivityRow[];
 };
 
 export default function ReportsPage() {
-  const router = useRouter();
-  const [data, setData] = useState<ReportData>(EMPTY_DATA);
+  const [report, setReport] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -56,44 +73,12 @@ export default function ReportsPage() {
       try {
         setLoading(true);
         setError(null);
-
-        const [
-          tasksResponse,
-          workOrdersResponse,
-          employeesResponse,
-          inventoryResponse,
-        ] = await Promise.all([
-          fetch("/api/tasks", { cache: "no-store" }),
-          fetch("/api/work-orders", { cache: "no-store" }),
-          fetch("/api/employees", { cache: "no-store" }),
-          fetch("/api/inventory", { cache: "no-store" }),
-        ]);
-
-        if (!tasksResponse.ok)
-          throw new Error(`Failed to load tasks (${tasksResponse.status})`);
-        if (!workOrdersResponse.ok)
-          throw new Error(
-            `Failed to load work orders (${workOrdersResponse.status})`,
-          );
-        if (!employeesResponse.ok)
-          throw new Error(
-            `Failed to load employees (${employeesResponse.status})`,
-          );
-        if (!inventoryResponse.ok)
-          throw new Error(
-            `Failed to load inventory (${inventoryResponse.status})`,
-          );
-
-        const [tasks, workOrders, employees, inventory] = (await Promise.all([
-          tasksResponse.json(),
-          workOrdersResponse.json(),
-          employeesResponse.json(),
-          inventoryResponse.json(),
-        ])) as [Task[], WorkOrder[], Employee[], InventoryItem[]];
-
-        if (!cancelled) {
-          setData({ tasks, workOrders, employees, inventory });
+        const response = await fetch("/api/reports", { cache: "no-store" });
+        if (!response.ok) {
+          throw new Error(`Failed to load reports (${response.status})`);
         }
+        const data = (await response.json()) as ReportData;
+        if (!cancelled) setReport(data);
       } catch (loadError) {
         if (!cancelled) {
           setError(
@@ -103,113 +88,74 @@ export default function ReportsPage() {
           );
         }
       } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+        if (!cancelled) setLoading(false);
       }
     }
 
-    loadReports();
+    void loadReports();
 
     return () => {
       cancelled = true;
     };
   }, []);
 
-  const metrics = useMemo(() => {
-    const completedTasks = data.tasks.filter(
-      (task) => normalize(task.status) === "completed",
-    ).length;
-    const blockedTasks = data.tasks.filter(
-      (task) => normalize(task.status) === "blocked",
-    ).length;
-    const highPriorityTasks = data.tasks.filter((task) => {
-      const priority = normalize(task.priority);
-      return priority === "high" || priority === "urgent";
-    }).length;
+  const cards = useMemo(() => {
+    if (!report) return [];
+    return [
+      { label: "Total Tasks", value: report.summary.totalTasks },
+      { label: "Overdue Tasks", value: report.summary.overdueTasks },
+      { label: "Blocked Tasks", value: report.summary.blockedTasks },
+      {
+        label: "Completed This Week",
+        value: report.summary.completedTasksThisWeek,
+      },
+      { label: "Open Requests", value: report.summary.openRequests },
+      { label: "Open Work Orders", value: report.summary.openWorkOrders },
+      { label: "Low Inventory", value: report.summary.lowInventory },
+      {
+        label: "Pending Timesheets",
+        value: report.summary.timesheetsPendingApproval,
+      },
+      {
+        label: "SOPs Needing Review",
+        value: report.summary.sopsNeedingReview ?? 0,
+      },
+      {
+        label: "Weekly Completed Work",
+        value: report.summary.weeklyCompletedWork,
+      },
+    ];
+  }, [report]);
 
-    const openWorkOrders = data.workOrders.filter((workOrder) => {
-      const status = normalize(workOrder.status);
-      return (
-        status !== "completed" &&
-        status !== "complete" &&
-        status !== "closed" &&
-        status !== "canceled" &&
-        status !== "cancelled"
+  async function exportCsv() {
+    try {
+      setExporting(true);
+      setError(null);
+      const response = await fetch("/api/reports/export", {
+        cache: "no-store",
+      });
+      if (!response.ok) {
+        throw new Error(`Failed to export reports (${response.status})`);
+      }
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `diversified-os-report-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (exportError) {
+      setError(
+        exportError instanceof Error
+          ? exportError.message
+          : "Failed to export reports",
       );
-    }).length;
-
-    const lowStockItems = data.inventory.filter(
-      (item) => normalize(item.status) === "low_stock",
-    ).length;
-    const outOfStockItems = data.inventory.filter(
-      (item) => normalize(item.status) === "out_of_stock",
-    ).length;
-
-    return {
-      totalTasks: data.tasks.length,
-      completedTasks,
-      blockedTasks,
-      highPriorityTasks,
-      openWorkOrders,
-      totalEmployees: data.employees.length,
-      lowStockItems,
-      outOfStockItems,
-    };
-  }, [data]);
-
-  const taskBreakdown = useMemo(() => {
-    return {
-      todo: data.tasks.filter((task) => normalize(task.status) === "todo")
-        .length,
-      in_progress: data.tasks.filter(
-        (task) => normalize(task.status) === "in_progress",
-      ).length,
-      completed: data.tasks.filter(
-        (task) => normalize(task.status) === "completed",
-      ).length,
-      blocked: data.tasks.filter((task) => normalize(task.status) === "blocked")
-        .length,
-    };
-  }, [data.tasks]);
-
-  const inventoryAlerts = useMemo(() => {
-    return data.inventory.filter((item) => {
-      const status = normalize(item.status);
-      return status === "low_stock" || status === "out_of_stock";
-    });
-  }, [data.inventory]);
-
-  const workOrderBreakdown = useMemo(() => {
-    return {
-      open: data.workOrders.filter((workOrder) => {
-        const status = normalize(workOrder.status);
-        return status === "open" || status === "todo";
-      }).length,
-      in_progress: data.workOrders.filter(
-        (workOrder) => normalize(workOrder.status) === "in_progress",
-      ).length,
-      pending: data.workOrders.filter((workOrder) => {
-        const status = normalize(workOrder.status);
-        return status === "pending" || status === "waiting";
-      }).length,
-      completed: data.workOrders.filter((workOrder) => {
-        const status = normalize(workOrder.status);
-        return status === "completed" || status === "complete";
-      }).length,
-    };
-  }, [data.workOrders]);
-
-  const cards = [
-    { label: "Total Tasks", value: metrics.totalTasks },
-    { label: "Completed Tasks", value: metrics.completedTasks },
-    { label: "Blocked Tasks", value: metrics.blockedTasks },
-    { label: "High Priority Tasks", value: metrics.highPriorityTasks },
-    { label: "Open Work Orders", value: metrics.openWorkOrders },
-    { label: "Total Employees", value: metrics.totalEmployees },
-    { label: "Low Stock Items", value: metrics.lowStockItems },
-    { label: "Out of Stock Items", value: metrics.outOfStockItems },
-  ];
+    } finally {
+      setExporting(false);
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -218,43 +164,88 @@ export default function ReportsPage() {
         blur={true}
         duration={800}
         delay={50}
-        className="space-y-2"
+        className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between"
       >
-        <h1 className="text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
-          <ShinyText>Reports</ShinyText>
-        </h1>
-        <p className="max-w-3xl text-base text-textSecondary">
-          Live reporting across tasks, work orders, employees, and inventory.
-        </p>
+        <div className="space-y-2">
+          <h1 className="text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
+            <ShinyText>Reports</ShinyText>
+          </h1>
+          <p className="max-w-3xl text-base text-textSecondary">
+            PostgreSQL-backed operational reporting across tasks, requests, work
+            orders, inventory, SOPs, and timesheets.
+          </p>
+          {report ? (
+            <p className="text-xs text-textMuted">
+              Generated {new Date(report.generatedAt).toLocaleString()}
+            </p>
+          ) : null}
+        </div>
+        <button
+          type="button"
+          onClick={() => void exportCsv()}
+          disabled={exporting || loading || !report}
+          className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-white/30 bg-white/55 px-4 text-sm font-semibold text-textPrimary shadow-glass backdrop-blur-2xl transition hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+        >
+          <DownloadSimple className="h-4 w-4" weight="bold" />
+          {exporting ? "Exporting" : "Export CSV"}
+        </button>
       </FadeContent>
 
       {error ? <ErrorPanel message={error} /> : null}
 
-      {loading ? (
-        <LoadingPanel label="Loading reports..." />
-      ) : (
+      {loading ? <LoadingPanel label="Loading reports..." /> : null}
+
+      {!loading && !error && report && cards.length === 0 ? (
+        <EmptyPanel message="No report records are available." />
+      ) : null}
+
+      {report ? (
         <>
           <FadeContent
             as="section"
             blur={true}
             duration={800}
             delay={90}
-            className="grid gap-5 md:grid-cols-2 xl:grid-cols-4"
+            className="grid gap-5 md:grid-cols-2 xl:grid-cols-5"
           >
             {cards.map((card) => (
-              <article
-                key={card.label}
-                className="glass-surface glass-surface-hover p-6"
-              >
+              <article key={card.label} className="glass-surface p-6">
                 <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">
                   {card.label}
                 </p>
                 <p className="mt-3 text-4xl font-semibold text-textPrimary">
-                  {card.value}
+                  {card.value.toLocaleString()}
                 </p>
               </article>
             ))}
           </FadeContent>
+
+          <div className="grid gap-6 xl:grid-cols-2">
+            <BreakdownTable
+              title="Tasks by Status"
+              rows={report.tasksByStatus}
+            />
+            <BreakdownTable
+              title="Tasks by Priority"
+              rows={report.tasksByPriority}
+            />
+            <BreakdownTable
+              title="Requests by Status"
+              rows={report.requestsByStatus}
+            />
+            <BreakdownTable
+              title="Work Orders by Status"
+              rows={report.workOrdersByStatus}
+            />
+            <BreakdownTable
+              title="Timesheet Approval Counts"
+              rows={report.timesheetApprovalCounts}
+            />
+            <BreakdownTable
+              title="SOP Review Needs"
+              rows={report.sopsNeedingReview}
+            />
+          </div>
 
           <FadeContent
             as="section"
@@ -264,61 +255,43 @@ export default function ReportsPage() {
             className="glass-surface p-6 md:p-8"
           >
             <h2 className="text-lg font-semibold text-textPrimary">
-              Task Breakdown by Status
+              Employee Workload
             </h2>
-            <p className="mt-1 text-sm text-textSecondary">
-              Counts for todo, in_progress, completed, and blocked tasks.
-            </p>
-            <div className="mt-4 overflow-x-auto">
-              <table className="min-w-full text-left text-sm">
-                <thead className="bg-white/35 text-xs uppercase tracking-wide text-textMuted dark:bg-white/5">
-                  <tr>
-                    <th className="px-4 py-3 font-semibold">Status</th>
-                    <th className="px-4 py-3 font-semibold">Count</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/30 dark:divide-white/10">
-                  <tr
-                    onClick={() => router.push("/tasks?status=todo")}
-                    className="cursor-pointer transition-colors hover:bg-white/45 dark:hover:bg-white/5"
-                  >
-                    <td className="px-4 py-3 text-textSecondary">todo</td>
-                    <td className="px-4 py-3 font-medium text-textPrimary">
-                      {taskBreakdown.todo}
-                    </td>
-                  </tr>
-                  <tr
-                    onClick={() => router.push("/tasks?status=in_progress")}
-                    className="cursor-pointer transition-colors hover:bg-white/45 dark:hover:bg-white/5"
-                  >
-                    <td className="px-4 py-3 text-textSecondary">
-                      in_progress
-                    </td>
-                    <td className="px-4 py-3 font-medium text-textPrimary">
-                      {taskBreakdown.in_progress}
-                    </td>
-                  </tr>
-                  <tr
-                    onClick={() => router.push("/tasks?status=completed")}
-                    className="cursor-pointer transition-colors hover:bg-white/45 dark:hover:bg-white/5"
-                  >
-                    <td className="px-4 py-3 text-textSecondary">completed</td>
-                    <td className="px-4 py-3 font-medium text-textPrimary">
-                      {taskBreakdown.completed}
-                    </td>
-                  </tr>
-                  <tr
-                    onClick={() => router.push("/tasks?status=blocked")}
-                    className="cursor-pointer transition-colors hover:bg-white/45 dark:hover:bg-white/5"
-                  >
-                    <td className="px-4 py-3 text-textSecondary">blocked</td>
-                    <td className="px-4 py-3 font-medium text-textPrimary">
-                      {taskBreakdown.blocked}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+            <DataTableEmpty visible={report.employeeWorkload.length === 0} />
+            {report.employeeWorkload.length > 0 ? (
+              <div className="mt-4 overflow-x-auto">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="bg-white/35 text-xs uppercase tracking-wide text-textMuted dark:bg-white/5">
+                    <tr>
+                      <th className="px-4 py-3 font-semibold">Employee</th>
+                      <th className="px-4 py-3 font-semibold">Department</th>
+                      <th className="px-4 py-3 font-semibold">Open Tasks</th>
+                      <th className="px-4 py-3 font-semibold">
+                        Open Work Orders
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/30 dark:divide-white/10">
+                    {report.employeeWorkload.map((row) => (
+                      <tr key={row.employee_id}>
+                        <td className="px-4 py-3 font-medium text-textPrimary">
+                          {row.employee_name}
+                        </td>
+                        <td className="px-4 py-3 text-textSecondary">
+                          {row.department || "-"}
+                        </td>
+                        <td className="px-4 py-3 text-textSecondary">
+                          {row.open_tasks}
+                        </td>
+                        <td className="px-4 py-3 text-textSecondary">
+                          {row.open_work_orders}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
           </FadeContent>
 
           <FadeContent
@@ -329,84 +302,10 @@ export default function ReportsPage() {
             className="glass-surface p-6 md:p-8"
           >
             <h2 className="text-lg font-semibold text-textPrimary">
-              Work Order Breakdown by Status
-            </h2>
-            <p className="mt-1 text-sm text-textSecondary">
-              Counts for open, in_progress, pending, and completed work orders.
-            </p>
-            <div className="mt-4 overflow-x-auto">
-              <table className="min-w-full text-left text-sm">
-                <thead className="bg-white/35 text-xs uppercase tracking-wide text-textMuted dark:bg-white/5">
-                  <tr>
-                    <th className="px-4 py-3 font-semibold">Status</th>
-                    <th className="px-4 py-3 font-semibold">Count</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/30 dark:divide-white/10">
-                  <tr
-                    onClick={() => router.push("/work-orders?status=open")}
-                    className="cursor-pointer transition-colors hover:bg-white/45 dark:hover:bg-white/5"
-                  >
-                    <td className="px-4 py-3 text-textSecondary">open</td>
-                    <td className="px-4 py-3 font-medium text-textPrimary">
-                      {workOrderBreakdown.open}
-                    </td>
-                  </tr>
-                  <tr
-                    onClick={() =>
-                      router.push("/work-orders?status=in_progress")
-                    }
-                    className="cursor-pointer transition-colors hover:bg-white/45 dark:hover:bg-white/5"
-                  >
-                    <td className="px-4 py-3 text-textSecondary">
-                      in_progress
-                    </td>
-                    <td className="px-4 py-3 font-medium text-textPrimary">
-                      {workOrderBreakdown.in_progress}
-                    </td>
-                  </tr>
-                  <tr
-                    onClick={() => router.push("/work-orders?status=pending")}
-                    className="cursor-pointer transition-colors hover:bg-white/45 dark:hover:bg-white/5"
-                  >
-                    <td className="px-4 py-3 text-textSecondary">pending</td>
-                    <td className="px-4 py-3 font-medium text-textPrimary">
-                      {workOrderBreakdown.pending}
-                    </td>
-                  </tr>
-                  <tr
-                    onClick={() => router.push("/work-orders?status=completed")}
-                    className="cursor-pointer transition-colors hover:bg-white/45 dark:hover:bg-white/5"
-                  >
-                    <td className="px-4 py-3 text-textSecondary">completed</td>
-                    <td className="px-4 py-3 font-medium text-textPrimary">
-                      {workOrderBreakdown.completed}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          </FadeContent>
-
-          <FadeContent
-            as="section"
-            blur={true}
-            duration={800}
-            delay={180}
-            className="glass-surface p-6 md:p-8"
-          >
-            <h2 className="text-lg font-semibold text-textPrimary">
               Inventory Alerts
             </h2>
-            <p className="mt-1 text-sm text-textSecondary">
-              Items currently low on stock or out of stock.
-            </p>
-
-            {inventoryAlerts.length === 0 ? (
-              <p className="mt-4 text-sm text-textSecondary">
-                No inventory alerts right now.
-              </p>
-            ) : (
+            <DataTableEmpty visible={report.lowInventory.length === 0} />
+            {report.lowInventory.length > 0 ? (
               <div className="mt-4 overflow-x-auto">
                 <table className="min-w-full text-left text-sm">
                   <thead className="bg-white/35 text-xs uppercase tracking-wide text-textMuted dark:bg-white/5">
@@ -419,12 +318,8 @@ export default function ReportsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/30 dark:divide-white/10">
-                    {inventoryAlerts.map((item) => (
-                      <tr
-                        key={item.id}
-                        onClick={() => router.push(`/inventory/${item.id}`)}
-                        className="cursor-pointer transition-colors hover:bg-white/45 dark:hover:bg-white/5"
-                      >
+                    {report.lowInventory.map((item) => (
+                      <tr key={item.id}>
                         <td className="px-4 py-3 font-medium text-textPrimary">
                           {item.item_name}
                         </td>
@@ -437,48 +332,133 @@ export default function ReportsPage() {
                         <td className="px-4 py-3 text-textSecondary">
                           {item.location || "-"}
                         </td>
-                        <td className="px-4 py-3">
-                          <InventoryStatusBadge status={item.status} />
+                        <td className="px-4 py-3 text-textSecondary">
+                          {formatLabel(item.status)}
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
-            )}
+            ) : null}
+          </FadeContent>
+
+          <FadeContent
+            as="section"
+            blur={true}
+            duration={800}
+            delay={180}
+            className="glass-surface p-6 md:p-8"
+          >
+            <h2 className="text-lg font-semibold text-textPrimary">
+              Recent Operational Activity
+            </h2>
+            <DataTableEmpty
+              visible={report.recentOperationalActivity.length === 0}
+            />
+            {report.recentOperationalActivity.length > 0 ? (
+              <div className="mt-4 overflow-x-auto">
+                <table className="min-w-full text-left text-sm">
+                  <thead className="bg-white/35 text-xs uppercase tracking-wide text-textMuted dark:bg-white/5">
+                    <tr>
+                      <th className="px-4 py-3 font-semibold">Action</th>
+                      <th className="px-4 py-3 font-semibold">Module</th>
+                      <th className="px-4 py-3 font-semibold">Entity</th>
+                      <th className="px-4 py-3 font-semibold">Created</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/30 dark:divide-white/10">
+                    {report.recentOperationalActivity.map((activity, index) => (
+                      <tr
+                        key={`${activity.module}-${activity.action}-${index}`}
+                      >
+                        <td className="px-4 py-3 font-medium text-textPrimary">
+                          {activity.action}
+                        </td>
+                        <td className="px-4 py-3 text-textSecondary">
+                          {activity.module}
+                        </td>
+                        <td className="px-4 py-3 text-textSecondary">
+                          {[activity.entity_type, activity.entity_id]
+                            .filter(Boolean)
+                            .join(":") || "-"}
+                        </td>
+                        <td className="px-4 py-3 text-textSecondary">
+                          {new Date(activity.created_at).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : null}
           </FadeContent>
         </>
-      )}
+      ) : null}
     </div>
   );
 }
 
-function normalize(value: string | null) {
-  return (value || "").toLowerCase();
+function BreakdownTable({ title, rows }: { title: string; rows: CountRow[] }) {
+  return (
+    <FadeContent
+      as="section"
+      blur={true}
+      duration={800}
+      delay={120}
+      className="glass-surface p-6 md:p-8"
+    >
+      <h2 className="text-lg font-semibold text-textPrimary">{title}</h2>
+      <DataTableEmpty visible={rows.length === 0} />
+      {rows.length > 0 ? (
+        <div className="mt-4 overflow-x-auto">
+          <table className="min-w-full text-left text-sm">
+            <thead className="bg-white/35 text-xs uppercase tracking-wide text-textMuted dark:bg-white/5">
+              <tr>
+                <th className="px-4 py-3 font-semibold">Label</th>
+                <th className="px-4 py-3 font-semibold">Count</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-white/30 dark:divide-white/10">
+              {rows.map((row) => (
+                <tr key={row.label}>
+                  <td className="px-4 py-3 text-textSecondary">
+                    {formatLabel(row.label)}
+                  </td>
+                  <td className="px-4 py-3 font-medium text-textPrimary">
+                    {row.count.toLocaleString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : null}
+    </FadeContent>
+  );
 }
 
-function InventoryStatusBadge({ status }: { status: string | null }) {
-  const normalized = normalize(status);
-  const styles: Record<string, string> = {
-    low_stock:
-      "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
-    out_of_stock:
-      "border-red-500/30 bg-red-500/10 text-red-600 dark:text-red-300",
-  };
+function DataTableEmpty({ visible }: { visible: boolean }) {
+  if (!visible) return null;
+  return <p className="mt-4 text-sm text-textSecondary">No records found.</p>;
+}
 
-  return (
-    <span
-      className={`inline-flex rounded-md border px-2 py-0.5 text-xs font-medium ${styles[normalized] || styles.low_stock}`}
-    >
-      {normalized.replaceAll("_", " ")}
-    </span>
-  );
+function formatLabel(value: string | null) {
+  return (value || "unknown").replaceAll("_", " ");
 }
 
 function LoadingPanel({ label }: { label: string }) {
   return (
     <div className="glass-surface p-12 text-center text-sm text-textSecondary">
       {label}
+    </div>
+  );
+}
+
+function EmptyPanel({ message }: { message: string }) {
+  return (
+    <div className="glass-surface p-8 text-center text-sm text-textSecondary">
+      {message}
     </div>
   );
 }

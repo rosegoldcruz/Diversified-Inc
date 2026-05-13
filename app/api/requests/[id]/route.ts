@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
+import { createAuditLog } from "@/lib/audit-log";
 import { ensureSchema } from "@/lib/schema";
 import { HttpError, getSession, requireRole } from "@/lib/session";
 import { createNotification } from "@/lib/notifications";
+import { safeCreateAutomationEvent } from "@/lib/automation-events";
 import { ValidationError, optionalString, requireEnum } from "@/lib/validators";
 
 export const runtime = "nodejs";
@@ -214,6 +216,20 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 
     const updated = rows[0];
 
+    await createAuditLog({
+      actorUserId: session.userId,
+      action:
+        nextStatus !== currentStatus
+          ? "request.status_updated"
+          : "request.updated",
+      module: "requests",
+      entityType: "request",
+      entityId: updated.id,
+      beforeData: existing,
+      afterData: updated,
+      request,
+    });
+
     // Notify the requester (best-effort) when status changes.
     if (nextStatus !== currentStatus) {
       const requesterRow = await query<{ id: number }>(
@@ -229,6 +245,28 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
         userIds: requesterId ? [requesterId] : undefined,
         excludeUserId: session.userId,
       });
+
+      if (nextStatus === "Approved" || nextStatus === "Denied") {
+        await safeCreateAutomationEvent({
+          eventType:
+            nextStatus === "Approved" ? "request_approved" : "request_denied",
+          sourceModule: "requests",
+          entityType: "request",
+          entityId: updated.id,
+          actorUserId: session.userId,
+          path: "/requests",
+          payload: {
+            request_id: updated.id,
+            request_number: updated.request_id,
+            title: updated.title,
+            previous_status: currentStatus,
+            status: nextStatus,
+            category: updated.category,
+            priority: updated.priority,
+            requester: updated.requester,
+          },
+        });
+      }
     }
 
     return NextResponse.json(updated);

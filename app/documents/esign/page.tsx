@@ -48,8 +48,6 @@ type Document = {
   created_at: string;
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
-
 export default function DocumentESignPage() {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
@@ -57,6 +55,9 @@ export default function DocumentESignPage() {
   const [versions, setVersions] = useState<DocumentVersion[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(false);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [signing, setSigning] = useState(false);
   const [signingId, setSigningId] = useState<number | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -69,15 +70,17 @@ export default function DocumentESignPage() {
   async function loadDocuments() {
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE}/documents/?limit=50`, {
+      setError(null);
+      const res = await fetch(`/api/documents?limit=50`, {
         cache: "no-store",
       });
-      if (res.ok) {
-        const data = await res.json();
-        setDocuments(data);
+      if (!res.ok) {
+        throw new Error(`Failed to load documents (${res.status})`);
       }
+      const data = await res.json();
+      setDocuments(data);
     } catch (err) {
-      console.error("Failed to load documents:", err);
+      setError(err instanceof Error ? err.message : "Failed to load documents");
     } finally {
       setLoading(false);
     }
@@ -85,17 +88,30 @@ export default function DocumentESignPage() {
 
   async function loadDocumentDetails(docId: number) {
     try {
+      setDetailsLoading(true);
+      setError(null);
       const [sigsRes, versionsRes, auditRes] = await Promise.all([
-        fetch(`${API_BASE}/documents/${docId}/signatures`),
-        fetch(`${API_BASE}/documents/${docId}/versions`),
-        fetch(`${API_BASE}/documents/${docId}/audit`),
+        fetch(`/api/documents/${docId}/signatures`),
+        fetch(`/api/documents/${docId}/versions`),
+        fetch(`/api/documents/${docId}/audit`),
       ]);
+
+      if (!sigsRes.ok)
+        throw new Error(`Failed to load signatures (${sigsRes.status})`);
+      if (!versionsRes.ok)
+        throw new Error(`Failed to load versions (${versionsRes.status})`);
+      if (!auditRes.ok)
+        throw new Error(`Failed to load audit logs (${auditRes.status})`);
 
       if (sigsRes.ok) setSignatures(await sigsRes.json());
       if (versionsRes.ok) setVersions(await versionsRes.json());
       if (auditRes.ok) setAuditLogs(await auditRes.json());
     } catch (err) {
-      console.error("Failed to load document details:", err);
+      setError(
+        err instanceof Error ? err.message : "Failed to load document details",
+      );
+    } finally {
+      setDetailsLoading(false);
     }
   }
 
@@ -125,7 +141,9 @@ export default function DocumentESignPage() {
     const signatureData = canvas.toDataURL("image/png");
 
     try {
-      const res = await fetch(`${API_BASE}/documents/sign`, {
+      setError(null);
+      setSuccessMessage(null);
+      const res = await fetch(`/api/documents/sign`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -144,14 +162,17 @@ export default function DocumentESignPage() {
           await loadDocumentDetails(selectedDoc.id);
           await loadDocuments();
         }
-        alert("Document signed successfully!");
+        setSuccessMessage("Document signature captured.");
       } else {
-        const error = await res.json();
-        alert(`Error: ${error.detail}`);
+        const error = await res.json().catch(() => null);
+        throw new Error(
+          error && typeof error.error === "string"
+            ? error.error
+            : "Failed to sign document",
+        );
       }
     } catch (err) {
-      console.error("Failed to sign:", err);
-      alert("Failed to sign document");
+      setError(err instanceof Error ? err.message : "Failed to sign document");
     }
   }
 
@@ -200,6 +221,14 @@ export default function DocumentESignPage() {
             Select a document to view signatures
           </p>
         </header>
+
+        {error ? (
+          <ErrorPanel message={error} onRetry={() => void loadDocuments()} />
+        ) : null}
+
+        {documents.length === 0 ? (
+          <EmptyPanel message="No document records are available for signature workflow." />
+        ) : null}
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {documents.map((doc) => (
@@ -254,20 +283,41 @@ export default function DocumentESignPage() {
         <p className="text-sm text-neutral-400">Document #{selectedDoc.id}</p>
       </header>
 
-      {/* PDF Viewer Placeholder */}
+      {error ? (
+        <ErrorPanel
+          message={error}
+          onRetry={() =>
+            selectedDoc
+              ? void loadDocumentDetails(selectedDoc.id)
+              : void loadDocuments()
+          }
+        />
+      ) : null}
+      {successMessage ? (
+        <div className="rounded-md border border-emerald-500/50 bg-emerald-950/30 px-4 py-3 text-sm text-emerald-200">
+          {successMessage}
+        </div>
+      ) : null}
+
+      {/* Document File */}
       <div className="rounded-lg border border-neutral-800 bg-neutral-950/50 p-8 text-center">
         <FileText
           className="w-16 h-16 text-neutral-600 mx-auto mb-4"
           weight="duotone"
         />
-        <p className="text-neutral-400">PDF Viewer</p>
+        <p className="text-neutral-400">Document File</p>
         <p className="text-xs text-neutral-500 mt-2">
           {selectedDoc.storage_url}
         </p>
         {selectedDoc.storage_url && (
-          <Button variant="outline" size="sm" className="mt-4">
+          <a
+            href={selectedDoc.storage_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-4 inline-flex rounded-md border border-neutral-700 px-3 py-2 text-sm text-neutral-200 transition-colors hover:bg-neutral-800"
+          >
             Download PDF
-          </Button>
+          </a>
         )}
       </div>
 
@@ -278,6 +328,11 @@ export default function DocumentESignPage() {
           Signatures
         </h2>
         <div className="space-y-3">
+          {detailsLoading ? (
+            <p className="text-center text-neutral-500 py-4">
+              Loading signature records...
+            </p>
+          ) : null}
           {signatures.map((sig) => (
             <div
               key={sig.id}
@@ -322,7 +377,7 @@ export default function DocumentESignPage() {
                   <span className="text-xs text-neutral-500">
                     Order: {sig.signature_order}
                   </span>
-                  {sig.status === "pending" && (
+                  {sig.status === "pending_signature" && (
                     <Button
                       size="sm"
                       onClick={() => startSigning(sig.id)}
@@ -340,7 +395,7 @@ export default function DocumentESignPage() {
               </div>
             </div>
           ))}
-          {signatures.length === 0 && (
+          {!detailsLoading && signatures.length === 0 && (
             <p className="text-center text-neutral-500 py-4">
               No signatures required
             </p>
@@ -425,6 +480,35 @@ export default function DocumentESignPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function ErrorPanel({
+  message,
+  onRetry,
+}: {
+  message: string;
+  onRetry: () => void;
+}) {
+  return (
+    <div className="rounded-md border border-red-500/50 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+      <p>{message}</p>
+      <button
+        type="button"
+        onClick={onRetry}
+        className="mt-3 rounded-md border border-red-500/50 px-3 py-1.5 text-xs font-semibold text-red-100 transition-colors hover:bg-red-900/40"
+      >
+        Retry
+      </button>
+    </div>
+  );
+}
+
+function EmptyPanel({ message }: { message: string }) {
+  return (
+    <div className="rounded-lg border border-dashed border-neutral-800 bg-neutral-900/50 p-8 text-center text-sm text-neutral-400">
+      {message}
     </div>
   );
 }

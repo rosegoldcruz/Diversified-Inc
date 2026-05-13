@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createAuditLog } from "@/lib/audit-log";
 import {
   isAllowedCategory,
   isAllowedSettingKey,
@@ -12,6 +13,7 @@ import {
   getAllSettings,
   upsertSetting,
 } from "@/lib/settings-store";
+import { HttpError, requireRole } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +26,7 @@ type SettingsPatchBody = {
 
 export async function GET() {
   try {
+    requireRole(["Admin", "Leadership"]);
     const { rows, byKey } = await getAllSettings();
 
     return NextResponse.json({
@@ -31,6 +34,12 @@ export async function GET() {
       byKey,
     });
   } catch (error) {
+    if (error instanceof HttpError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
+    }
     const message =
       error instanceof Error ? error.message : "Failed to load settings";
     return NextResponse.json({ error: message }, { status: 500 });
@@ -39,6 +48,7 @@ export async function GET() {
 
 export async function PATCH(request: NextRequest) {
   try {
+    const session = requireRole(["Admin", "Leadership"]);
     const body = (await request.json()) as SettingsPatchBody;
 
     if (!isAllowedSettingKey(body.key)) {
@@ -83,11 +93,28 @@ export async function PATCH(request: NextRequest) {
       metadata: {
         key: updated.key,
         category: updated.category,
+        actorUserId: session.userId,
       },
+    });
+
+    await createAuditLog({
+      actorUserId: session.userId,
+      action: "setting.updated",
+      module: "settings",
+      entityType: "system_setting",
+      entityId: updated.key,
+      afterData: updated,
+      request,
     });
 
     return NextResponse.json(updated);
   } catch (error) {
+    if (error instanceof HttpError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
+    }
     const message =
       error instanceof Error ? error.message : "Failed to update setting";
     return NextResponse.json({ error: message }, { status: 500 });

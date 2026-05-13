@@ -8,7 +8,7 @@ import { ShinyText } from "@/components/ui/ShinyText";
 type HubCard = {
   title: string;
   description: string;
-  status: "Configured" | "Partial" | "Coming Later" | "Internal Only";
+  status: "Configured" | "Partial" | "Internal Only";
   href?: string;
 };
 
@@ -116,7 +116,7 @@ export default function SettingsPage() {
                 </Badge>
               </div>
               <div className="mt-4 flex items-center text-xs font-medium text-accent">
-                {card.href ? "Open" : "Coming Later"}
+                Open
                 <ArrowRight className="ml-1 h-3.5 w-3.5" weight="bold" />
               </div>
             </article>

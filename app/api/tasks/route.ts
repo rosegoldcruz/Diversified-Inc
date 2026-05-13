@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
+import { createAuditLog } from "@/lib/audit-log";
+import { HttpError, requireRole } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -61,6 +63,7 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const session = requireRole(["Manager", "Admin", "Leadership"]);
     const body = (await request.json()) as TaskPostBody;
     const title = body.title?.trim();
 
@@ -113,8 +116,23 @@ export async function POST(request: NextRequest) {
     );
 
     const task = await getTaskWithAssignee(rows[0].id as number);
+    await createAuditLog({
+      actorUserId: session.userId,
+      action: "task.created",
+      module: "tasks",
+      entityType: "task",
+      entityId: rows[0].id as number,
+      afterData: task ?? rows[0],
+      request,
+    });
     return NextResponse.json(task ?? rows[0], { status: 201 });
   } catch (error) {
+    if (error instanceof HttpError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
+    }
     const message =
       error instanceof Error ? error.message : "Failed to create task";
     return NextResponse.json({ error: message }, { status: 500 });

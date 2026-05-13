@@ -35,8 +35,6 @@ type Document = {
   updated_at?: string | null;
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
-
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-slate-500/20 text-slate-300 border-slate-500/50",
   generating: "bg-blue-500/20 text-blue-300 border-blue-500/50",
@@ -64,6 +62,7 @@ export default function DocumentDetailPage() {
   const [document, setDocument] = useState<Document | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
 
   async function loadDocument() {
@@ -71,7 +70,7 @@ export default function DocumentDetailPage() {
       setLoading(true);
       setError(null);
 
-      const res = await fetch(`${API_BASE}/documents/${documentId}`, {
+      const res = await fetch(`/api/documents/${documentId}`, {
         cache: "no-store",
       });
       if (!res.ok) throw new Error(`Failed to load document (${res.status})`);
@@ -89,7 +88,9 @@ export default function DocumentDetailPage() {
   async function updateSignatureStatus(newStatus: string) {
     try {
       setUpdating(true);
-      const res = await fetch(`${API_BASE}/documents/${documentId}/signature`, {
+      setError(null);
+      setActionMessage(null);
+      const res = await fetch(`/api/documents/${documentId}/signature`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -98,11 +99,21 @@ export default function DocumentDetailPage() {
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to update signature status");
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(
+          data && typeof data.error === "string"
+            ? data.error
+            : "Failed to update signature status",
+        );
+      }
       await loadDocument();
+      setActionMessage(
+        `Signature status updated to ${newStatus.replaceAll("_", " ")}.`,
+      );
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to update";
-      alert(message);
+      setError(message);
     } finally {
       setUpdating(false);
     }
@@ -168,11 +179,7 @@ export default function DocumentDetailPage() {
           </div>
         </div>
         {document.file_url && (
-          <a
-            href={`${API_BASE}${document.file_url}`}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
+          <a href={document.file_url} target="_blank" rel="noopener noreferrer">
             <Button className="bg-amber-600 hover:bg-amber-700 text-white">
               <DownloadSimple className="w-4 h-4 mr-2" weight="bold" />
               Download PDF
@@ -180,6 +187,18 @@ export default function DocumentDetailPage() {
           </a>
         )}
       </header>
+
+      {actionMessage ? (
+        <div className="rounded-md border border-emerald-500/50 bg-emerald-950/30 px-4 py-3 text-sm text-emerald-200">
+          {actionMessage}
+        </div>
+      ) : null}
+
+      {error ? (
+        <div className="rounded-md border border-red-500/50 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+          {error}
+        </div>
+      ) : null}
 
       {/* Status Cards */}
       <div className="grid gap-4 md:grid-cols-2">
@@ -323,7 +342,7 @@ export default function DocumentDetailPage() {
           <h2 className="text-lg font-semibold text-white mb-4">PDF Preview</h2>
           <div className="w-full h-[800px] bg-neutral-950 rounded-lg overflow-hidden border border-neutral-800">
             <iframe
-              src={`${API_BASE}${document.file_url}`}
+              src={document.file_url}
               className="w-full h-full"
               title="PDF Preview"
             />

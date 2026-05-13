@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { readFile } from "node:fs/promises";
 import { query } from "@/lib/db";
 import { getAllSettings } from "@/lib/settings-store";
+import { HttpError, requireRole } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -51,6 +52,7 @@ function getDeploymentTarget() {
 export async function GET() {
   const checkedAt = new Date().toISOString();
   try {
+    requireRole(["Admin", "Leadership"]);
     const startedAt = Date.now();
     await query("SELECT 1 AS ok");
     const latencyMs = Date.now() - startedAt;
@@ -142,6 +144,12 @@ export async function GET() {
       runtime,
     });
   } catch (error) {
+    if (error instanceof HttpError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
+    }
     const message =
       error instanceof Error ? error.message : "Failed to check system health";
 

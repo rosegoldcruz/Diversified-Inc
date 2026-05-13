@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { HttpError, requireRole } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,7 @@ function checkOneOf(
 
 export async function GET() {
   try {
+    requireRole(["Admin", "Leadership"]);
     const groups: EnvGroup[] = [
       {
         group: "Database",
@@ -168,6 +170,12 @@ export async function GET() {
       totals,
     });
   } catch (error) {
+    if (error instanceof HttpError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
+    }
     const message =
       error instanceof Error ? error.message : "Failed to load env status";
     return NextResponse.json({ error: message }, { status: 500 });

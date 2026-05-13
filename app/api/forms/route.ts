@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query, withTransaction } from "@/lib/db";
+import { createAuditLog } from "@/lib/audit-log";
 import { ensureSchema } from "@/lib/schema";
-import { HttpError, getSession } from "@/lib/session";
+import { HttpError, getSession, requireUser } from "@/lib/session";
 import {
   ValidationError,
   optionalString,
   requireString,
 } from "@/lib/validators";
 import { createNotification } from "@/lib/notifications";
+import { safeCreateAutomationEvent } from "@/lib/automation-events";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -63,13 +65,7 @@ const FORM_TYPE_TO_REVIEWER: Record<(typeof FORM_TYPES)[number], string> = {
 export async function GET(request: NextRequest) {
   try {
     await ensureSchema();
-    const session = getSession();
-    if (!session) {
-      return NextResponse.json(
-        { error: "Authentication required" },
-        { status: 401 },
-      );
-    }
+    const session = requireUser();
 
     const { searchParams } = new URL(request.url);
     const type = searchParams.get("type");
@@ -119,13 +115,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     await ensureSchema();
-    const session = getSession();
-    if (!session) {
-      return NextResponse.json(
-        { error: "Authentication required" },
-        { status: 401 },
-      );
-    }
+    const session = requireUser();
 
     const body = (await request.json().catch(() => null)) as {
       type?: unknown;
@@ -217,6 +207,34 @@ export async function POST(request: NextRequest) {
       body: `${session.name} submitted ${type}`,
       link: `/requests`,
       audienceRoles: ["Admin", "Leadership", "Manager"],
+    });
+
+    await safeCreateAutomationEvent({
+      eventType: "form_submitted",
+      sourceModule: "forms",
+      entityType: "form",
+      entityId: result.form_id,
+      actorUserId: session.userId,
+      path: `/forms`,
+      payload: {
+        form_id: result.form_id,
+        request_id: result.request?.id ?? null,
+        request_number: result.request?.request_id ?? null,
+        title,
+        type,
+        priority,
+        requester: session.name,
+      },
+    });
+
+    await createAuditLog({
+      actorUserId: session.userId,
+      action: "form.submitted",
+      module: "forms",
+      entityType: "form",
+      entityId: result.form_id,
+      afterData: result,
+      request,
     });
 
     return NextResponse.json(result, { status: 201 });

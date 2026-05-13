@@ -1,6 +1,8 @@
 import { deepseek } from "@ai-sdk/deepseek";
 import { convertToModelMessages, streamText, UIMessage } from "ai";
 import { buildOperationalContext } from "@/app/lib/aiContext";
+import { SESSION_COOKIE } from "@/lib/auth-shared";
+import { verifySessionEdge } from "@/lib/auth-edge";
 
 export const runtime = "edge";
 export const maxDuration = 30;
@@ -35,6 +37,13 @@ const ENV_DEFAULT_MODEL =
 
 const DEFAULT_MODEL: DeepSeekModel =
   MODEL_ALIASES[ENV_DEFAULT_MODEL ?? ""] ?? "deepseek-v4-flash";
+
+function getCookieValue(header: string | null, name: string): string | null {
+  if (!header) return null;
+  const cookies = header.split(";").map((cookie) => cookie.trim());
+  const match = cookies.find((cookie) => cookie.startsWith(`${name}=`));
+  return match ? decodeURIComponent(match.slice(name.length + 1)) : null;
+}
 
 function resolveModel(model: ChatRequestBody["model"]): DeepSeekModel {
   if (!model) return DEFAULT_MODEL;
@@ -182,6 +191,16 @@ If asked about data not present in the snapshot, clearly state what you can and 
 }
 
 export async function POST(request: Request) {
+  const session = await verifySessionEdge(
+    getCookieValue(request.headers.get("cookie"), SESSION_COOKIE),
+  );
+  if (!session) {
+    return new Response(JSON.stringify({ error: "Authentication required" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   if (!process.env.DEEPSEEK_API_KEY) {
     return new Response(
       JSON.stringify({

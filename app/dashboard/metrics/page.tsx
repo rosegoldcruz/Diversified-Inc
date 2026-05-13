@@ -3,283 +3,196 @@
 import { useEffect, useState } from "react";
 import {
   ArrowsClockwise,
-  CurrencyDollar,
-  TrendUp,
-  Users,
   Briefcase,
-  Target,
+  ClipboardText,
+  Package,
+  Users,
+  Warning,
 } from "phosphor-react";
 import { Button } from "@/components/ui/button";
 import { ShinyText } from "@/components/ui/ShinyText";
 
-type MetricValue = {
-  metric_key: string;
-  metric_name: string;
-  value: number | null;
-  formatted_value: string;
-  unit?: string;
+type DashboardStats = {
+  total_tasks: number;
+  open_work_orders: number;
+  low_stock_items: number;
+  total_employees: number;
+  high_priority_tasks: number;
+  blocked_tasks: number;
 };
 
-type WidgetData = {
-  widget_key: string;
-  widget_name: string;
-  widget_type: string;
-  metrics: MetricValue[];
-  config?: any;
-};
-
-type DashboardData = {
-  widgets: WidgetData[];
-  last_updated: string;
-  refresh_interval: number;
-};
-
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
-
-const METRIC_ICONS: Record<string, any> = {
-  total_leads: Users,
-  total_revenue: CurrencyDollar,
-  conversion_rate: Target,
-  active_jobs: Briefcase,
+type MetricCard = {
+  label: string;
+  value: number;
+  description: string;
+  tone: "default" | "warning" | "critical";
+  icon: typeof ClipboardText;
 };
 
 export default function MetricsDashboard() {
-  const [dashboard, setDashboard] = useState<DashboardData | null>(null);
+  const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(false);
-  const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [error, setError] = useState<string | null>(null);
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
 
   useEffect(() => {
-    loadDashboard();
-
-    // Auto-refresh every 60 seconds
-    const interval = setInterval(() => {
-      loadDashboard();
-    }, 60000);
-
-    return () => clearInterval(interval);
+    void loadDashboard();
   }, []);
 
   async function loadDashboard() {
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE}/metrics-engine/dashboard`, {
-        cache: "no-store",
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setDashboard(data);
-        setLastRefresh(new Date());
+      setError(null);
+      const response = await fetch("/api/dashboard", { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error(
+          `Failed to load dashboard metrics (${response.status})`,
+        );
       }
-    } catch (err) {
-      console.error("Failed to load dashboard:", err);
+      setStats((await response.json()) as DashboardStats);
+      setLastRefresh(new Date());
+    } catch (loadError) {
+      setError(
+        loadError instanceof Error
+          ? loadError.message
+          : "Failed to load dashboard metrics",
+      );
     } finally {
       setLoading(false);
     }
   }
 
-  if (!dashboard) {
-    return (
-      <div className="flex items-center justify-center p-12">
-        <p className="text-neutral-400">Loading dashboard...</p>
-      </div>
-    );
-  }
+  const metrics: MetricCard[] = stats
+    ? [
+        {
+          label: "Total Tasks",
+          value: stats.total_tasks,
+          description: "Tracked execution items",
+          tone: "default",
+          icon: ClipboardText,
+        },
+        {
+          label: "Open Work Orders",
+          value: stats.open_work_orders,
+          description: "Operational work not completed",
+          tone: stats.open_work_orders > 0 ? "warning" : "default",
+          icon: Briefcase,
+        },
+        {
+          label: "Low Stock Items",
+          value: stats.low_stock_items,
+          description: "Inventory records needing attention",
+          tone: stats.low_stock_items > 0 ? "warning" : "default",
+          icon: Package,
+        },
+        {
+          label: "Employees",
+          value: stats.total_employees,
+          description: "People in the workspace directory",
+          tone: "default",
+          icon: Users,
+        },
+        {
+          label: "High Priority Tasks",
+          value: stats.high_priority_tasks,
+          description: "Priority work requiring focus",
+          tone: stats.high_priority_tasks > 0 ? "warning" : "default",
+          icon: Warning,
+        },
+        {
+          label: "Blocked Tasks",
+          value: stats.blocked_tasks,
+          description: "Work that needs intervention",
+          tone: stats.blocked_tasks > 0 ? "critical" : "default",
+          icon: Warning,
+        },
+      ]
+    : [];
 
   return (
     <div className="flex flex-col gap-6 p-6">
-      {/* Header */}
-      <header className="flex items-center justify-between">
+      <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl font-semibold text-white">
-            <ShinyText>Metrics Dashboard</ShinyText>
+            <ShinyText>Operations Metrics</ShinyText>
           </h1>
           <p className="text-sm text-neutral-400">
-            Real-time business metrics • Last updated:{" "}
-            {lastRefresh.toLocaleTimeString()}
+            PostgreSQL-backed workspace metrics
+            {lastRefresh
+              ? ` | Last updated: ${lastRefresh.toLocaleTimeString()}`
+              : null}
           </p>
         </div>
         <Button
-          onClick={loadDashboard}
+          onClick={() => void loadDashboard()}
           disabled={loading}
           variant="outline"
           size="sm"
         >
           <ArrowsClockwise
-            className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`}
+            className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`}
             weight="bold"
           />
           Refresh
         </Button>
       </header>
 
-      {/* Widgets Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {dashboard.widgets.map((widget) => {
-          if (
-            widget.widget_type === "number" ||
-            widget.widget_type === "trend"
-          ) {
+      {error ? (
+        <div className="rounded-md border border-red-500/50 bg-red-950/40 px-4 py-3 text-sm text-red-200">
+          <p>{error}</p>
+          <button
+            type="button"
+            onClick={() => void loadDashboard()}
+            className="mt-3 rounded-md border border-red-500/50 px-3 py-1.5 text-xs font-semibold text-red-100 transition-colors hover:bg-red-900/40"
+          >
+            Retry
+          </button>
+        </div>
+      ) : null}
+
+      {loading && !stats ? (
+        <div className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-12 text-center text-sm text-neutral-400">
+          Loading operations metrics...
+        </div>
+      ) : null}
+
+      {stats ? (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {metrics.map((metric) => {
+            const Icon = metric.icon;
             return (
-              <div
-                key={widget.widget_key}
+              <article
+                key={metric.label}
                 className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-6"
               >
-                {widget.metrics.map((metric) => {
-                  const Icon = METRIC_ICONS[metric.metric_key] || TrendUp;
-                  return (
-                    <div key={metric.metric_key}>
-                      <div className="flex items-center gap-2 mb-2">
-                        <Icon
-                          className="w-4 h-4 text-blue-400"
-                          weight="duotone"
-                        />
-                        <p className="text-sm text-neutral-400">
-                          {metric.metric_name}
-                        </p>
-                      </div>
-                      <p className="text-3xl font-bold text-white mb-1">
-                        {metric.formatted_value}
-                      </p>
-                      {metric.unit && (
-                        <p className="text-xs text-neutral-500">
-                          {metric.unit}
-                        </p>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          }
-
-          return (
-            <div
-              key={widget.widget_key}
-              className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-6"
-            >
-              <h3 className="text-sm font-medium text-neutral-300 mb-4">
-                {widget.widget_name}
-              </h3>
-              <div className="space-y-3">
-                {widget.metrics.map((metric) => (
-                  <div
-                    key={metric.metric_key}
-                    className="flex items-center justify-between"
-                  >
-                    <p className="text-sm text-neutral-400">
-                      {metric.metric_name}
-                    </p>
-                    <p className="text-sm font-semibold text-white">
-                      {metric.formatted_value}
-                    </p>
+                <div className="mb-4 flex items-center justify-between gap-3">
+                  <div className="rounded-md border border-neutral-800 bg-neutral-950/80 p-2">
+                    <Icon className="h-5 w-5 text-blue-300" weight="duotone" />
                   </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {/* Empty State */}
-      {dashboard.widgets.length === 0 && (
-        <div className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-12 text-center">
-          <Target
-            className="w-16 h-16 text-neutral-700 mx-auto mb-4"
-            weight="duotone"
-          />
-          <h3 className="text-lg font-semibold text-white mb-2">
-            No Widgets Configured
-          </h3>
-          <p className="text-sm text-neutral-400 mb-4">
-            Create dashboard widgets to visualize your business metrics
-          </p>
-          <Button>Configure Widgets</Button>
+                  <span
+                    className={`rounded-md border px-2 py-0.5 text-xs font-medium ${
+                      metric.tone === "critical"
+                        ? "border-red-500/40 bg-red-500/10 text-red-200"
+                        : metric.tone === "warning"
+                          ? "border-amber-500/40 bg-amber-500/10 text-amber-200"
+                          : "border-neutral-700 bg-neutral-950 text-neutral-300"
+                    }`}
+                  >
+                    {metric.tone === "default" ? "Current" : "Attention"}
+                  </span>
+                </div>
+                <p className="text-sm text-neutral-400">{metric.label}</p>
+                <p className="mt-2 text-3xl font-semibold text-white">
+                  {metric.value.toLocaleString()}
+                </p>
+                <p className="mt-2 text-xs text-neutral-500">
+                  {metric.description}
+                </p>
+              </article>
+            );
+          })}
         </div>
-      )}
-
-      {/* Additional Metrics Grid */}
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-4">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-neutral-300">Quick Stats</p>
-            <TrendUp className="w-4 h-4 text-emerald-400" weight="duotone" />
-          </div>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-neutral-400">Total Widgets</span>
-              <span className="text-white font-semibold">
-                {dashboard.widgets.length}
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-neutral-400">Metrics Tracked</span>
-              <span className="text-white font-semibold">
-                {dashboard.widgets.reduce(
-                  (sum, w) => sum + w.metrics.length,
-                  0,
-                )}
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-neutral-400">Refresh Rate</span>
-              <span className="text-white font-semibold">
-                {dashboard.refresh_interval}s
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-4">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-neutral-300">Performance</p>
-            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-          </div>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-neutral-400">Cache Status</span>
-              <span className="text-emerald-400 font-semibold">Active</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-neutral-400">Query Time</span>
-              <span className="text-white font-semibold">&lt;50ms</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-neutral-400">Data Freshness</span>
-              <span className="text-white font-semibold">Real-time</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-4">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-medium text-neutral-300">
-              System Health
-            </p>
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-emerald-500 rounded-full" />
-              <span className="text-xs text-emerald-400">Healthy</span>
-            </div>
-          </div>
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-neutral-400">Database</span>
-              <span className="text-emerald-400 font-semibold">✓ Online</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-neutral-400">API</span>
-              <span className="text-emerald-400 font-semibold">
-                ✓ Responsive
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-neutral-400">Cache</span>
-              <span className="text-emerald-400 font-semibold">
-                ✓ Available
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
+      ) : null}
     </div>
   );
 }

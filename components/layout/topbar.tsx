@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   ArrowLeft,
-  Funnel,
   List,
   MagnifyingGlass,
   Moon,
@@ -24,11 +23,26 @@ type SessionUser = {
   role: string;
 };
 
+type SearchResult = {
+  id: string;
+  type: string;
+  title: string;
+  subtitle: string | null;
+  url: string;
+  status: string | null;
+  matched_field: string;
+};
+
 export function TopBar({ onMenuToggle }: TopBarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [user, setUser] = useState<SessionUser | null>(null);
+  const [query, setQuery] = useState("");
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
   const canGoBack = pathname !== "/";
 
   useEffect(() => {
@@ -49,6 +63,53 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
     };
   }, [pathname]);
 
+  useEffect(() => {
+    setSearchOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (trimmed.length < 2) {
+      setSearchResults([]);
+      setSearchError(null);
+      setSearchLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      try {
+        setSearchLoading(true);
+        setSearchError(null);
+        const params = new URLSearchParams({ q: trimmed, limit: "8" });
+        const response = await fetch(`/api/search?${params.toString()}`, {
+          cache: "no-store",
+          signal: controller.signal,
+        });
+        if (!response.ok) {
+          throw new Error(`Search failed (${response.status})`);
+        }
+        const data = (await response.json()) as { results?: SearchResult[] };
+        setSearchResults(data.results ?? []);
+        setSearchOpen(true);
+      } catch (error) {
+        if (controller.signal.aborted) return;
+        setSearchResults([]);
+        setSearchError(
+          error instanceof Error ? error.message : "Search failed",
+        );
+        setSearchOpen(true);
+      } finally {
+        if (!controller.signal.aborted) setSearchLoading(false);
+      }
+    }, 250);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [query]);
+
   const toggleTheme = () => {
     const nextTheme = theme === "dark" ? "light" : "dark";
     setTheme(nextTheme);
@@ -58,6 +119,12 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
 
   async function signOut() {
     window.location.assign("/api/auth/logout");
+  }
+
+  function openResult(result: SearchResult) {
+    setSearchOpen(false);
+    setQuery("");
+    router.push(result.url);
   }
 
   const initials = user
@@ -92,24 +159,71 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
         >
           <List className="h-4 w-4" weight="bold" />
         </button>
-        <div className="relative max-w-xl min-w-0 flex-1">
-          <MagnifyingGlass
-            className="pointer-events-none absolute left-3.5 top-2.5 h-4 w-4 text-textDisabled"
-            weight="regular"
-          />
-          <input
-            className="h-10 w-full rounded-xl border border-white/30 bg-white/55 pl-10 pr-3 text-sm text-textPrimary shadow-[inset_0_1px_0_rgba(255,255,255,0.42)] outline-none backdrop-blur-2xl transition-all placeholder:text-textDisabled focus:border-white/60 focus:bg-white/80 focus:ring-4 focus:ring-white/25 dark:border-white/10 dark:bg-white/5 dark:focus:bg-white/10"
-            placeholder="Search tasks, work orders, files…"
-          />
-          <kbd className="absolute right-3 top-2.5 hidden rounded-lg border border-white/30 bg-white/60 px-1.5 py-0.5 text-[10px] text-textDisabled backdrop-blur-xl dark:border-white/10 dark:bg-white/5 sm:block">
-            ⌘K
-          </kbd>
+        <div className="relative min-w-0 flex-1">
+          <div className="relative">
+            <MagnifyingGlass
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-textMuted"
+              weight="duotone"
+            />
+            <input
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setSearchOpen(event.target.value.trim().length >= 2);
+              }}
+              onFocus={() => setSearchOpen(query.trim().length >= 2)}
+              onBlur={() => window.setTimeout(() => setSearchOpen(false), 120)}
+              onKeyDown={(event) => {
+                if (event.key === "Escape") setSearchOpen(false);
+                if (event.key === "Enter" && searchResults[0]) {
+                  event.preventDefault();
+                  openResult(searchResults[0]);
+                }
+              }}
+              placeholder="Search operations"
+              aria-label="Search operations"
+              className="h-10 w-full rounded-xl border border-white/30 bg-white/55 pl-9 pr-3 text-sm text-textPrimary shadow-glass outline-none backdrop-blur-2xl transition placeholder:text-textMuted focus:border-accent/50 focus:bg-white/80 dark:border-white/10 dark:bg-white/5 dark:focus:bg-white/10"
+            />
+          </div>
+          {searchOpen ? (
+            <div className="absolute left-0 right-0 top-12 z-50 overflow-hidden rounded-2xl border border-white/30 bg-white/95 shadow-glass backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/95">
+              {searchLoading ? (
+                <SearchState label="Searching..." />
+              ) : searchError ? (
+                <SearchState label={searchError} tone="error" />
+              ) : searchResults.length === 0 ? (
+                <SearchState label="No matching records found." />
+              ) : (
+                <ul className="max-h-80 overflow-y-auto py-2">
+                  {searchResults.map((result) => (
+                    <li key={`${result.type}-${result.id}`}>
+                      <button
+                        type="button"
+                        onMouseDown={(event) => event.preventDefault()}
+                        onClick={() => openResult(result)}
+                        className="flex w-full items-start gap-3 px-4 py-3 text-left transition-colors hover:bg-black/5 focus:bg-black/5 focus:outline-none dark:hover:bg-white/10 dark:focus:bg-white/10"
+                      >
+                        <span className="mt-0.5 rounded-md border border-white/30 bg-white/60 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-textMuted dark:border-white/10 dark:bg-white/5">
+                          {result.type.replaceAll("_", " ")}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate text-sm font-semibold text-textPrimary">
+                            {result.title}
+                          </span>
+                          <span className="block truncate text-xs text-textMuted">
+                            {result.subtitle ||
+                              result.status ||
+                              `Matched ${result.matched_field}`}
+                          </span>
+                        </span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          ) : null}
         </div>
-
-        <button className="hidden h-10 items-center gap-1.5 rounded-xl border border-white/30 bg-white/55 px-3 text-xs font-medium text-textSecondary shadow-glass backdrop-blur-2xl transition-all hover:-translate-y-px hover:border-white/50 hover:bg-white/80 hover:text-textPrimary dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10 sm:inline-flex">
-          <Funnel className="h-3.5 w-3.5" weight="regular" />
-          <span>Filters</span>
-        </button>
       </div>
 
       {/* Right Section */}
@@ -158,5 +272,23 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
         </div>
       </div>
     </header>
+  );
+}
+
+function SearchState({
+  label,
+  tone = "default",
+}: {
+  label: string;
+  tone?: "default" | "error";
+}) {
+  return (
+    <div
+      className={`px-4 py-5 text-sm ${
+        tone === "error" ? "text-red-600 dark:text-red-300" : "text-textMuted"
+      }`}
+    >
+      {label}
+    </div>
   );
 }

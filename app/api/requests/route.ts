@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
+import { createAuditLog } from "@/lib/audit-log";
 import { ensureSchema } from "@/lib/schema";
-import { HttpError, getSession, requireRole } from "@/lib/session";
+import { HttpError, requireUser } from "@/lib/session";
 import { createNotification } from "@/lib/notifications";
+import { safeCreateAutomationEvent } from "@/lib/automation-events";
 import {
   ValidationError,
   optionalString,
@@ -18,13 +20,7 @@ const PRIORITIES = ["Low", "Medium", "High", "Urgent"] as const;
 export async function GET() {
   try {
     await ensureSchema();
-    const session = getSession();
-    if (!session) {
-      return NextResponse.json(
-        { error: "Authentication required" },
-        { status: 401 },
-      );
-    }
+    const session = requireUser();
     const rows = await query(`
       SELECT *
       FROM requests
@@ -48,13 +44,7 @@ export async function POST(request: NextRequest) {
   try {
     await ensureSchema();
     // Any authenticated user may file a request on their own behalf.
-    const session = getSession();
-    if (!session) {
-      return NextResponse.json(
-        { error: "Authentication required" },
-        { status: 401 },
-      );
-    }
+    const session = requireUser();
 
     const body = (await request.json().catch(() => null)) as Record<
       string,
@@ -81,11 +71,9 @@ export async function POST(request: NextRequest) {
       ? requireEnum(body.priority, PRIORITIES, "priority")
       : "Medium";
     const description = optionalString(body.description, "description", 5000);
-    const assigned_reviewer = optionalString(
-      body.assigned_reviewer,
-      "assigned_reviewer",
-      200,
-    );
+    const assigned_reviewer = canImpersonate
+      ? optionalString(body.assigned_reviewer, "assigned_reviewer", 200)
+      : null;
     const title =
       optionalString(body.title, "title", 200) ?? `${category} - ${requester}`;
 
@@ -126,6 +114,34 @@ export async function POST(request: NextRequest) {
       excludeUserId: session.userId,
     });
 
+    await safeCreateAutomationEvent({
+      eventType: "request_created",
+      sourceModule: "requests",
+      entityType: "request",
+      entityId: rows[0].id,
+      actorUserId: session.userId,
+      path: "/requests",
+      payload: {
+        request_id: rows[0].id,
+        request_number: rows[0].request_id ?? request_id,
+        title,
+        category,
+        priority,
+        requester,
+        assigned_reviewer,
+      },
+    });
+
+    await createAuditLog({
+      actorUserId: session.userId,
+      action: "request.created",
+      module: "requests",
+      entityType: "request",
+      entityId: rows[0].id,
+      afterData: rows[0],
+      request,
+    });
+
     return NextResponse.json(rows[0], { status: 201 });
   } catch (error) {
     if (error instanceof HttpError) {
@@ -145,6 +161,3 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
-
-// Avoid unused import warnings while keeping requireRole available to extensions.
-void requireRole;

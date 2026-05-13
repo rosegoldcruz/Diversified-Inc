@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { ensureSchema } from "@/lib/schema";
-import { HttpError, getSession } from "@/lib/session";
+import {
+  HttpError,
+  getSession,
+  requireUser,
+  unauthorized,
+} from "@/lib/session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -16,13 +21,6 @@ type NotificationRow = {
   read_at: string | null;
   created_at: string;
 };
-
-function unauthorized() {
-  return NextResponse.json(
-    { error: "Authentication required" },
-    { status: 401 },
-  );
-}
 
 export async function GET(request: NextRequest) {
   try {
@@ -71,8 +69,7 @@ export async function GET(request: NextRequest) {
 export async function POST() {
   try {
     await ensureSchema();
-    const session = getSession();
-    if (!session) return unauthorized();
+    const session = requireUser();
 
     await query(
       `UPDATE notifications SET read_at = NOW() WHERE user_id = $1 AND read_at IS NULL`,

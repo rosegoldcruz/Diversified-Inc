@@ -77,13 +77,13 @@ type IntegrationsResponse = {
       | "Configured"
       | "Missing"
       | "Partial"
-      | "Coming Later"
+      | "Not Configured"
       | "Error";
     configured: boolean;
     purpose: string;
     lastChecked: string;
     notes: string;
-    clientDemoVisibility: "visible" | "internal";
+    clientProductionVisibility: "visible" | "internal";
   }>;
 };
 
@@ -652,9 +652,9 @@ export default function SystemSettingsPage() {
               </p>
               <p className="mt-2 text-xs text-textMuted">{integration.notes}</p>
               <p className="mt-1 text-xs text-textMuted">
-                Demo visibility:{" "}
-                {integration.clientDemoVisibility === "visible"
-                  ? "Client-visible"
+                Production visibility:{" "}
+                {integration.clientProductionVisibility === "visible"
+                  ? "Visible"
                   : "Internal-only"}
               </p>
               <p className="mt-1 text-[11px] text-textMuted">
@@ -667,11 +667,11 @@ export default function SystemSettingsPage() {
 
       <section className="glass-surface rounded-2xl p-5">
         <h2 className="text-lg font-semibold text-textPrimary">
-          Client Walkthrough Visibility
+          Module Visibility
         </h2>
         <p className="mt-2 text-sm text-textSecondary">
-          Persisted feature visibility controls for safer demos. This saves to
-          system_settings as client_visible_modules.
+          Persisted feature visibility controls for production navigation. This
+          saves to system_settings as client_visible_modules.
         </p>
         {!moduleVisibility ? (
           <p className="mt-3 text-sm text-textMuted">

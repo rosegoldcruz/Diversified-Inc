@@ -41,6 +41,26 @@ type Task = {
 
 type Employee = { id: number; name: string };
 
+type CalendarBlock = {
+  id: string;
+  title: string;
+  description: string | null;
+  block_type: string;
+  status: string | null;
+  priority: string | null;
+  assigned_to_employee_id: number | null;
+  assigned_to_name: string | null;
+  linked_task_int_id: number | null;
+  linked_work_order_int_id: number | null;
+  company_division: string | null;
+  start_time: string;
+  end_time: string;
+  all_day: boolean | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 type EditorState = {
   title: string;
   division: string;
@@ -107,6 +127,7 @@ const EMPTY_EDITOR_STATE: EditorState = {
 
 export default function CalendarPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [calendarBlocks, setCalendarBlocks] = useState<CalendarBlock[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -131,10 +152,12 @@ export default function CalendarPage() {
       setLoading(true);
       setError(null);
 
-      const [tasksResponse, employeesResponse] = await Promise.all([
-        fetch("/api/tasks", { cache: "no-store" }),
-        fetch("/api/employees", { cache: "no-store" }),
-      ]);
+      const [tasksResponse, blocksResponse, employeesResponse] =
+        await Promise.all([
+          fetch("/api/tasks", { cache: "no-store" }),
+          fetch("/api/calendar-blocks", { cache: "no-store" }),
+          fetch("/api/employees", { cache: "no-store" }),
+        ]);
 
       if (!tasksResponse.ok) {
         throw new Error(`Failed to load tasks (${tasksResponse.status})`);
@@ -144,14 +167,21 @@ export default function CalendarPage() {
           `Failed to load employees (${employeesResponse.status})`,
         );
       }
+      if (!blocksResponse.ok) {
+        throw new Error(
+          `Failed to load calendar blocks (${blocksResponse.status})`,
+        );
+      }
 
-      const [taskData, employeeData] = (await Promise.all([
+      const [taskData, blockData, employeeData] = (await Promise.all([
         tasksResponse.json(),
+        blocksResponse.json(),
         employeesResponse.json(),
-      ])) as [Task[], Employee[]];
+      ])) as [Task[], CalendarBlock[], Employee[]];
 
       if (!cancelled?.()) {
         setTasks(taskData);
+        setCalendarBlocks(blockData);
         setEmployees(
           employeeData.map((employee) => ({
             id: employee.id,
@@ -245,6 +275,18 @@ export default function CalendarPage() {
     });
   }, [tasks, userFilter, weekEnd, weekStart]);
 
+  const visibleCalendarBlocks = useMemo(() => {
+    return calendarBlocks.filter((block) => {
+      if (block.linked_task_int_id) return false;
+      const blockDate = parseDateOnly(block.start_time);
+      if (!blockDate) return false;
+      const matchesWeek = isWithinInclusive(blockDate, weekStart, weekEnd);
+      const matchesUser =
+        userFilter === "All Users" || block.assigned_to_name === userFilter;
+      return matchesWeek && matchesUser;
+    });
+  }, [calendarBlocks, userFilter, weekEnd, weekStart]);
+
   const monthMatrix = useMemo(() => getMonthMatrix(currentDay), [currentDay]);
 
   function openExistingTask(task: Task) {
@@ -285,6 +327,7 @@ export default function CalendarPage() {
       }
 
       const savedTask = (await response.json()) as Task;
+      await upsertCalendarBlockForTask(savedTask);
       if (isNewTask) {
         await loadCalendarData();
       } else {
@@ -340,6 +383,7 @@ export default function CalendarPage() {
       }
 
       const updatedTask = (await response.json()) as Task;
+      await upsertCalendarBlockForTask(updatedTask);
       setTasks((current) =>
         current.map((task) =>
           task.id === updatedTask.id ? updatedTask : task,
@@ -368,10 +412,7 @@ export default function CalendarPage() {
     setDropTargetKey(null);
   }
 
-  function handleDragOver(
-    event: DragEvent<HTMLElement>,
-    slotKey: string,
-  ) {
+  function handleDragOver(event: DragEvent<HTMLElement>, slotKey: string) {
     event.preventDefault();
     event.dataTransfer.dropEffect = "move";
     if (dropTargetKey !== slotKey) {
@@ -442,6 +483,7 @@ export default function CalendarPage() {
       }
 
       const updatedTask = (await response.json()) as Task;
+      await upsertCalendarBlockForTask(updatedTask);
       setTasks((current) =>
         current.map((candidate) =>
           candidate.id === updatedTask.id ? updatedTask : candidate,
@@ -459,6 +501,48 @@ export default function CalendarPage() {
     }
   }
 
+  async function upsertCalendarBlockForTask(task: Task) {
+    if (!hasProjectedWindow(task)) return;
+    const startDateTime = toTaskDateTime(task.start_date, task.start_time);
+    const endDateTime = toTaskDateTime(task.start_date, task.end_time);
+    if (!startDateTime || !endDateTime) return;
+
+    const payload = {
+      title: task.title,
+      description: task.description,
+      block_type: "task_work",
+      status: normalizeStatus(task.status),
+      priority: task.priority,
+      assigned_to: task.assigned_to,
+      linked_task_id: task.id,
+      company_division: task.division,
+      start_time: startDateTime.toISOString(),
+      end_time: endDateTime.toISOString(),
+      all_day: Boolean(task.all_day),
+      notes: task.notes,
+    };
+
+    const existing = calendarBlocks.find(
+      (block) => block.linked_task_int_id === task.id,
+    );
+    const response = await fetch(
+      existing ? `/api/calendar-blocks/${existing.id}` : "/api/calendar-blocks",
+      {
+        method: existing ? "PATCH" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      },
+    );
+    if (!response.ok) {
+      throw new Error(`Failed to persist calendar block (${response.status})`);
+    }
+    const block = (await response.json()) as CalendarBlock;
+    setCalendarBlocks((current) => {
+      const withoutExisting = current.filter((item) => item.id !== block.id);
+      return [...withoutExisting, block];
+    });
+  }
+
   function renderTaskBoard() {
     if (loading) {
       return <LoadingPanel label="Loading projection calendar..." />;
@@ -473,6 +557,7 @@ export default function CalendarPage() {
         <MonthProjectionView
           monthMatrix={monthMatrix}
           tasks={calendarTasks}
+          calendarBlocks={visibleCalendarBlocks}
           onOpenTask={openExistingTask}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -489,6 +574,7 @@ export default function CalendarPage() {
           <DesktopWeekGrid
             visibleDays={visibleDays}
             calendarTasks={calendarTasks}
+            calendarBlocks={visibleCalendarBlocks}
             onOpenTask={openExistingTask}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -501,6 +587,7 @@ export default function CalendarPage() {
           <MobileWeekGrid
             visibleDays={visibleDays}
             calendarTasks={calendarTasks}
+            calendarBlocks={visibleCalendarBlocks}
             onOpenTask={openExistingTask}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -670,8 +757,7 @@ export default function CalendarPage() {
           <LegendDot className="bg-rose-500" label="Blocked/Urgent" />
           <LegendDot className="bg-amber-500" label="Default" />
           <span className="text-textMuted">
-            Block resize is temporarily disabled in-grid; adjust duration in
-            Task Editor.
+            Adjust task duration, owner, and notes in Task Editor.
           </span>
         </div>
       </main>
@@ -697,6 +783,7 @@ export default function CalendarPage() {
 function DesktopWeekGrid({
   visibleDays,
   calendarTasks,
+  calendarBlocks,
   onOpenTask,
   onDragOver,
   onDragLeave,
@@ -706,6 +793,7 @@ function DesktopWeekGrid({
 }: {
   visibleDays: Date[];
   calendarTasks: Task[];
+  calendarBlocks: CalendarBlock[];
   onOpenTask: (task: Task) => void;
   onDragOver: (event: DragEvent<HTMLElement>, slotKey: string) => void;
   onDragLeave: (slotKey: string) => void;
@@ -760,6 +848,9 @@ function DesktopWeekGrid({
               const slotTasks = calendarTasks.filter((task) =>
                 doesTaskMatchSlot(task, day, hour),
               );
+              const slotBlocks = calendarBlocks.filter((block) =>
+                doesBlockMatchSlot(block, day, hour),
+              );
               const slotKey = `${toDateKey(day)}-${hour}`;
 
               return (
@@ -780,6 +871,9 @@ function DesktopWeekGrid({
                       onDragStart={onTaskDragStart}
                     />
                   ))}
+                  {slotBlocks.map((block) => (
+                    <CalendarBlockChip key={block.id} block={block} />
+                  ))}
                 </div>
               );
             })}
@@ -793,6 +887,7 @@ function DesktopWeekGrid({
 function MobileWeekGrid({
   visibleDays,
   calendarTasks,
+  calendarBlocks,
   onOpenTask,
   onDragOver,
   onDragLeave,
@@ -802,6 +897,7 @@ function MobileWeekGrid({
 }: {
   visibleDays: Date[];
   calendarTasks: Task[];
+  calendarBlocks: CalendarBlock[];
   onOpenTask: (task: Task) => void;
   onDragOver: (event: DragEvent<HTMLElement>, slotKey: string) => void;
   onDragLeave: (slotKey: string) => void;
@@ -832,6 +928,9 @@ function MobileWeekGrid({
               const slotTasks = calendarTasks.filter((task) =>
                 doesTaskMatchSlot(task, day, hour),
               );
+              const slotBlocks = calendarBlocks.filter((block) =>
+                doesBlockMatchSlot(block, day, hour),
+              );
               return (
                 <div
                   key={slotKey}
@@ -854,7 +953,10 @@ function MobileWeekGrid({
                         onDragStart={onTaskDragStart}
                       />
                     ))}
-                    {slotTasks.length === 0 ? (
+                    {slotBlocks.map((block) => (
+                      <CalendarBlockChip key={block.id} block={block} />
+                    ))}
+                    {slotTasks.length === 0 && slotBlocks.length === 0 ? (
                       <p className="text-[11px] text-textMuted">
                         Drop projected task here
                       </p>
@@ -873,6 +975,7 @@ function MobileWeekGrid({
 function MonthProjectionView({
   monthMatrix,
   tasks,
+  calendarBlocks,
   onOpenTask,
   onDragOver,
   onDragLeave,
@@ -882,6 +985,7 @@ function MonthProjectionView({
 }: {
   monthMatrix: Date[];
   tasks: Task[];
+  calendarBlocks: CalendarBlock[];
   onOpenTask: (task: Task) => void;
   onDragOver: (event: DragEvent<HTMLElement>, slotKey: string) => void;
   onDragLeave: (slotKey: string) => void;
@@ -903,6 +1007,10 @@ function MonthProjectionView({
         const dayTasks = tasks.filter((task) => {
           const taskDate = getTaskDate(task);
           return taskDate ? toDateKey(taskDate) === dayKey : false;
+        });
+        const dayBlocks = calendarBlocks.filter((block) => {
+          const blockDate = parseDateOnly(block.start_time);
+          return blockDate ? toDateKey(blockDate) === dayKey : false;
         });
         const slotKey = `${dayKey}-9`;
         return (
@@ -927,12 +1035,17 @@ function MonthProjectionView({
                   onDragStart={onTaskDragStart}
                 />
               ))}
-              {dayTasks.length > 4 ? (
+              {dayBlocks
+                .slice(0, Math.max(0, 4 - dayTasks.length))
+                .map((block) => (
+                  <CalendarBlockChip key={block.id} block={block} />
+                ))}
+              {dayTasks.length + dayBlocks.length > 4 ? (
                 <p className="text-xs text-textMuted">
-                  +{dayTasks.length - 4} more
+                  +{dayTasks.length + dayBlocks.length - 4} more
                 </p>
               ) : null}
-              {dayTasks.length === 0 ? (
+              {dayTasks.length === 0 && dayBlocks.length === 0 ? (
                 <p className="text-xs text-textMuted">
                   Drop to schedule at 9:00 AM
                 </p>
@@ -952,10 +1065,7 @@ function UnscheduledTaskCard({
 }: {
   task: Task;
   onOpen: () => void;
-  onDragStart: (
-    event: DragEvent<HTMLElement>,
-    payload: DragPayload,
-  ) => void;
+  onDragStart: (event: DragEvent<HTMLElement>, payload: DragPayload) => void;
 }) {
   return (
     <article
@@ -1302,16 +1412,9 @@ function TaskEditorModal({
 
         <div className="flex flex-col gap-3 border-t border-borderSubtle px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            {!isNewTask ? (
-              <button
-                type="button"
-                disabled
-                title="Coming in next release"
-                className="cursor-not-allowed rounded-lg border border-red-500/30 px-4 py-2 text-sm font-semibold text-red-600 opacity-50 dark:text-red-300"
-              >
-                Delete Task
-              </button>
-            ) : null}
+            <span className="text-xs text-textMuted">
+              Task changes save to tasks and linked calendar blocks.
+            </span>
           </div>
           <div className="flex flex-wrap gap-2">
             <button
@@ -1417,10 +1520,7 @@ function TaskChip({
 }: {
   task: Task;
   onClick: () => void;
-  onDragStart: (
-    event: DragEvent<HTMLElement>,
-    payload: DragPayload,
-  ) => void;
+  onDragStart: (event: DragEvent<HTMLElement>, payload: DragPayload) => void;
 }) {
   return (
     <button
@@ -1438,9 +1538,22 @@ function TaskChip({
         {task.assigned_to_name || "Unassigned"}
       </span>
       <span className="mt-0.5 inline-flex items-center rounded border border-current/30 px-1 py-0 text-[9px] opacity-75">
-        Resize in editor
+        Edit time in editor
       </span>
     </button>
+  );
+}
+
+function CalendarBlockChip({ block }: { block: CalendarBlock }) {
+  return (
+    <div
+      className={`mb-1 w-full rounded border px-1.5 py-1 text-left text-xs font-medium ${getBlockClass(block)}`}
+    >
+      <span className="block truncate">{block.title}</span>
+      <span className="block truncate text-[10px] opacity-80">
+        {block.assigned_to_name || formatBlockType(block.block_type)}
+      </span>
+    </div>
   );
 }
 
@@ -1595,6 +1708,12 @@ function doesTaskMatchSlot(task: Task, day: Date, hour: number) {
   return taskHour === hour;
 }
 
+function doesBlockMatchSlot(block: CalendarBlock, day: Date, hour: number) {
+  const blockDate = parseDateOnly(block.start_time);
+  if (!blockDate || toDateKey(blockDate) !== toDateKey(day)) return false;
+  return parseStartHour(toTimeKey(new Date(block.start_time))) === hour;
+}
+
 function getTaskDate(task: Task) {
   return parseDateOnly(task.start_date || task.due_date);
 }
@@ -1705,6 +1824,29 @@ function getCalendarBlockClass(task: Task) {
   }
 
   return "border-amber-500/35 bg-amber-500/15 text-amber-800 dark:text-amber-300";
+}
+
+function getBlockClass(block: CalendarBlock) {
+  const normalized = normalizeStatus(block.status);
+  if (normalized === "completed") {
+    return "border-slate-500/40 bg-slate-500/20 text-slate-700 dark:text-slate-300";
+  }
+  if (normalized === "canceled") {
+    return "border-red-500/40 bg-red-500/15 text-red-700 dark:text-red-300";
+  }
+  if (block.block_type === "meeting") {
+    return "border-indigo-500/40 bg-indigo-500/15 text-indigo-700 dark:text-indigo-300";
+  }
+  if (block.block_type === "review") {
+    return "border-emerald-500/40 bg-emerald-500/15 text-emerald-700 dark:text-emerald-300";
+  }
+  return "border-cyan-500/35 bg-cyan-500/15 text-cyan-800 dark:text-cyan-300";
+}
+
+function formatBlockType(value: string) {
+  return value
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 function getBadgeClassName(status: string | null) {

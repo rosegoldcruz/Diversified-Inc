@@ -1,4 +1,7 @@
 import { query } from "@/lib/db";
+import { createAuditLog } from "@/lib/audit-log";
+import { safeCreateAutomationEvent } from "@/lib/automation-events";
+import { HttpError, requireRole } from "@/lib/session";
 import { NextRequest, NextResponse } from "next/server";
 
 type RouteContext = {
@@ -52,6 +55,17 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   }
 
   try {
+    const session = requireRole(["Manager", "Admin", "Leadership"]);
+    const existingRows = await query("SELECT * FROM inventory WHERE id = $1", [
+      itemId,
+    ]);
+    const existing = existingRows[0] ?? null;
+    if (!existing) {
+      return NextResponse.json(
+        { error: "Inventory item not found" },
+        { status: 404 },
+      );
+    }
     const body = (await request.json()) as {
       quantity?: number;
       status?: string;
@@ -147,8 +161,45 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       );
     }
 
+    const updated = updatedRows[0] as Record<string, unknown>;
+    await createAuditLog({
+      actorUserId: session.userId,
+      action: "inventory.updated",
+      module: "inventory",
+      entityType: "inventory_item",
+      entityId: itemId,
+      beforeData: existing,
+      afterData: updated,
+      request,
+    });
+    const status =
+      typeof updated.status === "string" ? updated.status.toLowerCase() : "";
+    if (status === "low_stock" || status === "out_of_stock") {
+      await safeCreateAutomationEvent({
+        eventType: "inventory_low",
+        sourceModule: "inventory",
+        entityType: "inventory_item",
+        entityId: itemId,
+        actorUserId: session.userId,
+        path: `/inventory/${itemId}`,
+        payload: {
+          inventory_id: itemId,
+          item_name: updated.item_name ?? updated.name ?? null,
+          quantity: updated.quantity ?? null,
+          status: updated.status ?? null,
+          location: updated.location ?? null,
+        },
+      });
+    }
+
     return NextResponse.json(updatedRows[0]);
   } catch (error) {
+    if (error instanceof HttpError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
+    }
     const message =
       error instanceof Error
         ? error.message

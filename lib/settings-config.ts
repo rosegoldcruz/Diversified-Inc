@@ -14,7 +14,7 @@ export const SETTING_KEYS = {
   automationMode: "automation_mode",
   maintenanceBanner: "maintenance_banner",
   appDisplayLabels: "app_display_labels",
-  demoVisibilityFlags: "demo_visibility_flags",
+  moduleVisibilityFlags: "demo_visibility_flags",
 } as const;
 
 export type SettingKey = (typeof SETTING_KEYS)[keyof typeof SETTING_KEYS];
@@ -90,7 +90,7 @@ export type MaintenanceBannerSetting = {
 
 export type AppDisplayLabelsSetting = Record<string, string>;
 
-export type DemoVisibilityFlagsSetting = Record<string, boolean>;
+export type ModuleVisibilityFlagsSetting = Record<string, boolean>;
 
 export type SystemSettingValue =
   | NotificationPreferences
@@ -98,7 +98,7 @@ export type SystemSettingValue =
   | AutomationMode
   | MaintenanceBannerSetting
   | AppDisplayLabelsSetting
-  | DemoVisibilityFlagsSetting;
+  | ModuleVisibilityFlagsSetting;
 
 export const DEFAULT_NOTIFICATION_PREFERENCES: NotificationPreferences = {
   task_assigned: { inApp: true, email: true, sms: false },
@@ -129,7 +129,7 @@ export const DEFAULT_SETTINGS: Record<SettingKey, SystemSettingValue> = {
   [SETTING_KEYS.appDisplayLabels]: {
     workspaceName: "Diversified OS",
   },
-  [SETTING_KEYS.demoVisibilityFlags]: {
+  [SETTING_KEYS.moduleVisibilityFlags]: {
     hideIncompletePages: true,
   },
 };
@@ -146,7 +146,7 @@ export const SETTINGS_METADATA: Record<
   [SETTING_KEYS.clientVisibleModules]: {
     category: SETTINGS_CATEGORIES.visibility,
     description:
-      "Controls whether modules are visible, hidden, or internal-only during walkthroughs.",
+      "Controls whether modules are visible, hidden, or internal-only in managed deployments.",
   },
   [SETTING_KEYS.automationMode]: {
     category: SETTINGS_CATEGORIES.system,
@@ -161,9 +161,10 @@ export const SETTINGS_METADATA: Record<
     category: SETTINGS_CATEGORIES.ui,
     description: "Display labels that are safe to edit from the UI.",
   },
-  [SETTING_KEYS.demoVisibilityFlags]: {
+  [SETTING_KEYS.moduleVisibilityFlags]: {
     category: SETTINGS_CATEGORIES.visibility,
-    description: "Safety switches for client walkthrough visibility behavior.",
+    description:
+      "Compatibility safety switches for module visibility behavior.",
   },
 };
 
@@ -228,7 +229,7 @@ function isValidDisplayLabels(value: unknown): boolean {
   return Object.values(value).every((item) => typeof item === "string");
 }
 
-function isValidDemoVisibilityFlags(value: unknown): boolean {
+function isValidModuleVisibilityFlags(value: unknown): boolean {
   if (!isRecord(value)) return false;
   return Object.values(value).every((item) => typeof item === "boolean");
 }
@@ -251,8 +252,8 @@ export function isValidSettingValue(
       return isValidMaintenanceBanner(value);
     case SETTING_KEYS.appDisplayLabels:
       return isValidDisplayLabels(value);
-    case SETTING_KEYS.demoVisibilityFlags:
-      return isValidDemoVisibilityFlags(value);
+    case SETTING_KEYS.moduleVisibilityFlags:
+      return isValidModuleVisibilityFlags(value);
     default:
       return false;
   }

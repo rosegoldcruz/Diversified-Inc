@@ -11,6 +11,7 @@
  */
 import { NextResponse } from "next/server";
 import mammoth from "mammoth";
+import { HttpError, requireUser } from "@/lib/session";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -59,6 +60,7 @@ async function extractDocxText(file: File): Promise<string> {
 
 export async function POST(request: Request) {
   try {
+    requireUser();
     const formData = await request.formData();
     const file = formData.get("file");
 
@@ -122,6 +124,12 @@ export async function POST(request: Request) {
       extractedText: readableText,
     });
   } catch (error: unknown) {
+    if (error instanceof HttpError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
+    }
     const message =
       error instanceof Error
         ? error.message

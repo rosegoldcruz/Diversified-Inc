@@ -1,4 +1,12 @@
 import { query } from "@/lib/db";
+import { createAuditLog } from "@/lib/audit-log";
+import { safeCreateAutomationEvent } from "@/lib/automation-events";
+import {
+  canMutateTask,
+  HttpError,
+  requireRole,
+  requireUser,
+} from "@/lib/session";
 import { NextRequest, NextResponse } from "next/server";
 
 type RouteContext = {
@@ -60,7 +68,19 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   }
 
   try {
+    const session = requireUser();
+    const existingTask = await getTaskById(taskId);
+    if (!existingTask) {
+      return NextResponse.json({ error: "Task not found" }, { status: 404 });
+    }
+    if (!canMutateTask(session, existingTask)) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     const body = (await request.json()) as Record<string, unknown>;
+
+    if ("assigned_to" in body && body.assigned_to !== undefined) {
+      requireRole(["Manager", "Admin", "Leadership"]);
+    }
     const acceptedFields = [
       "division",
       "topic",
@@ -115,8 +135,47 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     }
 
     const task = await getTaskById(taskId);
+    await createAuditLog({
+      actorUserId: session.userId,
+      action: "task.updated",
+      module: "tasks",
+      entityType: "task",
+      entityId: taskId,
+      beforeData: existingTask,
+      afterData: task ?? updatedRows[0],
+      request,
+    });
+    if (
+      task &&
+      "status" in body &&
+      String(body.status).trim().toLowerCase() === "blocked" &&
+      String(existingTask.status ?? "").toLowerCase() !== "blocked"
+    ) {
+      await safeCreateAutomationEvent({
+        eventType: "task_blocked",
+        sourceModule: "tasks",
+        entityType: "task",
+        entityId: taskId,
+        actorUserId: session.userId,
+        path: `/tasks/${taskId}`,
+        payload: {
+          task_id: taskId,
+          title: task.title ?? null,
+          assigned_to: task.assigned_to ?? null,
+          previous_status: existingTask.status ?? null,
+          status: task.status ?? "blocked",
+          priority: task.priority ?? null,
+        },
+      });
+    }
     return NextResponse.json(task ?? updatedRows[0]);
   } catch (error) {
+    if (error instanceof HttpError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
+    }
     if (error instanceof InputValidationError) {
       return NextResponse.json({ error: error.message }, { status: 400 });
     }

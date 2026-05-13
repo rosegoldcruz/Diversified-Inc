@@ -2,7 +2,12 @@ import { query } from "@/lib/db";
 import { NextRequest, NextResponse } from "next/server";
 import { ensureSchema } from "@/lib/schema";
 import { Role } from "@/lib/auth";
-import { HttpError, getSession, requireRole } from "@/lib/session";
+import {
+  canManageUser,
+  HttpError,
+  getSession,
+  requireRole,
+} from "@/lib/session";
 import {
   ValidationError,
   optionalString,
@@ -97,6 +102,20 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
         { error: "Invalid employee id" },
         { status: 400 },
       );
+    }
+
+    const targetRows = await query<{ id: number; role: string | null }>(
+      `SELECT id, role FROM employees WHERE id = $1 LIMIT 1`,
+      [employeeId],
+    );
+    if (targetRows.length === 0) {
+      return NextResponse.json(
+        { error: "Employee not found" },
+        { status: 404 },
+      );
+    }
+    if (!canManageUser(session, targetRows[0])) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const body = (await request.json().catch(() => null)) as Record<

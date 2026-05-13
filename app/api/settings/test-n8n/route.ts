@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { HttpError, requireRole } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +37,7 @@ async function probe(url: string) {
 
 export async function POST() {
   try {
+    requireRole(["Admin", "Leadership"]);
     const baseUrl = process.env.N8N_BASE_URL;
     if (!baseUrl) {
       return NextResponse.json(
@@ -58,6 +60,12 @@ export async function POST() {
       note: "Connectivity check only. No webhook payloads were sent.",
     });
   } catch (error) {
+    if (error instanceof HttpError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
+    }
     const message =
       error instanceof Error ? error.message : "Failed to test n8n connection";
     return NextResponse.json({ error: message }, { status: 500 });

@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import {
   Role,
+  ROLES,
   SESSION_COOKIE,
   SessionPayload,
   roleSatisfies,
@@ -16,6 +17,8 @@ export function getSession(): SessionPayload | null {
   const token = cookies().get(SESSION_COOKIE)?.value;
   return verifySession(token);
 }
+
+export const getCurrentUser = getSession;
 
 export class HttpError extends Error {
   status: number;
@@ -38,6 +41,8 @@ export function requireUser(): SessionPayload {
   return session;
 }
 
+export const requireSession = requireUser;
+
 /** Require a session AND a satisfying role (with hierarchy). */
 export function requireRole(required: Role | Role[]): SessionPayload {
   const session = requireUser();
@@ -47,13 +52,68 @@ export function requireRole(required: Role | Role[]): SessionPayload {
   return session;
 }
 
+export const requireAnyRole = requireRole;
+
+export function unauthorized() {
+  return NextResponse.json(
+    { error: "Authentication required" },
+    { status: 401 },
+  );
+}
+
+export function forbidden() {
+  return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+}
+
+export function normalizeRole(role: unknown): Role | null {
+  if (typeof role !== "string") return null;
+  const normalized = ROLES.find(
+    (candidate) => candidate.toLowerCase() === role.trim().toLowerCase(),
+  );
+  return normalized ?? null;
+}
+
+export function canManageUser(
+  actor: Pick<SessionPayload, "userId" | "role">,
+  targetUser: { id?: number | null; role?: unknown } | null,
+) {
+  if (!targetUser) return false;
+  if (actor.role === "Leadership") return true;
+  if (actor.role !== "Admin") return false;
+  return normalizeRole(targetUser.role) !== "Leadership";
+}
+
+export function canMutateTask(
+  actor: Pick<SessionPayload, "userId" | "role">,
+  task: { assigned_to?: number | null; created_by?: number | null } | null,
+) {
+  if (!task) return false;
+  if (roleSatisfies(actor.role, "Manager")) return true;
+  return task.assigned_to === actor.userId || task.created_by === actor.userId;
+}
+
+export function canApproveTimesheet(
+  actor: Pick<SessionPayload, "role">,
+  _timesheet: unknown,
+) {
+  return roleSatisfies(actor.role, "Manager");
+}
+
+export function canAccessFile(
+  actor: Pick<SessionPayload, "userId" | "role">,
+  file: { uploaded_by_user_id?: number | null } | null,
+) {
+  if (!file) return false;
+  if (roleSatisfies(actor.role, "Manager")) return true;
+  return file.uploaded_by_user_id === actor.userId;
+}
+
 /**
  * Convenience HTTP response helpers for API routes.
  */
 export const apiErrors = {
-  unauthorized: () =>
-    NextResponse.json({ error: "Authentication required" }, { status: 401 }),
-  forbidden: () => NextResponse.json({ error: "Forbidden" }, { status: 403 }),
+  unauthorized,
+  forbidden,
   badRequest: (message: string, details?: unknown) =>
     NextResponse.json({ error: message, details }, { status: 400 }),
   notFound: (message = "Not found") =>

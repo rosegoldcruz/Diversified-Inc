@@ -1,10 +1,11 @@
 /**
- * AEON Database Contract Types
- * =============================
- * Auto-synced from Supabase schema.
- * DO NOT EDIT MANUALLY - regenerate via aeon_audit.py
- * 
- * Last sync: 2025-11-29
+ * Legacy AEON contract types.
+ *
+ * These types predate the current Diversified OS production architecture.
+ * They are not auto-synced, are not generated from Supabase, and are not the
+ * source of truth for the active internal OS database. Keep them only for
+ * legacy/future-scope references until the related Revenue Engine lane is
+ * formally designed against PostgreSQL.
  */
 
 // ============================================

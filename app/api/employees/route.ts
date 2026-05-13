@@ -61,7 +61,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     await ensureSchema();
-    requireRole(["Admin", "Leadership"]);
+    const session = requireRole(["Admin", "Leadership"]);
 
     const body = (await request.json().catch(() => null)) as Record<
       string,
@@ -76,6 +76,12 @@ export async function POST(request: NextRequest) {
 
     const name = requireString(body.name, "name", 200);
     const role: Role = requireRoleValue(body.role);
+    if (role === "Leadership" && session.role !== "Leadership") {
+      return NextResponse.json(
+        { error: "Only Leadership can assign the Leadership role" },
+        { status: 403 },
+      );
+    }
     const email = requireEmail(body.email);
     const department = optionalString(body.department, "department", 200);
     const phone = optionalString(body.phone, "phone", 50);
