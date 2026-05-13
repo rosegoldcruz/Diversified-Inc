@@ -1,261 +1,215 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Bell, DeviceMobile, Envelope } from "phosphor-react";
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/button";
 import { ShinyText } from "@/components/ui/ShinyText";
+import {
+  DEFAULT_NOTIFICATION_PREFERENCES,
+  NOTIFICATION_EVENT_TYPES,
+  SETTING_KEYS,
+  type NotificationChannels,
+  type NotificationEventType,
+  type NotificationPreferences,
+} from "@/lib/settings-config";
 
-type Preference = {
-  id: number;
-  user_id: number;
-  user_type: string;
-  channel: string;
-  notification_type: string;
-  is_enabled: boolean;
+const LABELS: Record<NotificationEventType, string> = {
+  task_assigned: "Task assigned",
+  task_overdue: "Task overdue",
+  request_submitted: "Request submitted",
+  request_approved_or_denied: "Request approved or denied",
+  form_submitted: "Form submitted",
+  work_order_assigned: "Work order assigned",
+  low_inventory: "Low inventory",
+  timesheet_submitted: "Timesheet submitted",
+  weekly_leadership_summary: "Weekly leadership summary",
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE || "http://localhost:8000";
-
-// Mock user - in production, get from auth context
-const USER_ID = 1;
-const USER_TYPE = "homeowner";
-
-const CHANNEL_ICONS: Record<string, any> = {
-  email: Envelope,
-  sms: DeviceMobile,
-  in_app: Bell,
-  push: Bell,
+type SettingsResponse = {
+  byKey?: {
+    notification_preferences?: NotificationPreferences;
+  };
 };
 
-const CHANNEL_LABELS: Record<string, string> = {
-  email: "Email",
-  sms: "SMS/Text",
-  in_app: "In-App",
-  push: "Push Notifications",
-};
-
-const NOTIFICATION_TYPE_LABELS: Record<string, string> = {
-  quote_ready: "Quote Ready",
-  quote_approved: "Quote Approved",
-  payment_received: "Payment Received",
-  job_scheduled: "Job Scheduled",
-  job_completed: "Job Completed",
-  document_ready: "Document Ready",
-  signature_required: "Signature Required",
-  message_received: "Message Received",
-  system_alert: "System Alert",
-};
-
-export default function NotificationPreferencesPage() {
-  const [preferences, setPreferences] = useState<Preference[]>([]);
-  const [channels, setChannels] = useState<string[]>([]);
-  const [notificationTypes, setNotificationTypes] = useState<string[]>([]);
+export default function NotificationSettingsPage() {
+  const [preferences, setPreferences] = useState<NotificationPreferences>(
+    DEFAULT_NOTIFICATION_PREFERENCES,
+  );
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    loadData();
+    void loadPreferences();
   }, []);
 
-  async function loadData() {
+  async function loadPreferences() {
     try {
       setLoading(true);
-
-      // Load available channels
-      const channelsRes = await fetch(`${API_BASE}/notifications/channels`);
-      if (channelsRes.ok) {
-        const channelsData = await channelsRes.json();
-        setChannels(channelsData);
+      const response = await fetch("/api/settings", { cache: "no-store" });
+      if (!response.ok) {
+        throw new Error("Failed to load notification settings.");
       }
 
-      // Load notification types
-      const typesRes = await fetch(`${API_BASE}/notifications/types`);
-      if (typesRes.ok) {
-        const typesData = await typesRes.json();
-        setNotificationTypes(typesData);
-      }
-
-      // Load user preferences
-      const prefsRes = await fetch(
-        `${API_BASE}/notifications/preferences/${USER_ID}/${USER_TYPE}`,
+      const payload = (await response.json()) as SettingsResponse;
+      setPreferences(
+        payload.byKey?.notification_preferences ??
+          DEFAULT_NOTIFICATION_PREFERENCES,
       );
-      if (prefsRes.ok) {
-        const prefsData = await prefsRes.json();
-        setPreferences(prefsData);
-      }
-    } catch (err) {
-      console.error("Failed to load preferences:", err);
+    } catch (error) {
+      const text =
+        error instanceof Error ? error.message : "Failed to load preferences";
+      setMessage(text);
     } finally {
       setLoading(false);
     }
   }
 
-  async function togglePreference(
-    channel: string,
-    notificationType: string,
-    currentValue: boolean,
+  function toggleChannel(
+    eventType: NotificationEventType,
+    channel: keyof NotificationChannels,
   ) {
-    setSaving(true);
+    setPreferences((current) => ({
+      ...current,
+      [eventType]: {
+        ...current[eventType],
+        [channel]: !current[eventType][channel],
+      },
+    }));
+  }
+
+  async function savePreferences() {
     try {
-      const res = await fetch(`${API_BASE}/notifications/preferences`, {
-        method: "POST",
+      setSaving(true);
+      setMessage(null);
+
+      const response = await fetch("/api/settings", {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          user_id: USER_ID,
-          user_type: USER_TYPE,
-          channel,
-          notification_type: notificationType,
-          is_enabled: !currentValue,
+          key: SETTING_KEYS.notificationPreferences,
+          value: preferences,
         }),
       });
 
-      if (res.ok) {
-        await loadData();
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload?.error || "Failed to save preferences.");
       }
-    } catch (err) {
-      console.error("Failed to update preference:", err);
+
+      setMessage("Notification preferences saved.");
+      await loadPreferences();
+    } catch (error) {
+      const text =
+        error instanceof Error ? error.message : "Failed to save preferences";
+      setMessage(text);
     } finally {
       setSaving(false);
     }
   }
 
-  function getPreferenceValue(
-    channel: string,
-    notificationType: string,
-  ): boolean {
-    const pref = preferences.find(
-      (p) => p.channel === channel && p.notification_type === notificationType,
-    );
-    return pref ? pref.is_enabled : true; // Default to enabled
-  }
-
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-12">
-        <p className="text-neutral-400">Loading preferences...</p>
-      </div>
+      <p className="p-6 text-sm text-textSecondary">
+        Loading notification settings...
+      </p>
     );
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-5xl">
-      {/* Header */}
-      <header>
-        <h1 className="text-2xl font-semibold text-white">
-          <ShinyText>Notification Preferences</ShinyText>
+    <div className="space-y-6 pb-8">
+      <section className="space-y-2">
+        <h1 className="text-3xl font-semibold text-textPrimary">
+          <ShinyText>Notification Settings</ShinyText>
         </h1>
-        <p className="text-sm text-neutral-400">
-          Choose how you want to receive notifications
+        <p className="text-sm text-textSecondary">
+          Internal OS notification preferences. In-app is active now; email and
+          SMS are persisted for phased rollout.
         </p>
-      </header>
+      </section>
 
-      {/* Channel Overview */}
-      <div className="grid gap-4 md:grid-cols-3">
-        {channels.map((channel) => {
-          const Icon = CHANNEL_ICONS[channel] || Bell;
-          return (
-            <div
-              key={channel}
-              className="rounded-lg border border-neutral-800 bg-neutral-900/50 p-4"
-            >
-              <div className="flex items-center gap-3 mb-2">
-                <Icon className="w-5 h-5 text-blue-400" weight="duotone" />
-                <h3 className="font-medium text-white">
-                  {CHANNEL_LABELS[channel] || channel}
-                </h3>
-              </div>
-              <p className="text-xs text-neutral-500">
-                {channel === "email" && "Notifications sent to your email"}
-                {channel === "sms" && "Text messages to your phone"}
-                {channel === "in_app" && "Alerts in the portal"}
-                {channel === "push" && "Browser push notifications"}
-              </p>
-            </div>
-          );
-        })}
-      </div>
+      <section className="glass-surface rounded-2xl p-5">
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <Badge variant="success">Persisted</Badge>
+          <Badge variant="blue">In-App Active</Badge>
+          <Badge variant="warning">Email Later</Badge>
+          <Badge variant="default">SMS Future Scope</Badge>
+        </div>
 
-      {/* Preference Matrix */}
-      <div className="rounded-lg border border-neutral-800 bg-neutral-900/50 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full min-w-[720px] text-sm">
             <thead>
-              <tr className="border-b border-neutral-800">
-                <th className="text-left p-4 text-sm font-medium text-neutral-400">
-                  Notification Type
-                </th>
-                {channels.map((channel) => (
-                  <th key={channel} className="p-4 text-center">
-                    <div className="flex flex-col items-center gap-1">
-                      {(() => {
-                        const Icon = CHANNEL_ICONS[channel] || Bell;
-                        return (
-                          <Icon
-                            className="w-4 h-4 text-neutral-400"
-                            weight="regular"
-                          />
-                        );
-                      })()}
-                      <span className="text-xs text-neutral-400">
-                        {CHANNEL_LABELS[channel] || channel}
-                      </span>
-                    </div>
-                  </th>
-                ))}
+              <tr className="border-b border-white/20 text-left dark:border-white/10">
+                <th className="px-2 py-2 font-medium text-textMuted">Event</th>
+                <th className="px-2 py-2 font-medium text-textMuted">In-App</th>
+                <th className="px-2 py-2 font-medium text-textMuted">Email</th>
+                <th className="px-2 py-2 font-medium text-textMuted">SMS</th>
               </tr>
             </thead>
             <tbody>
-              {notificationTypes.map((type, idx) => (
-                <tr
-                  key={type}
-                  className={
-                    idx !== notificationTypes.length - 1
-                      ? "border-b border-neutral-800"
-                      : ""
-                  }
-                >
-                  <td className="p-4">
-                    <p className="text-sm font-medium text-white">
-                      {NOTIFICATION_TYPE_LABELS[type] || type}
-                    </p>
+              {NOTIFICATION_EVENT_TYPES.map((eventType) => (
+                <tr key={eventType} className="border-b border-white/10">
+                  <td className="px-2 py-3 text-textPrimary">
+                    {LABELS[eventType]}
                   </td>
-                  {channels.map((channel) => {
-                    const isEnabled = getPreferenceValue(channel, type);
-                    return (
-                      <td key={channel} className="p-4 text-center">
-                        <button
-                          onClick={() =>
-                            togglePreference(channel, type, isEnabled)
-                          }
-                          disabled={saving}
-                          className={`w-10 h-6 rounded-full transition relative ${
-                            isEnabled ? "bg-blue-600" : "bg-neutral-700"
-                          }`}
-                        >
-                          <div
-                            className={`absolute top-1 w-4 h-4 rounded-full bg-white transition ${
-                              isEnabled ? "right-1" : "left-1"
-                            }`}
-                          />
-                        </button>
-                      </td>
-                    );
-                  })}
+                  <td className="px-2 py-3">
+                    <ToggleButton
+                      checked={preferences[eventType].inApp}
+                      onChange={() => toggleChannel(eventType, "inApp")}
+                    />
+                  </td>
+                  <td className="px-2 py-3">
+                    <ToggleButton
+                      checked={preferences[eventType].email}
+                      onChange={() => toggleChannel(eventType, "email")}
+                    />
+                  </td>
+                  <td className="px-2 py-3">
+                    <ToggleButton
+                      checked={preferences[eventType].sms}
+                      onChange={() => toggleChannel(eventType, "sms")}
+                    />
+                  </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </div>
 
-      {/* Info Box */}
-      <div className="rounded-lg border border-blue-900/50 bg-blue-950/20 p-4">
-        <p className="text-sm text-neutral-300">
-          <strong className="text-blue-300">Note:</strong> Email and SMS
-          notifications may have additional delivery charges. In-app
-          notifications are always free.
-        </p>
-      </div>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <Button onClick={() => void savePreferences()} disabled={saving}>
+            {saving ? "Saving..." : "Save Notification Settings"}
+          </Button>
+          {message ? (
+            <p className="text-xs text-textSecondary">{message}</p>
+          ) : null}
+        </div>
+      </section>
     </div>
+  );
+}
+
+function ToggleButton({
+  checked,
+  onChange,
+}: {
+  checked: boolean;
+  onChange: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onChange}
+      aria-pressed={checked}
+      className={`relative h-6 w-11 rounded-full transition ${
+        checked ? "bg-emerald-600" : "bg-neutral-500/50"
+      }`}
+    >
+      <span
+        className={`absolute top-1 h-4 w-4 rounded-full bg-white transition ${
+          checked ? "right-1" : "left-1"
+        }`}
+      />
+    </button>
   );
 }

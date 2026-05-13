@@ -1,150 +1,136 @@
-"use client";
-
 import Link from "next/link";
-import { Bell, CreditCard, GearSix, ShieldCheck } from "phosphor-react";
-import { FadeContent } from "@/components/ui/FadeContent";
+import { ArrowRight, GearSix } from "phosphor-react";
+import { Badge } from "@/components/ui/Badge";
 import { ShinyText } from "@/components/ui/ShinyText";
 
-function KpiCard({
-  label,
-  value,
-  variant = "cyan",
-}: {
-  label: string;
-  value: string | number;
-  variant?: "cyan" | "green" | "yellow" | "magenta";
-}) {
-  const colors = {
-    cyan: {
-      icon: "bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300",
-    },
-    green: {
-      icon: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300",
-    },
-    yellow: {
-      icon: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300",
-    },
-    magenta: {
-      icon: "bg-slate-50 text-slate-700 dark:bg-slate-500/10 dark:text-slate-300",
-    },
-  };
-  const c = colors[variant];
-  return (
-    <div className="rounded-xl border border-borderSubtle bg-surface/95 p-6 shadow-soft backdrop-blur-xl">
-      <div className={`mb-3 h-1.5 w-10 rounded-sm ${c.icon}`} />
-      <p className="text-xs font-medium uppercase tracking-wide text-textMuted">
-        {label}
-      </p>
-      <p className="mt-2 text-2xl font-semibold text-textPrimary">{value}</p>
-    </div>
-  );
-}
+type HubCard = {
+  title: string;
+  description: string;
+  status: "Configured" | "Partial" | "Coming Later" | "Internal Only";
+  href?: string;
+};
 
-const SETTINGS_SECTIONS = [
+const HUB_CARDS: HubCard[] = [
   {
-    icon: CreditCard,
-    title: "Billing & Plan",
-    description: "Manage your subscription, invoices, and payment methods",
-    href: "/settings/billing",
-    accent: "text-blue-700 dark:text-blue-300",
-    border: "border-blue-200 dark:border-blue-500/30",
-    iconBg: "bg-blue-50 dark:bg-blue-500/10",
+    title: "System",
+    description:
+      "Database health, runtime readiness, integrations, env checks, and deployment notes.",
+    status: "Configured",
+    href: "/settings/system",
   },
   {
-    icon: Bell,
     title: "Notifications",
-    description: "Configure alerts, email preferences, and SMS settings",
+    description:
+      "Persist internal notification preferences for task, request, work order, and inventory events.",
+    status: "Configured",
     href: "/settings/notifications",
-    accent: "text-amber-700 dark:text-amber-300",
-    border: "border-amber-200 dark:border-amber-500/30",
-    iconBg: "bg-amber-50 dark:bg-amber-500/10",
   },
   {
-    icon: GearSix,
-    title: "System Config",
-    description: "Branding, integrations, feature flags, and system settings",
-    href: "/settings/system",
-    accent: "text-slate-700 dark:text-slate-300",
-    border: "border-slate-200 dark:border-slate-500/30",
-    iconBg: "bg-slate-50 dark:bg-slate-500/10",
+    title: "Users & Roles / Admin",
+    description:
+      "Employee/user administration and role controls for internal operations.",
+    status: "Partial",
+    href: "/admin",
   },
   {
-    icon: ShieldCheck,
-    title: "Security & Audit",
-    description: "API keys, two-factor auth, and system access controls",
-    href: "/settings/system",
-    accent: "text-emerald-700 dark:text-emerald-300",
-    border: "border-emerald-200 dark:border-emerald-500/30",
-    iconBg: "bg-emerald-50 dark:bg-emerald-500/10",
+    title: "Integrations",
+    description:
+      "Read-only integration status for PostgreSQL, NocoDB, n8n, and AI provider.",
+    status: "Configured",
+    href: "/settings/system#integrations",
+  },
+  {
+    title: "Data & Backups",
+    description:
+      "Backup strategy visibility, export readiness notes, and server-side runbook guidance.",
+    status: "Partial",
+    href: "/settings/system#backups",
+  },
+  {
+    title: "Security",
+    description:
+      "Auth and RBAC readiness status with clear notes on what is not yet enforced.",
+    status: "Partial",
+    href: "/settings/system#security",
+  },
+  {
+    title: "Audit Logs",
+    description:
+      "Recent configuration and system events from the internal audit table.",
+    status: "Configured",
+    href: "/settings/system#audit-logs",
+  },
+  {
+    title: "Environment",
+    description:
+      "Safe configured/missing checklist for required environment groups.",
+    status: "Configured",
+    href: "/settings/system#environment",
   },
 ];
+
+function statusVariant(status: HubCard["status"]) {
+  if (status === "Configured") return "success" as const;
+  if (status === "Partial") return "warning" as const;
+  if (status === "Internal Only") return "neutral" as const;
+  return "default" as const;
+}
 
 export default function SettingsPage() {
   return (
     <div className="space-y-8">
-      <FadeContent
-        as="section"
-        blur={true}
-        duration={800}
-        delay={50}
-        className="space-y-2"
-      >
-        <h1 className="text-3xl font-semibold tracking-normal text-textPrimary">
-          <ShinyText>Settings</ShinyText>
+      <section className="space-y-2">
+        <h1 className="text-3xl font-semibold text-textPrimary">
+          <ShinyText>System Control Center</ShinyText>
         </h1>
-        <p className="text-base text-textSecondary">
-          System configuration, billing, and preferences
+        <p className="max-w-3xl text-sm text-textSecondary">
+          Configure only what persists in this repository, and monitor real
+          backend readiness for Diversified OS. Secrets remain in environment
+          variables and server infrastructure.
         </p>
-      </FadeContent>
+      </section>
 
-      <FadeContent
-        as="section"
-        blur={true}
-        duration={800}
-        delay={90}
-        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
-      >
-        <KpiCard label="Plan" value="Pro" variant="cyan" />
-        <KpiCard label="Users" value="8" variant="green" />
-        <KpiCard label="Integrations" value="3" variant="yellow" />
-        <KpiCard label="API Keys" value="2 active" variant="magenta" />
-      </FadeContent>
-
-      <FadeContent
-        as="section"
-        blur={true}
-        duration={800}
-        delay={120}
-        className="grid gap-4 sm:grid-cols-2"
-      >
-        {SETTINGS_SECTIONS.map((section) => {
-          const Icon = section.icon;
-          return (
-            <Link key={section.href} href={section.href}>
-              <div className="glass-surface glass-surface-hover cursor-pointer p-6">
-                <div className="flex items-start gap-4">
-                  <div
-                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-md border ${section.border} ${section.iconBg}`}
-                  >
-                    <Icon
-                      className={`h-5 w-5 ${section.accent}`}
+      <section className="grid gap-4 sm:grid-cols-2">
+        {HUB_CARDS.map((card) => {
+          const content = (
+            <article className="glass-surface glass-surface-hover h-full rounded-2xl p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <GearSix
+                      className="h-4 w-4 text-textSecondary"
                       weight="duotone"
                     />
-                  </div>
-                  <div>
                     <h2 className="text-base font-semibold text-textPrimary">
-                      {section.title}
+                      {card.title}
                     </h2>
-                    <p className="mt-1 text-sm text-textSecondary">
-                      {section.description}
-                    </p>
                   </div>
+                  <p className="text-sm text-textSecondary">
+                    {card.description}
+                  </p>
                 </div>
+                <Badge variant={statusVariant(card.status)}>
+                  {card.status}
+                </Badge>
               </div>
+              <div className="mt-4 flex items-center text-xs font-medium text-accent">
+                {card.href ? "Open" : "Coming Later"}
+                <ArrowRight className="ml-1 h-3.5 w-3.5" weight="bold" />
+              </div>
+            </article>
+          );
+
+          if (!card.href) {
+            return <div key={card.title}>{content}</div>;
+          }
+
+          return (
+            <Link key={card.title} href={card.href}>
+              {content}
             </Link>
           );
         })}
-      </FadeContent>
+      </section>
     </div>
   );
 }
