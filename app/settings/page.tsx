@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowRight, GearSix } from "phosphor-react";
 import { Badge } from "@/components/ui/Badge";
