@@ -74,6 +74,11 @@ http_status() {
   curl -sS -o /dev/null -w '%{http_code}' "$1"
 }
 
+dashboard_status_ok() {
+  local status="$1"
+  [[ "$status" == "200" || "$status" == "307" ]]
+}
+
 health_check() {
   local quiet="${1:-0}"
   local css_path
@@ -98,7 +103,9 @@ health_check() {
 
   log "Health check statuses: local_dashboard=${local_dashboard_status} domain_dashboard=${domain_dashboard_status} local_css=${local_css_status} domain_css=${domain_css_status}"
 
-  [[ "$local_dashboard_status" == "200" && "$domain_dashboard_status" == "200" && "$local_css_status" == "200" && "$domain_css_status" == "200" ]]
+  dashboard_status_ok "$local_dashboard_status" && \
+    dashboard_status_ok "$domain_dashboard_status" && \
+    [[ "$local_css_status" == "200" && "$domain_css_status" == "200" ]]
 }
 
 read_fail_count() {

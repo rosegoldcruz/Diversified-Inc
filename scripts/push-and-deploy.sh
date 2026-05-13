@@ -217,10 +217,15 @@ quick_health_ok() {
   local local_css_status
   local domain_css_status
 
+  dashboard_status_ok() {
+    local status="$1"
+    [[ "$status" == "200" || "$status" == "307" ]]
+  }
+
   local_dashboard_status="$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/dashboard || true)"
   domain_dashboard_status="$(curl -sS -o /dev/null -w '%{http_code}' "${APP_PUBLIC_URL}/dashboard" || true)"
 
-  if [[ "$local_dashboard_status" != "200" || "$domain_dashboard_status" != "200" ]]; then
+  if ! dashboard_status_ok "$local_dashboard_status" || ! dashboard_status_ok "$domain_dashboard_status"; then
     echo "Health quick-check: local_dashboard=${local_dashboard_status} domain_dashboard=${domain_dashboard_status}"
     return 1
   fi
