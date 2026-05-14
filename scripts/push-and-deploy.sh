@@ -211,36 +211,45 @@ run_build_check() {
 }
 
 quick_health_ok() {
-  local local_dashboard_status
-  local domain_dashboard_status
+  local local_login_status
+  local domain_login_status
+  local css_candidates
   local css_path
   local local_css_status
   local domain_css_status
+  local found_working_css=0
 
-  dashboard_status_ok() {
+  page_status_ok() {
     local status="$1"
     [[ "$status" == "200" || "$status" == "307" ]]
   }
 
-  local_dashboard_status="$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/dashboard || true)"
-  domain_dashboard_status="$(curl -sS -o /dev/null -w '%{http_code}' "${APP_PUBLIC_URL}/dashboard" || true)"
+  local_login_status="$(curl -sS -o /dev/null -w '%{http_code}' http://127.0.0.1:3000/login || true)"
+  domain_login_status="$(curl -sS -o /dev/null -w '%{http_code}' "${APP_PUBLIC_URL}/login" || true)"
 
-  if ! dashboard_status_ok "$local_dashboard_status" || ! dashboard_status_ok "$domain_dashboard_status"; then
-    echo "Health quick-check: local_dashboard=${local_dashboard_status} domain_dashboard=${domain_dashboard_status}"
+  if ! page_status_ok "$local_login_status" || ! page_status_ok "$domain_login_status"; then
+    echo "Health quick-check: local_login=${local_login_status} domain_login=${domain_login_status}"
     return 1
   fi
 
-  css_path="$(curl -fsSL http://127.0.0.1:3000/dashboard | grep -o '/_next[^" ]*\.css' | head -n1 || true)"
-  if [[ -z "$css_path" ]]; then
+  css_candidates="$(curl -fsSL http://127.0.0.1:3000/login | grep -o '/_next[^" ]*\.css[^" ]*' || true)"
+  if [[ -z "$css_candidates" ]]; then
     echo "Health quick-check: could not extract css asset path"
     return 1
   fi
 
-  local_css_status="$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:3000${css_path}" || true)"
-  domain_css_status="$(curl -sS -o /dev/null -w '%{http_code}' "${APP_PUBLIC_URL}${css_path}" || true)"
+  while IFS= read -r css_path; do
+    [[ -z "$css_path" ]] && continue
+    local_css_status="$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:3000${css_path}" || true)"
+    domain_css_status="$(curl -sS -o /dev/null -w '%{http_code}' "${APP_PUBLIC_URL}${css_path}" || true)"
+    if [[ "$local_css_status" == "200" && "$domain_css_status" == "200" ]]; then
+      found_working_css=1
+      break
+    fi
+  done <<< "$css_candidates"
 
   echo "Health quick-check: local_css=${local_css_status} domain_css=${domain_css_status}"
-  [[ "$local_css_status" == "200" && "$domain_css_status" == "200" ]]
+  [[ "$found_working_css" -eq 1 ]]
 }
 
 remote_differs_from_local() {

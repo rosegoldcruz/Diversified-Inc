@@ -66,8 +66,8 @@ ensure_command() {
   fi
 }
 
-dashboard_css_path() {
-  curl -fsSL "http://127.0.0.1:3000/dashboard" | grep -o '/_next[^" ]*\.css' | head -n1
+login_css_candidates() {
+  curl -fsSL "http://127.0.0.1:3000/login" | grep -o '/_next[^" ]*\.css[^" ]*'
 }
 
 http_status() {
@@ -81,31 +81,41 @@ dashboard_status_ok() {
 
 health_check() {
   local quiet="${1:-0}"
-  local css_path
-  css_path="$(dashboard_css_path || true)"
+  local css_candidates
+  css_candidates="$(login_css_candidates || true)"
+  local css_path=""
+  local local_css_status=""
+  local domain_css_status=""
+  local found_working_css=0
 
-  if [[ -z "$css_path" ]]; then
+  if [[ -z "$css_candidates" ]]; then
     if [[ "$quiet" -ne 1 ]]; then
-      log "WARN: unable to extract dashboard CSS asset path"
+      log "WARN: unable to extract login CSS asset path"
     fi
     return 1
   fi
 
-  local local_css_status
-  local domain_css_status
-  local local_dashboard_status
-  local domain_dashboard_status
+  local local_login_status
+  local domain_login_status
 
-  local_css_status="$(http_status "http://127.0.0.1:3000${css_path}" || true)"
-  domain_css_status="$(http_status "${APP_PUBLIC_URL}${css_path}" || true)"
-  local_dashboard_status="$(http_status "http://127.0.0.1:3000/dashboard" || true)"
-  domain_dashboard_status="$(http_status "${APP_PUBLIC_URL}/dashboard" || true)"
+  while IFS= read -r css_path; do
+    [[ -z "$css_path" ]] && continue
+    local_css_status="$(http_status "http://127.0.0.1:3000${css_path}" || true)"
+    domain_css_status="$(http_status "${APP_PUBLIC_URL}${css_path}" || true)"
+    if [[ "$local_css_status" == "200" && "$domain_css_status" == "200" ]]; then
+      found_working_css=1
+      break
+    fi
+  done <<< "$css_candidates"
 
-  log "Health check statuses: local_dashboard=${local_dashboard_status} domain_dashboard=${domain_dashboard_status} local_css=${local_css_status} domain_css=${domain_css_status}"
+  local_login_status="$(http_status "http://127.0.0.1:3000/login" || true)"
+  domain_login_status="$(http_status "${APP_PUBLIC_URL}/login" || true)"
 
-  dashboard_status_ok "$local_dashboard_status" && \
-    dashboard_status_ok "$domain_dashboard_status" && \
-    [[ "$local_css_status" == "200" && "$domain_css_status" == "200" ]]
+  log "Health check statuses: local_login=${local_login_status} domain_login=${domain_login_status} local_css=${local_css_status} domain_css=${domain_css_status}"
+
+  dashboard_status_ok "$local_login_status" && \
+    dashboard_status_ok "$domain_login_status" && \
+    [[ "$found_working_css" -eq 1 ]]
 }
 
 read_fail_count() {
