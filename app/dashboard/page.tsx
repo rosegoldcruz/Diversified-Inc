@@ -606,7 +606,7 @@ export default function DashboardPage() {
         const rightTime = new Date(right.time || 0).getTime();
         return rightTime - leftTime;
       })
-      .slice(0, 10);
+      .slice(0, 6);
   }, [
     blockedTasks,
     lowInventoryItems,
@@ -755,7 +755,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-5 pb-6">
+    <div className="space-y-6 pb-6">
       <FadeContent
         as="section"
         blur={true}
@@ -794,19 +794,19 @@ export default function DashboardPage() {
         <LoadingPanel label="Loading dashboard..." />
       ) : (
         <>
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
-            <aside className="order-1 space-y-4 lg:order-2">
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(360px,1.05fr)]">
+            <aside className="order-1 space-y-5 xl:order-2">
               <FadeContent
                 as="article"
                 blur={true}
                 duration={700}
                 delay={110}
-                className="rounded-2xl border border-slate-300/80 bg-white p-5 shadow-soft dark:border-slate-500/75 dark:bg-slate-900/85"
+                className="rounded-2xl border border-slate-300/80 bg-white p-6 shadow-soft dark:border-slate-500/75 dark:bg-slate-900/85"
               >
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                   Quick Actions
                 </h2>
-                <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
+                <p className="mt-1 text-[15px] text-slate-700 dark:text-slate-300">
                   Start core service desk workflows.
                 </p>
                 <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
@@ -843,7 +843,7 @@ export default function DashboardPage() {
                 blur={true}
                 duration={700}
                 delay={140}
-                className="rounded-2xl border border-slate-300/80 bg-white p-5 shadow-soft dark:border-slate-500/75 dark:bg-slate-900/85"
+                className="rounded-2xl border border-slate-300/80 bg-white p-6 shadow-soft dark:border-slate-500/75 dark:bg-slate-900/85"
               >
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                   Workspace Notes / Announcements
@@ -874,12 +874,12 @@ export default function DashboardPage() {
                 blur={true}
                 duration={700}
                 delay={170}
-                className="rounded-2xl border border-slate-300/80 bg-white p-5 shadow-soft dark:border-slate-500/75 dark:bg-slate-900/85"
+                className="rounded-2xl border border-slate-300/80 bg-white p-6 shadow-soft dark:border-slate-500/75 dark:bg-slate-900/85"
               >
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                   Reports Snapshot
                 </h2>
-                <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
+                <p className="mt-1 text-[15px] text-slate-700 dark:text-slate-300">
                   Live operational summaries from task, request, and inventory
                   feeds.
                 </p>
@@ -1004,7 +1004,7 @@ export default function DashboardPage() {
                 blur={true}
                 duration={700}
                 delay={200}
-                className="rounded-2xl border border-slate-300/80 bg-white p-5 shadow-soft dark:border-slate-500/75 dark:bg-slate-900/85"
+                className="rounded-2xl border border-slate-300/80 bg-white p-6 shadow-soft dark:border-slate-500/75 dark:bg-slate-900/85"
               >
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                   System Health / Integration Status
@@ -1025,7 +1025,7 @@ export default function DashboardPage() {
               </FadeContent>
             </aside>
 
-            <section className="order-2 space-y-4 lg:order-1">
+            <section className="order-2 space-y-5 xl:order-1">
               <FadeContent
                 as="article"
                 blur={true}
@@ -1068,11 +1068,11 @@ export default function DashboardPage() {
                 {needsAttentionQueue.length === 0 ? (
                   <EmptyState message="No urgent queue items from tasks, requests, work orders, or inventory." />
                 ) : (
-                  <ul className="mt-4 space-y-3">
+                  <ul className="mt-4 space-y-2.5">
                     {needsAttentionQueue.map((item) => (
                       <li
                         key={item.key}
-                        className="rounded-xl border border-slate-300 bg-white px-3.5 py-3 dark:border-slate-600/70 dark:bg-slate-900/65"
+                        className="rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 dark:border-slate-600/70 dark:bg-slate-900/65"
                       >
                         <div className="flex flex-wrap items-center gap-2.5">
                           <Badge
@@ -1090,17 +1090,25 @@ export default function DashboardPage() {
                         </div>
                         <Link
                           href={item.href}
-                          className="mt-2.5 block text-sm font-semibold leading-snug text-slate-900 hover:text-accent dark:text-slate-100"
+                          className="mt-2 block text-[15px] font-semibold leading-snug text-slate-900 hover:text-accent dark:text-slate-100"
                         >
                           {item.title}
                         </Link>
-                        <p className="mt-1 text-xs text-slate-700 dark:text-slate-400">
+                        <p className="mt-0.5 text-[12px] text-slate-700 dark:text-slate-400">
                           {item.status}
                         </p>
                       </li>
                     ))}
                   </ul>
                 )}
+                <div className="mt-3 flex justify-end">
+                  <Link
+                    href="/tasks?status=blocked"
+                    className="text-sm font-semibold text-accent hover:underline"
+                  >
+                    View all queue items
+                  </Link>
+                </div>
               </FadeContent>
 
               <FadeContent
@@ -1121,7 +1129,7 @@ export default function DashboardPage() {
                   <AttentionBucket
                     title="Overdue tasks"
                     count={overdueTasks.length}
-                    items={overdueTasks.slice(0, 3).map((task) => ({
+                    items={overdueTasks.slice(0, 2).map((task) => ({
                       key: `overdue-${task.id}`,
                       label: task.title,
                       href: `/tasks/${task.id}`,
@@ -1130,7 +1138,7 @@ export default function DashboardPage() {
                   <AttentionBucket
                     title="Blocked tasks"
                     count={blockedTasks.length}
-                    items={blockedTasks.slice(0, 3).map((task) => ({
+                    items={blockedTasks.slice(0, 2).map((task) => ({
                       key: `blocked-${task.id}`,
                       label: task.title,
                       href: `/tasks/${task.id}`,
@@ -1139,7 +1147,7 @@ export default function DashboardPage() {
                   <AttentionBucket
                     title="High-priority work"
                     count={highPriorityTasks.length}
-                    items={highPriorityTasks.slice(0, 3).map((task) => ({
+                    items={highPriorityTasks.slice(0, 2).map((task) => ({
                       key: `high-${task.id}`,
                       label: task.title,
                       href: `/tasks/${task.id}`,
@@ -1148,7 +1156,7 @@ export default function DashboardPage() {
                   <AttentionBucket
                     title="Unassigned items"
                     count={unassignedItems.length}
-                    items={unassignedItems.slice(0, 3).map((item) => ({
+                    items={unassignedItems.slice(0, 2).map((item) => ({
                       key: item.key,
                       label: `${item.title} (${item.source})`,
                       href: item.href,
@@ -1157,7 +1165,7 @@ export default function DashboardPage() {
                   <AttentionBucket
                     title="Requests waiting review"
                     count={waitingRequests.length}
-                    items={waitingRequests.slice(0, 3).map((request) => ({
+                    items={waitingRequests.slice(0, 2).map((request) => ({
                       key: `request-${request.id}`,
                       label: `${request.request_id} - ${request.title}`,
                       href: "/requests",
@@ -1166,7 +1174,7 @@ export default function DashboardPage() {
                   <AttentionBucket
                     title="Low inventory"
                     count={lowInventoryItems.length}
-                    items={lowInventoryItems.slice(0, 3).map((item) => ({
+                    items={lowInventoryItems.slice(0, 2).map((item) => ({
                       key: `inventory-${item.id}`,
                       label: item.item_name,
                       href: `/inventory/${item.id}`,
@@ -1373,14 +1381,14 @@ function AttentionBucket({
   return (
     <article className="rounded-xl border border-slate-300/80 bg-slate-50/90 p-3 dark:border-slate-700/70 dark:bg-slate-900/55">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+        <p className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">
           {title}
         </p>
         <Badge label={String(count)} tone={count > 0 ? "warning" : "neutral"} />
       </div>
       <div className="mt-2 space-y-1.5">
         {items.length === 0 ? (
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             No items.
           </p>
         ) : (
@@ -1388,7 +1396,7 @@ function AttentionBucket({
             <Link
               key={item.key}
               href={item.href}
-              className="block truncate text-xs text-slate-700 transition hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100"
+              className="block truncate text-sm text-slate-700 transition hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100"
             >
               {item.label}
             </Link>
@@ -1408,12 +1416,12 @@ function SimpleListCard({
 }) {
   return (
     <article className="rounded-xl border border-slate-300/80 bg-slate-50/90 p-3 dark:border-slate-700/70 dark:bg-slate-900/55">
-      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+      <p className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">
         {title}
       </p>
       <div className="mt-2 space-y-1.5">
         {items.length === 0 ? (
-          <p className="text-xs text-slate-500 dark:text-slate-400">
+          <p className="text-sm text-slate-500 dark:text-slate-400">
             No items.
           </p>
         ) : (
@@ -1435,10 +1443,10 @@ function SimpleListCard({
 function SnapshotMetric({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-lg border border-slate-300/80 bg-slate-100/80 px-3 py-2 dark:border-slate-700/70 dark:bg-slate-800/35">
-      <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
+      <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
         {label}
       </p>
-      <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">
+      <p className="mt-1 text-xl font-semibold text-slate-900 dark:text-slate-100">
         {value}
       </p>
     </div>
@@ -1470,10 +1478,10 @@ function SummaryStripItem({
       href={href}
       className={`rounded-xl border px-4 py-3 transition ${toneStyles[tone]}`}
     >
-      <p className="text-[11px] font-semibold uppercase tracking-wide opacity-85">
+      <p className="text-xs font-semibold uppercase tracking-wide opacity-85">
         {label}
       </p>
-      <p className="mt-1 text-3xl font-bold leading-none">{value}</p>
+      <p className="mt-1 text-[2rem] font-bold leading-none">{value}</p>
     </Link>
   );
 }
@@ -1499,7 +1507,7 @@ function BarMetric({
 
   return (
     <div>
-      <div className="mb-1 flex items-center justify-between text-xs">
+      <div className="mb-1 flex items-center justify-between text-sm">
         <span className="font-medium text-slate-700 dark:text-slate-300">
           {label}
         </span>
@@ -1537,7 +1545,7 @@ function StatusPill({
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-xs ${tones[tone]}`}
+      className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-1 text-sm ${tones[tone]}`}
     >
       <span className="font-semibold">{label}:</span>
       <span>{value}</span>

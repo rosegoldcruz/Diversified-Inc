@@ -148,17 +148,27 @@ export function Sidebar({
         ].join(" ")}
       >
         {/* Logo Section */}
-        <div className="relative border-b border-white/25 px-3 py-3 dark:border-white/10">
-          <div className="relative h-16 w-full overflow-hidden rounded-2xl border border-white/30 shadow-glass ring-1 ring-white/20 backdrop-blur-2xl dark:border-white/10 dark:ring-white/10">
+        <div
+          className={[
+            "relative border-b border-white/25 dark:border-white/10",
+            desktopCollapsed ? "px-2 py-2" : "px-3 py-3",
+          ].join(" ")}
+        >
+          <div
+            className={[
+              "relative w-full overflow-hidden border border-white/35 bg-white/65 shadow-glass ring-1 ring-white/20 backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/40 dark:ring-white/10",
+              desktopCollapsed ? "h-12 rounded-xl" : "h-20 rounded-2xl",
+            ].join(" ")}
+          >
             <Image
               src="/divco.gif"
               alt="Diversified OS"
               fill
               priority
-              className="object-cover"
+              className="object-contain p-2"
               sizes="(max-width: 1024px) 85vw, 256px"
             />
-            <div className="pointer-events-none absolute inset-0 bg-black/20" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-white/10 dark:to-black/10" />
           </div>
           <button
             type="button"
