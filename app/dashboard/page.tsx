@@ -3,12 +3,11 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
+  CalendarBlank,
+  ChatCircleDots,
   ClipboardText,
-  Fire,
-  Prohibit,
-  UploadSimple,
-  Users,
-  Warning,
+  FileArrowUp,
+  NotePencil,
   Wrench,
 } from "phosphor-react";
 import { FadeContent } from "@/components/ui/FadeContent";
@@ -274,6 +273,17 @@ export default function DashboardPage() {
     [tasks],
   );
 
+  const overdueWorkOrders = useMemo(() => {
+    const now = new Date();
+    return workOrders.filter((workOrder) => {
+      if (!workOrder.due_date) return false;
+      const due = new Date(workOrder.due_date);
+      if (Number.isNaN(due.getTime())) return false;
+      const status = normalizeStatus(workOrder.status);
+      return status !== "complete" && status !== "completed" && due < now;
+    });
+  }, [workOrders]);
+
   const highPriorityTasks = useMemo(
     () =>
       tasks.filter((task) => {
@@ -281,6 +291,24 @@ export default function DashboardPage() {
         return priority === "high" || priority === "urgent";
       }),
     [tasks],
+  );
+
+  const highPriorityRequests = useMemo(
+    () =>
+      requests.filter((request) => {
+        const priority = normalizeStatus(request.priority);
+        return priority === "high" || priority === "urgent";
+      }),
+    [requests],
+  );
+
+  const highPriorityWorkOrders = useMemo(
+    () =>
+      workOrders.filter((workOrder) => {
+        const priority = normalizeStatus(workOrder.priority);
+        return priority === "high" || priority === "urgent";
+      }),
+    [workOrders],
   );
 
   const unassignedItems = useMemo(() => {
@@ -320,6 +348,22 @@ export default function DashboardPage() {
       return status === "low stock" || (reorder >= 0 && quantity <= reorder);
     });
   }, [inventory]);
+
+  const inventoryRisk = useMemo(() => {
+    const critical = inventory.filter((item) => {
+      const quantity = item.quantity ?? 0;
+      const reorder = item.reorder_threshold ?? -1;
+      return reorder >= 0 && quantity <= Math.max(0, Math.floor(reorder * 0.5));
+    }).length;
+    const warning = lowInventoryItems.length - critical;
+    const healthy = Math.max(0, inventory.length - lowInventoryItems.length);
+    return {
+      critical,
+      warning,
+      healthy,
+      total: inventory.length,
+    };
+  }, [inventory, lowInventoryItems]);
 
   const priorityWatchlist = useMemo(() => {
     const taskItems = [...highPriorityTasks, ...blockedTasks].map((task) => ({
@@ -441,13 +485,218 @@ export default function DashboardPage() {
     };
   }, [calendarBlocks, me, tasks, workOrders]);
 
+  const dueTodayCount =
+    todayWork.dueTodayTasks.length + todayWork.dueTodayWorkOrders.length;
+
+  const highPriorityCount =
+    highPriorityTasks.length +
+    highPriorityRequests.length +
+    highPriorityWorkOrders.length;
+
+  const blockedCount = blockedTasks.length + overdueWorkOrders.length;
+
+  const taskStatusSummary = useMemo(() => {
+    const buckets = [
+      { key: "not started", label: "Not Started", count: 0 },
+      { key: "in progress", label: "In Progress", count: 0 },
+      { key: "waiting", label: "Waiting", count: 0 },
+      { key: "blocked", label: "Blocked", count: 0 },
+      { key: "completed", label: "Completed", count: 0 },
+    ];
+    tasks.forEach((task) => {
+      const status = normalizeStatus(task.status);
+      const match =
+        buckets.find((bucket) => bucket.key === status) ||
+        (status === "complete"
+          ? buckets.find((bucket) => bucket.key === "completed")
+          : null);
+      if (match) match.count += 1;
+    });
+    return buckets;
+  }, [tasks]);
+
+  const requestPrioritySummary = useMemo(() => {
+    if (requests.length === 0) return [];
+    const priorities = [
+      { key: "urgent", label: "Urgent", count: 0 },
+      { key: "high", label: "High", count: 0 },
+      { key: "normal", label: "Normal", count: 0 },
+      { key: "low", label: "Low", count: 0 },
+    ];
+    requests.forEach((request) => {
+      const priority = normalizeStatus(request.priority);
+      const match = priorities.find((item) => item.key === priority);
+      if (match) match.count += 1;
+    });
+    return priorities;
+  }, [requests]);
+
+  const needsAttentionQueue = useMemo(() => {
+    const overdueTaskItems = overdueTasks.map((task) => ({
+      key: `overdue-task-${task.id}`,
+      title: task.title,
+      source: "Task",
+      href: `/tasks/${task.id}`,
+      status: task.status || "Overdue",
+      priority: task.priority || "High",
+      severity: 1,
+      time: task.due_date,
+      signal: "Overdue",
+    }));
+
+    const blockedTaskItems = blockedTasks.map((task) => ({
+      key: `blocked-task-${task.id}`,
+      title: task.title,
+      source: "Task",
+      href: `/tasks/${task.id}`,
+      status: task.status || "Blocked",
+      priority: task.priority || "High",
+      severity: 1,
+      time: task.updated_at || task.due_date,
+      signal: "Blocked",
+    }));
+
+    const overdueWorkOrderItems = overdueWorkOrders.map((workOrder) => ({
+      key: `overdue-wo-${workOrder.id}`,
+      title: workOrder.title,
+      source: "Work Order",
+      href: `/work-orders/${workOrder.id}`,
+      status: workOrder.status || "Open",
+      priority: workOrder.priority || "High",
+      severity: 1,
+      time: workOrder.due_date,
+      signal: "Overdue",
+    }));
+
+    const reviewRequestItems = waitingRequests.map((request) => ({
+      key: `waiting-request-${request.id}`,
+      title: request.title || request.request_id,
+      source: "Request",
+      href: "/requests",
+      status: request.status || "Under Review",
+      priority: request.priority || "Normal",
+      severity: normalizeStatus(request.priority) === "urgent" ? 1 : 2,
+      time: request.submitted_date,
+      signal: "Waiting Review",
+    }));
+
+    const lowInventoryQueueItems = lowInventoryItems.map((item) => ({
+      key: `inventory-risk-${item.id}`,
+      title: item.item_name,
+      source: "Inventory",
+      href: `/inventory/${item.id}`,
+      status: item.status || "Low Stock",
+      priority: "High",
+      severity: 2,
+      time: null,
+      signal: "Low Stock",
+    }));
+
+    return [
+      ...overdueTaskItems,
+      ...blockedTaskItems,
+      ...overdueWorkOrderItems,
+      ...reviewRequestItems,
+      ...lowInventoryQueueItems,
+    ]
+      .sort((left, right) => {
+        if (left.severity !== right.severity)
+          return left.severity - right.severity;
+        const leftTime = new Date(left.time || 0).getTime();
+        const rightTime = new Date(right.time || 0).getTime();
+        return rightTime - leftTime;
+      })
+      .slice(0, 10);
+  }, [
+    blockedTasks,
+    lowInventoryItems,
+    overdueTasks,
+    overdueWorkOrders,
+    waitingRequests,
+  ]);
+
   const quickActions = [
-    { label: "+ New Task", href: "/calendar?action=new-task" },
-    { label: "+ Work Order", href: "/work-orders" },
-    { label: "+ Request", href: "/requests" },
-    { label: "+ Upload File", href: "/files", icon: UploadSimple },
-    { label: "Open Calendar", href: "/calendar" },
-    { label: "Ask AEON", href: "/ai-chat" },
+    {
+      label: "New Task",
+      href: "/calendar?action=new-task",
+      detail: "Create and assign execution work",
+      icon: NotePencil,
+      accent: "bg-blue-500/15 border-blue-500/40",
+    },
+    {
+      label: "Submit Request",
+      href: "/requests",
+      detail: "Open a new internal request",
+      icon: ClipboardText,
+      accent: "bg-amber-500/15 border-amber-500/40",
+    },
+    {
+      label: "Create Work Order",
+      href: "/work-orders",
+      detail: "Launch an operational work order",
+      icon: Wrench,
+      accent: "bg-emerald-500/15 border-emerald-500/40",
+    },
+    {
+      label: "Upload File",
+      href: "/files",
+      detail: "Attach operational documentation",
+      icon: FileArrowUp,
+      accent: "bg-cyan-500/15 border-cyan-500/40",
+    },
+    {
+      label: "Ask AEON",
+      href: "/ai-chat",
+      detail: "Get a fast operations summary",
+      icon: ChatCircleDots,
+      accent: "bg-violet-500/15 border-violet-500/40",
+    },
+    {
+      label: "Open Calendar",
+      href: "/calendar",
+      detail: "View today and projected blocks",
+      icon: CalendarBlank,
+      accent: "bg-fuchsia-500/15 border-fuchsia-500/40",
+    },
+  ];
+
+  const summaryStrip = [
+    {
+      label: "Overdue",
+      value: overdueTasks.length + overdueWorkOrders.length,
+      href: "/tasks?status=overdue",
+      tone: "critical" as const,
+    },
+    {
+      label: "Due Today",
+      value: dueTodayCount,
+      href: "/calendar",
+      tone: "warning" as const,
+    },
+    {
+      label: "Open Work Orders",
+      value: stats.open_work_orders,
+      href: "/work-orders",
+      tone: "neutral" as const,
+    },
+    {
+      label: "Waiting Review",
+      value: waitingRequests.length,
+      href: "/requests",
+      tone: "warning" as const,
+    },
+    {
+      label: "High Priority",
+      value: highPriorityCount,
+      href: "/tasks?priority=high",
+      tone: "critical" as const,
+    },
+    {
+      label: "Blocked",
+      value: blockedCount,
+      href: "/tasks?status=blocked",
+      tone: "critical" as const,
+    },
   ];
 
   const leadershipSnapshot = {
@@ -502,67 +751,23 @@ export default function DashboardPage() {
     },
   ];
 
-  const statCards = [
-    {
-      label: "Total Tasks",
-      value: stats.total_tasks,
-      meaning: "All tracked tasks across teams.",
-      icon: ClipboardText,
-      href: "/tasks",
-    },
-    {
-      label: "Open Work Orders",
-      value: stats.open_work_orders,
-      meaning: "Execution items still in progress.",
-      icon: Wrench,
-      href: "/work-orders",
-    },
-    {
-      label: "Low Stock Items",
-      value: stats.low_stock_items,
-      meaning: "Inventory requiring reorder review.",
-      icon: Warning,
-      href: "/inventory",
-    },
-    {
-      label: "Total Employees",
-      value: stats.total_employees,
-      meaning: "Active internal directory records.",
-      icon: Users,
-      href: "/employees",
-    },
-    {
-      label: "High Priority Tasks",
-      value: stats.high_priority_tasks,
-      meaning: "Priority work needing fast response.",
-      icon: Fire,
-      href: "/tasks?priority=high",
-    },
-    {
-      label: "Blocked Tasks",
-      value: stats.blocked_tasks,
-      meaning: "Tasks blocked by dependencies or issues.",
-      icon: Prohibit,
-      href: "/tasks?status=blocked",
-    },
-  ];
-
   return (
-    <div className="space-y-6 pb-6">
+    <div className="space-y-5 pb-6">
       <FadeContent
         as="section"
         blur={true}
         duration={700}
         delay={40}
-        className="rounded-2xl border border-borderSubtle bg-surface/85 p-5 shadow-soft"
+        className="rounded-2xl border border-slate-500/40 bg-gradient-to-r from-slate-100/95 via-slate-100/90 to-white/95 p-5 shadow-soft dark:from-slate-950/95 dark:via-slate-900/95 dark:to-slate-900/95"
       >
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-1.5">
-            <h1 className="text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
+            <h1 className="text-3xl font-semibold tracking-normal text-slate-900 dark:text-white md:text-4xl">
               <ShinyText>Dashboard</ShinyText>
             </h1>
-            <p className="max-w-3xl text-base text-textSecondary">
-              Your team&apos;s daily command center.
+            <p className="max-w-3xl text-base text-slate-700 dark:text-slate-300">
+              Internal service desk command center for execution, queue health,
+              and next actions.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -587,55 +792,327 @@ export default function DashboardPage() {
         <LoadingPanel label="Loading dashboard..." />
       ) : (
         <>
-          <FadeContent
-            as="section"
-            blur={true}
-            duration={700}
-            delay={80}
-            className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3"
-          >
-            {statCards.map((card) => {
-              const Icon = card.icon;
-              return (
-                <Link
-                  key={card.label}
-                  href={card.href}
-                  className="group rounded-2xl border border-borderSubtle bg-surface/90 p-4 shadow-soft transition-all hover:-translate-y-px hover:border-white/40 hover:bg-surface"
-                >
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">
-                      {card.label}
-                    </p>
-                    <Icon
-                      className="h-4.5 w-4.5 text-accent"
-                      weight="duotone"
-                    />
-                  </div>
-                  <p className="mt-2 text-3xl font-semibold text-textPrimary">
-                    {card.value.toLocaleString()}
-                  </p>
-                  <p className="mt-1 text-xs text-textSecondary">
-                    {card.meaning}
-                  </p>
-                </Link>
-              );
-            })}
-          </FadeContent>
-
-          <div className="grid gap-4 xl:grid-cols-3">
-            <section className="space-y-4 xl:col-span-2">
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+            <aside className="order-1 space-y-4 lg:order-2">
               <FadeContent
                 as="article"
                 blur={true}
                 duration={700}
                 delay={110}
-                className="rounded-2xl border border-borderSubtle bg-surface/90 p-5 shadow-soft"
+                className="rounded-2xl border border-slate-400/40 bg-white/95 p-5 shadow-soft dark:border-slate-600/45 dark:bg-slate-900/95"
               >
-                <h2 className="text-lg font-semibold text-textPrimary">
-                  Needs Attention
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                  Quick Actions
                 </h2>
-                <p className="mt-1 text-sm text-textSecondary">
-                  Items leadership should review today.
+                <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
+                  Start core service desk workflows.
+                </p>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+                  {quickActions.map((action) => {
+                    const Icon = action.icon;
+                    return (
+                      <Link
+                        key={action.label}
+                        href={action.href}
+                        className={`group rounded-xl border p-4 transition hover:-translate-y-px hover:shadow-md ${action.accent}`}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                              {action.label}
+                            </p>
+                            <p className="mt-1 text-xs text-slate-700 dark:text-slate-300">
+                              {action.detail}
+                            </p>
+                          </div>
+                          <Icon
+                            className="h-5 w-5 text-slate-700 dark:text-slate-200"
+                            weight="duotone"
+                          />
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </FadeContent>
+
+              <FadeContent
+                as="article"
+                blur={true}
+                duration={700}
+                delay={140}
+                className="rounded-2xl border border-slate-400/40 bg-white/95 p-5 shadow-soft dark:border-slate-600/45 dark:bg-slate-900/95"
+              >
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                  Workspace Notes / Announcements
+                </h2>
+                <div className="mt-3 space-y-2">
+                  {needsAttentionQueue.length > 0 ? (
+                    <ul className="space-y-2">
+                      <li className="rounded-lg border border-red-500/35 bg-red-500/10 px-3 py-2 text-sm text-red-800 dark:text-red-200">
+                        {overdueTasks.length + overdueWorkOrders.length} overdue
+                        items require immediate owner follow-up.
+                      </li>
+                      <li className="rounded-lg border border-amber-500/35 bg-amber-500/10 px-3 py-2 text-sm text-amber-900 dark:text-amber-200">
+                        {waitingRequests.length} requests are waiting for review
+                        decisions.
+                      </li>
+                      <li className="rounded-lg border border-blue-500/30 bg-blue-500/10 px-3 py-2 text-sm text-blue-900 dark:text-blue-200">
+                        Queue refreshed {formatDateTime(lastUpdatedAt)}.
+                      </li>
+                    </ul>
+                  ) : (
+                    <EmptyState message="No active announcements from current dashboard data." />
+                  )}
+                </div>
+              </FadeContent>
+
+              <FadeContent
+                as="article"
+                blur={true}
+                duration={700}
+                delay={170}
+                className="rounded-2xl border border-slate-400/40 bg-white/95 p-5 shadow-soft dark:border-slate-600/45 dark:bg-slate-900/95"
+              >
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                  Reports Snapshot
+                </h2>
+                <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
+                  Live operational summaries from task, request, and inventory
+                  feeds.
+                </p>
+                <div className="mt-4 space-y-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      Work by Status
+                    </p>
+                    <div className="mt-2 space-y-2">
+                      {taskStatusSummary.map((item) => (
+                        <BarMetric
+                          key={item.key}
+                          label={item.label}
+                          value={item.count}
+                          total={Math.max(tasks.length, 1)}
+                          tone={
+                            item.key === "blocked"
+                              ? "critical"
+                              : item.key === "waiting"
+                                ? "warning"
+                                : "neutral"
+                          }
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      Requests by Priority
+                    </p>
+                    {requestPrioritySummary.length === 0 ? (
+                      <EmptyState message="No request priority data available." />
+                    ) : (
+                      <div className="mt-2 space-y-2">
+                        {requestPrioritySummary.map((item) => (
+                          <BarMetric
+                            key={item.key}
+                            label={item.label}
+                            value={item.count}
+                            total={Math.max(requests.length, 1)}
+                            tone={
+                              item.key === "urgent" || item.key === "high"
+                                ? "warning"
+                                : "neutral"
+                            }
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                      Inventory Risk Summary
+                    </p>
+                    {inventoryRisk.total === 0 ? (
+                      <EmptyState message="No inventory records available." />
+                    ) : (
+                      <div className="mt-2 space-y-2">
+                        <BarMetric
+                          label="Critical"
+                          value={inventoryRisk.critical}
+                          total={inventoryRisk.total}
+                          tone="critical"
+                        />
+                        <BarMetric
+                          label="Warning"
+                          value={Math.max(0, inventoryRisk.warning)}
+                          total={inventoryRisk.total}
+                          tone="warning"
+                        />
+                        <BarMetric
+                          label="Healthy"
+                          value={inventoryRisk.healthy}
+                          total={inventoryRisk.total}
+                          tone="success"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <SnapshotMetric
+                      label="Completed this week"
+                      value={leadershipSnapshot.completedThisWeek}
+                    />
+                    <SnapshotMetric
+                      label="Blocked items"
+                      value={leadershipSnapshot.blockedItems}
+                    />
+                    <SnapshotMetric
+                      label="Open requests"
+                      value={leadershipSnapshot.openRequests}
+                    />
+                    <SnapshotMetric
+                      label="Low stock"
+                      value={leadershipSnapshot.lowStock}
+                    />
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Link
+                    href="/reports"
+                    className="inline-flex rounded-lg border border-slate-300 bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-900 transition hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+                  >
+                    Open Reports
+                  </Link>
+                  {reportsExportReady ? (
+                    <a
+                      href="/api/reports/export"
+                      className="inline-flex rounded-lg border border-slate-300 bg-slate-100 px-3 py-1.5 text-xs font-semibold text-slate-900 transition hover:bg-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+                    >
+                      Export CSV
+                    </a>
+                  ) : null}
+                </div>
+              </FadeContent>
+
+              <FadeContent
+                as="article"
+                blur={true}
+                duration={700}
+                delay={200}
+                className="rounded-2xl border border-slate-400/40 bg-white/95 p-5 shadow-soft dark:border-slate-600/45 dark:bg-slate-900/95"
+              >
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                  System Health / Integration Status
+                </h2>
+                <div className="mt-3 grid gap-2">
+                  {statusPills.map((pill) => {
+                    if (!pill.visible) return null;
+                    return (
+                      <StatusPill
+                        key={pill.label}
+                        label={pill.label}
+                        value={pill.value}
+                        tone={pill.tone}
+                      />
+                    );
+                  })}
+                </div>
+              </FadeContent>
+            </aside>
+
+            <section className="order-2 space-y-4 lg:order-1">
+              <FadeContent
+                as="article"
+                blur={true}
+                duration={700}
+                delay={80}
+                className="overflow-x-auto"
+              >
+                <div className="grid min-w-[880px] grid-cols-6 gap-3">
+                  {summaryStrip.map((item) => (
+                    <SummaryStripItem
+                      key={item.label}
+                      label={item.label}
+                      value={item.value}
+                      href={item.href}
+                      tone={item.tone}
+                    />
+                  ))}
+                </div>
+              </FadeContent>
+
+              <FadeContent
+                as="article"
+                blur={true}
+                duration={700}
+                delay={110}
+                className="rounded-2xl border border-red-500/35 bg-gradient-to-br from-red-50/90 via-amber-50/80 to-white p-5 shadow-soft dark:from-red-950/25 dark:via-amber-950/20 dark:to-slate-900"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                    Needs Attention
+                  </h2>
+                  <span className="inline-flex items-center gap-1 rounded-full border border-red-500/35 bg-red-500/15 px-2.5 py-1 text-xs font-semibold text-red-800 dark:text-red-200">
+                    Immediate Queue
+                  </span>
+                </div>
+                <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
+                  Urgent, blocked, and waiting items sorted by operational risk.
+                </p>
+
+                {needsAttentionQueue.length === 0 ? (
+                  <EmptyState message="No urgent queue items from tasks, requests, work orders, or inventory." />
+                ) : (
+                  <ul className="mt-4 space-y-2">
+                    {needsAttentionQueue.map((item) => (
+                      <li
+                        key={item.key}
+                        className="rounded-xl border border-slate-300/80 bg-white/90 p-3 dark:border-slate-700/70 dark:bg-slate-950/50"
+                      >
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Badge
+                            label={item.signal}
+                            tone={item.severity === 1 ? "critical" : "warning"}
+                          />
+                          <Badge label={item.source} tone="neutral" />
+                          <Badge
+                            label={item.priority}
+                            tone={item.severity === 1 ? "critical" : "warning"}
+                          />
+                          <span className="text-xs text-slate-600 dark:text-slate-400">
+                            {formatDate(item.time)}
+                          </span>
+                        </div>
+                        <Link
+                          href={item.href}
+                          className="mt-2 block text-sm font-semibold text-slate-900 hover:text-accent dark:text-slate-100"
+                        >
+                          {item.title}
+                        </Link>
+                        <p className="mt-0.5 text-xs text-slate-700 dark:text-slate-400">
+                          {item.status}
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </FadeContent>
+
+              <FadeContent
+                as="article"
+                blur={true}
+                duration={700}
+                delay={140}
+                className="rounded-2xl border border-slate-400/40 bg-white/95 p-5 shadow-soft dark:border-slate-600/45 dark:bg-slate-900/95"
+              >
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
+                  Queue Breakdown
+                </h2>
+                <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
+                  Category-level command view for current pressure points.
                 </p>
 
                 <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
@@ -700,13 +1177,13 @@ export default function DashboardPage() {
                 as="article"
                 blur={true}
                 duration={700}
-                delay={140}
-                className="rounded-2xl border border-borderSubtle bg-surface/90 p-5 shadow-soft"
+                delay={170}
+                className="rounded-2xl border border-slate-400/40 bg-white/95 p-5 shadow-soft dark:border-slate-600/45 dark:bg-slate-900/95"
               >
-                <h2 className="text-lg font-semibold text-textPrimary">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                   Priority Watchlist
                 </h2>
-                <p className="mt-1 text-sm text-textSecondary">
+                <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
                   Critical queue across tasks, work orders, requests, and
                   inventory.
                 </p>
@@ -716,7 +1193,7 @@ export default function DashboardPage() {
                 ) : (
                   <div className="mt-4 overflow-x-auto">
                     <table className="min-w-full text-left text-sm">
-                      <thead className="text-xs uppercase tracking-wide text-textMuted">
+                      <thead className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
                         <tr>
                           <th className="px-2 py-2 font-semibold">Title</th>
                           <th className="px-2 py-2 font-semibold">Owner</th>
@@ -726,21 +1203,24 @@ export default function DashboardPage() {
                           <th className="px-2 py-2 font-semibold">Source</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-borderSubtle">
+                      <tbody className="divide-y divide-slate-300/70 dark:divide-slate-700/70">
                         {priorityWatchlist.map((item) => (
-                          <tr key={item.key} className="hover:bg-white/5">
+                          <tr
+                            key={item.key}
+                            className="hover:bg-slate-100/70 dark:hover:bg-slate-800/40"
+                          >
                             <td className="px-2 py-2">
                               <Link
                                 href={item.href}
-                                className="font-medium text-textPrimary hover:text-accent"
+                                className="font-medium text-slate-900 hover:text-accent dark:text-slate-100"
                               >
                                 {item.title}
                               </Link>
                             </td>
-                            <td className="px-2 py-2 text-textSecondary">
+                            <td className="px-2 py-2 text-slate-700 dark:text-slate-300">
                               {item.owner}
                             </td>
-                            <td className="px-2 py-2 text-textSecondary">
+                            <td className="px-2 py-2 text-slate-700 dark:text-slate-300">
                               {formatDate(item.dueDate)}
                             </td>
                             <td className="px-2 py-2">
@@ -755,7 +1235,7 @@ export default function DashboardPage() {
                                 tone="warning"
                               />
                             </td>
-                            <td className="px-2 py-2 text-textSecondary">
+                            <td className="px-2 py-2 text-slate-700 dark:text-slate-300">
                               {item.source}
                             </td>
                           </tr>
@@ -770,13 +1250,13 @@ export default function DashboardPage() {
                 as="article"
                 blur={true}
                 duration={700}
-                delay={170}
-                className="rounded-2xl border border-borderSubtle bg-surface/90 p-5 shadow-soft"
+                delay={200}
+                className="rounded-2xl border border-slate-400/40 bg-white/95 p-5 shadow-soft dark:border-slate-600/45 dark:bg-slate-900/95"
               >
-                <h2 className="text-lg font-semibold text-textPrimary">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                   Today&apos;s Work
                 </h2>
-                <p className="mt-1 text-sm text-textSecondary">
+                <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
                   Due today, scheduled blocks, and assigned execution.
                 </p>
 
@@ -818,7 +1298,7 @@ export default function DashboardPage() {
                     <SimpleListCard
                       title="Assigned Work"
                       items={todayWork.assignedToMe.slice(0, 4).map((item) => ({
-                        key: `assigned-${"id" in item ? String(item.id) : Math.random()}`,
+                        key: `assigned-${item.id}`,
                         label: item.title,
                         href:
                           "owner_name" in item
@@ -834,13 +1314,13 @@ export default function DashboardPage() {
                 as="article"
                 blur={true}
                 duration={700}
-                delay={200}
-                className="rounded-2xl border border-borderSubtle bg-surface/90 p-5 shadow-soft"
+                delay={230}
+                className="rounded-2xl border border-slate-400/40 bg-white/95 p-5 shadow-soft dark:border-slate-600/45 dark:bg-slate-900/95"
               >
-                <h2 className="text-lg font-semibold text-textPrimary">
+                <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                   Recent Activity
                 </h2>
-                <p className="mt-1 text-sm text-textSecondary">
+                <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
                   Latest operational changes from internal audit logs.
                 </p>
 
@@ -853,12 +1333,12 @@ export default function DashboardPage() {
                     {activity.map((log) => (
                       <li
                         key={log.id}
-                        className="rounded-xl border border-borderSubtle bg-bgDark/20 px-3 py-2"
+                        className="rounded-xl border border-slate-300/70 bg-slate-100/60 px-3 py-2 dark:border-slate-700/70 dark:bg-slate-800/35"
                       >
-                        <p className="text-sm font-medium text-textPrimary">
+                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
                           {toActivityLabel(log.action)}
                         </p>
-                        <p className="mt-0.5 text-xs text-textSecondary">
+                        <p className="mt-0.5 text-xs text-slate-700 dark:text-slate-300">
                           {log.module}{" "}
                           {log.entity_type ? `- ${log.entity_type}` : ""}
                           {log.entity_id_text
@@ -872,104 +1352,6 @@ export default function DashboardPage() {
                 )}
               </FadeContent>
             </section>
-
-            <aside className="space-y-4">
-              <FadeContent
-                as="article"
-                blur={true}
-                duration={700}
-                delay={110}
-                className="rounded-2xl border border-borderSubtle bg-surface/90 p-5 shadow-soft"
-              >
-                <h2 className="text-lg font-semibold text-textPrimary">
-                  Quick Actions
-                </h2>
-                <p className="mt-1 text-sm text-textSecondary">
-                  Jump directly into daily execution flows.
-                </p>
-                <div className="mt-4 grid gap-2">
-                  {quickActions.map((action) => (
-                    <Link
-                      key={action.label}
-                      href={action.href}
-                      className="inline-flex items-center justify-between rounded-lg border border-borderSubtle bg-bgDark/25 px-3 py-2 text-sm font-medium text-textPrimary transition hover:border-white/35 hover:bg-bgDark/40"
-                    >
-                      {action.label}
-                      <span className="text-xs text-textMuted">Open</span>
-                    </Link>
-                  ))}
-                </div>
-              </FadeContent>
-
-              <FadeContent
-                as="article"
-                blur={true}
-                duration={700}
-                delay={140}
-                className="rounded-2xl border border-borderSubtle bg-surface/90 p-5 shadow-soft"
-              >
-                <h2 className="text-lg font-semibold text-textPrimary">
-                  Workspace Notes
-                </h2>
-                <p className="mt-2 text-sm text-textSecondary">
-                  Current polish focus: Outlook sync reliability, Forms to
-                  Requests workflow stability, and admin control hardening.
-                </p>
-                <p className="mt-2 text-sm text-textSecondary">
-                  In progress: dashboard and mobile command-center polish for
-                  demo readiness.
-                </p>
-              </FadeContent>
-
-              <FadeContent
-                as="article"
-                blur={true}
-                duration={700}
-                delay={170}
-                className="rounded-2xl border border-borderSubtle bg-surface/90 p-5 shadow-soft"
-              >
-                <h2 className="text-lg font-semibold text-textPrimary">
-                  Reports Snapshot
-                </h2>
-                <p className="mt-1 text-sm text-textSecondary">
-                  Leadership preview from current operational data.
-                </p>
-                <div className="mt-4 grid grid-cols-2 gap-2">
-                  <SnapshotMetric
-                    label="Completed this week"
-                    value={leadershipSnapshot.completedThisWeek}
-                  />
-                  <SnapshotMetric
-                    label="Blocked items"
-                    value={leadershipSnapshot.blockedItems}
-                  />
-                  <SnapshotMetric
-                    label="Open requests"
-                    value={leadershipSnapshot.openRequests}
-                  />
-                  <SnapshotMetric
-                    label="Low stock"
-                    value={leadershipSnapshot.lowStock}
-                  />
-                </div>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Link
-                    href="/reports"
-                    className="inline-flex rounded-lg border border-borderSubtle bg-bgDark/25 px-3 py-1.5 text-xs font-semibold text-textPrimary transition hover:bg-bgDark/40"
-                  >
-                    Open Reports
-                  </Link>
-                  {reportsExportReady ? (
-                    <a
-                      href="/api/reports/export"
-                      className="inline-flex rounded-lg border border-borderSubtle bg-bgDark/25 px-3 py-1.5 text-xs font-semibold text-textPrimary transition hover:bg-bgDark/40"
-                    >
-                      Export CSV
-                    </a>
-                  ) : null}
-                </div>
-              </FadeContent>
-            </aside>
           </div>
         </>
       )}
@@ -987,20 +1369,24 @@ function AttentionBucket({
   items: Array<{ key: string; label: string; href: string }>;
 }) {
   return (
-    <article className="rounded-xl border border-borderSubtle bg-bgDark/20 p-3">
+    <article className="rounded-xl border border-slate-300/80 bg-slate-50/90 p-3 dark:border-slate-700/70 dark:bg-slate-900/55">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-semibold text-textPrimary">{title}</p>
+        <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+          {title}
+        </p>
         <Badge label={String(count)} tone={count > 0 ? "warning" : "neutral"} />
       </div>
       <div className="mt-2 space-y-1.5">
         {items.length === 0 ? (
-          <p className="text-xs text-textMuted">No items.</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            No items.
+          </p>
         ) : (
           items.map((item) => (
             <Link
               key={item.key}
               href={item.href}
-              className="block truncate text-xs text-textSecondary transition hover:text-textPrimary"
+              className="block truncate text-xs text-slate-700 transition hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100"
             >
               {item.label}
             </Link>
@@ -1019,17 +1405,21 @@ function SimpleListCard({
   items: Array<{ key: string; label: string; href: string }>;
 }) {
   return (
-    <article className="rounded-xl border border-borderSubtle bg-bgDark/20 p-3">
-      <p className="text-sm font-semibold text-textPrimary">{title}</p>
+    <article className="rounded-xl border border-slate-300/80 bg-slate-50/90 p-3 dark:border-slate-700/70 dark:bg-slate-900/55">
+      <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+        {title}
+      </p>
       <div className="mt-2 space-y-1.5">
         {items.length === 0 ? (
-          <p className="text-xs text-textMuted">No items.</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            No items.
+          </p>
         ) : (
           items.map((item) => (
             <Link
               key={item.key}
               href={item.href}
-              className="block truncate text-sm text-textSecondary transition hover:text-textPrimary"
+              className="block truncate text-sm text-slate-700 transition hover:text-slate-900 dark:text-slate-300 dark:hover:text-slate-100"
             >
               {item.label}
             </Link>
@@ -1042,11 +1432,85 @@ function SimpleListCard({
 
 function SnapshotMetric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-lg border border-borderSubtle bg-bgDark/20 px-3 py-2">
-      <p className="text-[11px] uppercase tracking-wide text-textMuted">
+    <div className="rounded-lg border border-slate-300/80 bg-slate-100/80 px-3 py-2 dark:border-slate-700/70 dark:bg-slate-800/35">
+      <p className="text-[11px] uppercase tracking-wide text-slate-500 dark:text-slate-400">
         {label}
       </p>
-      <p className="mt-1 text-lg font-semibold text-textPrimary">{value}</p>
+      <p className="mt-1 text-lg font-semibold text-slate-900 dark:text-slate-100">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function SummaryStripItem({
+  label,
+  value,
+  href,
+  tone,
+}: {
+  label: string;
+  value: number;
+  href: string;
+  tone: "critical" | "warning" | "neutral";
+}) {
+  const toneStyles: Record<typeof tone, string> = {
+    critical:
+      "border-red-500/45 bg-red-500/10 hover:bg-red-500/15 text-red-900 dark:text-red-100",
+    warning:
+      "border-amber-500/45 bg-amber-500/10 hover:bg-amber-500/15 text-amber-900 dark:text-amber-100",
+    neutral:
+      "border-slate-400/45 bg-slate-100/85 hover:bg-slate-200/85 text-slate-900 dark:border-slate-600/45 dark:bg-slate-800/70 dark:text-slate-100 dark:hover:bg-slate-700/70",
+  };
+
+  return (
+    <Link
+      href={href}
+      className={`rounded-xl border px-4 py-3 transition ${toneStyles[tone]}`}
+    >
+      <p className="text-[11px] font-semibold uppercase tracking-wide opacity-85">
+        {label}
+      </p>
+      <p className="mt-1 text-3xl font-bold leading-none">{value}</p>
+    </Link>
+  );
+}
+
+function BarMetric({
+  label,
+  value,
+  total,
+  tone,
+}: {
+  label: string;
+  value: number;
+  total: number;
+  tone: "success" | "warning" | "critical" | "neutral";
+}) {
+  const pct = Math.min(100, Math.round((value / Math.max(total, 1)) * 100));
+  const trackStyles: Record<typeof tone, string> = {
+    success: "bg-emerald-500",
+    warning: "bg-amber-500",
+    critical: "bg-red-500",
+    neutral: "bg-slate-500",
+  };
+
+  return (
+    <div>
+      <div className="mb-1 flex items-center justify-between text-xs">
+        <span className="font-medium text-slate-700 dark:text-slate-300">
+          {label}
+        </span>
+        <span className="font-semibold text-slate-900 dark:text-slate-100">
+          {value} ({pct}%)
+        </span>
+      </div>
+      <div className="h-2 rounded-full bg-slate-200 dark:bg-slate-800">
+        <div
+          className={`h-2 rounded-full transition-all ${trackStyles[tone]}`}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
     </div>
   );
 }
@@ -1062,10 +1526,11 @@ function StatusPill({
 }) {
   const tones: Record<typeof tone, string> = {
     success:
-      "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+      "border-emerald-500/45 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200",
     warning:
-      "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
-    neutral: "border-borderSubtle bg-bgDark/20 text-textSecondary",
+      "border-amber-500/45 bg-amber-500/15 text-amber-900 dark:text-amber-200",
+    neutral:
+      "border-slate-400/60 bg-slate-100/85 text-slate-700 dark:border-slate-600/60 dark:bg-slate-800/60 dark:text-slate-300",
   };
 
   return (
@@ -1083,14 +1548,16 @@ function Badge({
   tone,
 }: {
   label: string;
-  tone: "success" | "warning" | "neutral";
+  tone: "success" | "warning" | "critical" | "neutral";
 }) {
   const tones: Record<typeof tone, string> = {
     success:
-      "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300",
+      "border-emerald-500/40 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200",
     warning:
-      "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300",
-    neutral: "border-borderSubtle bg-bgDark/20 text-textSecondary",
+      "border-amber-500/40 bg-amber-500/15 text-amber-900 dark:text-amber-200",
+    critical: "border-red-500/40 bg-red-500/15 text-red-800 dark:text-red-200",
+    neutral:
+      "border-slate-400/60 bg-slate-100/85 text-slate-700 dark:border-slate-600/60 dark:bg-slate-800/60 dark:text-slate-300",
   };
   return (
     <span
@@ -1103,7 +1570,7 @@ function Badge({
 
 function EmptyState({ message }: { message: string }) {
   return (
-    <p className="mt-3 rounded-xl border border-dashed border-borderSubtle bg-bgDark/15 px-3 py-4 text-sm text-textSecondary">
+    <p className="mt-3 rounded-xl border border-dashed border-slate-300 bg-slate-100/70 px-3 py-4 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-800/35 dark:text-slate-300">
       {message}
     </p>
   );
