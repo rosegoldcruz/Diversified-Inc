@@ -732,9 +732,12 @@ export default function DashboardPage() {
     },
     {
       label: "Automations",
-      value: automationHealth
-        ? automationHealth.replaceAll("_", " ")
-        : "Unavailable",
+      value:
+        automationHealth === "healthy"
+          ? "Healthy"
+          : automationHealth === "degraded"
+            ? "Degraded"
+            : "Automation hooks pending",
       tone:
         automationHealth === "healthy"
           ? "success"
@@ -766,8 +769,7 @@ export default function DashboardPage() {
               <ShinyText>Dashboard</ShinyText>
             </h1>
             <p className="max-w-3xl text-base text-slate-700 dark:text-slate-300">
-              Internal service desk command center for execution, queue health,
-              and next actions.
+              Daily command center for work, priorities, and team visibility.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -799,7 +801,7 @@ export default function DashboardPage() {
                 blur={true}
                 duration={700}
                 delay={110}
-                className="rounded-2xl border border-slate-400/40 bg-white/95 p-5 shadow-soft dark:border-slate-600/45 dark:bg-slate-900/95"
+                className="rounded-2xl border border-slate-300/80 bg-white p-5 shadow-soft dark:border-slate-500/75 dark:bg-slate-900/85"
               >
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                   Quick Actions
@@ -814,19 +816,19 @@ export default function DashboardPage() {
                       <Link
                         key={action.label}
                         href={action.href}
-                        className={`group rounded-xl border p-4 transition hover:-translate-y-px hover:shadow-md ${action.accent}`}
+                        className={`group rounded-xl border p-5 transition hover:-translate-y-px hover:shadow-md ${action.accent}`}
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div>
-                            <p className="text-base font-semibold text-slate-900 dark:text-slate-100">
+                            <p className="text-[1.04rem] font-semibold leading-tight text-slate-900 dark:text-slate-100">
                               {action.label}
                             </p>
-                            <p className="mt-1 text-xs text-slate-700 dark:text-slate-300">
+                            <p className="mt-1.5 text-sm text-slate-700 dark:text-slate-300">
                               {action.detail}
                             </p>
                           </div>
                           <Icon
-                            className="h-5 w-5 text-slate-700 dark:text-slate-200"
+                            className="h-6 w-6 text-slate-700 dark:text-slate-200"
                             weight="duotone"
                           />
                         </div>
@@ -841,7 +843,7 @@ export default function DashboardPage() {
                 blur={true}
                 duration={700}
                 delay={140}
-                className="rounded-2xl border border-slate-400/40 bg-white/95 p-5 shadow-soft dark:border-slate-600/45 dark:bg-slate-900/95"
+                className="rounded-2xl border border-slate-300/80 bg-white p-5 shadow-soft dark:border-slate-500/75 dark:bg-slate-900/85"
               >
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                   Workspace Notes / Announcements
@@ -872,7 +874,7 @@ export default function DashboardPage() {
                 blur={true}
                 duration={700}
                 delay={170}
-                className="rounded-2xl border border-slate-400/40 bg-white/95 p-5 shadow-soft dark:border-slate-600/45 dark:bg-slate-900/95"
+                className="rounded-2xl border border-slate-300/80 bg-white p-5 shadow-soft dark:border-slate-500/75 dark:bg-slate-900/85"
               >
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                   Reports Snapshot
@@ -1002,7 +1004,7 @@ export default function DashboardPage() {
                 blur={true}
                 duration={700}
                 delay={200}
-                className="rounded-2xl border border-slate-400/40 bg-white/95 p-5 shadow-soft dark:border-slate-600/45 dark:bg-slate-900/95"
+                className="rounded-2xl border border-slate-300/80 bg-white p-5 shadow-soft dark:border-slate-500/75 dark:bg-slate-900/85"
               >
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                   System Health / Integration Status
@@ -1029,9 +1031,9 @@ export default function DashboardPage() {
                 blur={true}
                 duration={700}
                 delay={80}
-                className="overflow-x-auto"
+                className=""
               >
-                <div className="grid min-w-[880px] grid-cols-6 gap-3">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
                   {summaryStrip.map((item) => (
                     <SummaryStripItem
                       key={item.label}
@@ -1066,13 +1068,13 @@ export default function DashboardPage() {
                 {needsAttentionQueue.length === 0 ? (
                   <EmptyState message="No urgent queue items from tasks, requests, work orders, or inventory." />
                 ) : (
-                  <ul className="mt-4 space-y-2">
+                  <ul className="mt-4 space-y-3">
                     {needsAttentionQueue.map((item) => (
                       <li
                         key={item.key}
-                        className="rounded-xl border border-slate-300/80 bg-white/90 p-3 dark:border-slate-700/70 dark:bg-slate-950/50"
+                        className="rounded-xl border border-slate-300 bg-white px-3.5 py-3 dark:border-slate-600/70 dark:bg-slate-900/65"
                       >
-                        <div className="flex flex-wrap items-center gap-2">
+                        <div className="flex flex-wrap items-center gap-2.5">
                           <Badge
                             label={item.signal}
                             tone={item.severity === 1 ? "critical" : "warning"}
@@ -1088,11 +1090,11 @@ export default function DashboardPage() {
                         </div>
                         <Link
                           href={item.href}
-                          className="mt-2 block text-sm font-semibold text-slate-900 hover:text-accent dark:text-slate-100"
+                          className="mt-2.5 block text-sm font-semibold leading-snug text-slate-900 hover:text-accent dark:text-slate-100"
                         >
                           {item.title}
                         </Link>
-                        <p className="mt-0.5 text-xs text-slate-700 dark:text-slate-400">
+                        <p className="mt-1 text-xs text-slate-700 dark:text-slate-400">
                           {item.status}
                         </p>
                       </li>
@@ -1106,7 +1108,7 @@ export default function DashboardPage() {
                 blur={true}
                 duration={700}
                 delay={140}
-                className="rounded-2xl border border-slate-400/40 bg-white/95 p-5 shadow-soft dark:border-slate-600/45 dark:bg-slate-900/95"
+                className="rounded-2xl border border-slate-300/80 bg-white p-5 shadow-soft dark:border-slate-500/75 dark:bg-slate-900/85"
               >
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                   Queue Breakdown
@@ -1178,7 +1180,7 @@ export default function DashboardPage() {
                 blur={true}
                 duration={700}
                 delay={170}
-                className="rounded-2xl border border-slate-400/40 bg-white/95 p-5 shadow-soft dark:border-slate-600/45 dark:bg-slate-900/95"
+                className="rounded-2xl border border-slate-300/80 bg-white p-5 shadow-soft dark:border-slate-500/75 dark:bg-slate-900/85"
               >
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                   Priority Watchlist
@@ -1251,7 +1253,7 @@ export default function DashboardPage() {
                 blur={true}
                 duration={700}
                 delay={200}
-                className="rounded-2xl border border-slate-400/40 bg-white/95 p-5 shadow-soft dark:border-slate-600/45 dark:bg-slate-900/95"
+                className="rounded-2xl border border-slate-300/80 bg-white p-5 shadow-soft dark:border-slate-500/75 dark:bg-slate-900/85"
               >
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                   Today&apos;s Work
@@ -1315,7 +1317,7 @@ export default function DashboardPage() {
                 blur={true}
                 duration={700}
                 delay={230}
-                className="rounded-2xl border border-slate-400/40 bg-white/95 p-5 shadow-soft dark:border-slate-600/45 dark:bg-slate-900/95"
+                className="rounded-2xl border border-slate-300/80 bg-white p-5 shadow-soft dark:border-slate-500/75 dark:bg-slate-900/85"
               >
                 <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">
                   Recent Activity
