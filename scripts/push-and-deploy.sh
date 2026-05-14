@@ -240,8 +240,8 @@ quick_health_ok() {
 
   while IFS= read -r css_path; do
     [[ -z "$css_path" ]] && continue
-    local_css_status="$(curl -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:3000${css_path}" || true)"
-    domain_css_status="$(curl -sS -o /dev/null -w '%{http_code}' "${APP_PUBLIC_URL}${css_path}" || true)"
+    local_css_status="$(curl -L -sS -o /dev/null -w '%{http_code}' "http://127.0.0.1:3000${css_path}" || true)"
+    domain_css_status="$(curl -L -sS -o /dev/null -w '%{http_code}' "${APP_PUBLIC_URL}${css_path}" || true)"
     if [[ "$local_css_status" == "200" && "$domain_css_status" == "200" ]]; then
       found_working_css=1
       break

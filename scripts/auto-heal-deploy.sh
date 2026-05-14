@@ -74,6 +74,10 @@ http_status() {
   curl -sS -o /dev/null -w '%{http_code}' "$1"
 }
 
+http_status_follow() {
+  curl -L -sS -o /dev/null -w '%{http_code}' "$1"
+}
+
 dashboard_status_ok() {
   local status="$1"
   [[ "$status" == "200" || "$status" == "307" ]]
@@ -100,8 +104,8 @@ health_check() {
 
   while IFS= read -r css_path; do
     [[ -z "$css_path" ]] && continue
-    local_css_status="$(http_status "http://127.0.0.1:3000${css_path}" || true)"
-    domain_css_status="$(http_status "${APP_PUBLIC_URL}${css_path}" || true)"
+    local_css_status="$(http_status_follow "http://127.0.0.1:3000${css_path}" || true)"
+    domain_css_status="$(http_status_follow "${APP_PUBLIC_URL}${css_path}" || true)"
     if [[ "$local_css_status" == "200" && "$domain_css_status" == "200" ]]; then
       found_working_css=1
       break
