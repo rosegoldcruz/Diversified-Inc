@@ -1,6 +1,6 @@
 "use client";
 
-import type { ComponentType } from "react";
+import { useEffect, useState, type ComponentType } from "react";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
@@ -22,6 +22,7 @@ import {
   Robot,
   Lightning,
   GearSix,
+  SignOut,
   X,
   CaretLeft,
   CaretRight,
@@ -95,6 +96,13 @@ type SidebarProps = {
   onDesktopToggle?: () => void;
 };
 
+type SessionUser = {
+  id: number;
+  email: string;
+  name: string;
+  role: string;
+};
+
 export function Sidebar({
   mobileOpen = false,
   onClose,
@@ -102,6 +110,25 @@ export function Sidebar({
   onDesktopToggle,
 }: SidebarProps) {
   const pathname = usePathname() ?? "/";
+  const [user, setUser] = useState<SessionUser | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/auth/me", { cache: "no-store" })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (!cancelled && data?.user) setUser(data.user as SessionUser);
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [pathname]);
+
+  function signOut() {
+    window.location.assign("/api/auth/logout");
+  }
 
   return (
     <>
@@ -203,6 +230,20 @@ export function Sidebar({
             desktopCollapsed ? "lg:hidden" : "",
           ].join(" ")}
         >
+          {user ? (
+            <div className="rounded-xl border border-white/20 bg-white/40 px-3 py-2 text-xs dark:border-white/10 dark:bg-white/5">
+              <div className="font-semibold text-textPrimary">{user.name}</div>
+              <div className="text-textMuted">{user.role}</div>
+              <button
+                type="button"
+                onClick={signOut}
+                className="mt-2 inline-flex h-8 w-full items-center justify-center gap-1 rounded-lg border border-white/30 bg-white/50 font-semibold text-textPrimary transition hover:bg-white/70 dark:border-white/10 dark:bg-white/10 dark:hover:bg-white/20"
+              >
+                <SignOut className="h-3.5 w-3.5" weight="bold" />
+                Logout
+              </button>
+            </div>
+          ) : null}
           <GlassIcons
             items={[
               { label: "Tasks", href: "/tasks", icon: CheckSquare },

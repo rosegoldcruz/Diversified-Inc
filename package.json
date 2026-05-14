@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "seed:demo-user": "tsx scripts/seed-demo-user.ts",
     "auto-heal": "bash ./scripts/auto-heal-deploy.sh",
     "install-auto-heal": "bash ./scripts/install-auto-heal-cron.sh"
   },
@@ -41,6 +42,7 @@
     "eslint-config-next": "^14.1.0",
     "postcss": "^8.4.0",
     "tailwindcss": "^3.4.0",
+    "tsx": "^4.22.0",
     "typescript": "^5.3.0"
   }
 }

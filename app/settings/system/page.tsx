@@ -115,7 +115,11 @@ function toReadableDate(value?: string) {
 
 function statusBadge(status: string) {
   const normalized = status.toLowerCase();
-  if (normalized === "healthy" || normalized === "configured")
+  if (
+    normalized === "healthy" ||
+    normalized === "configured" ||
+    normalized === "connected"
+  )
     return "success" as const;
   if (normalized === "partial" || normalized === "degraded")
     return "warning" as const;

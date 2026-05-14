@@ -11,7 +11,7 @@ import { verifySessionEdge } from "@/lib/auth-edge";
 
 const PUBLIC_PATHS: RegExp[] = [
   /^\/login(?:\/.*)?$/,
-  /^\/api\/auth\/(login|logout|me|callback)$/,
+  /^\/api\/auth\/(login|logout|me|callback|local-login)$/,
   /^\/api\/health$/,
   /^\/manifest\.webmanifest$/,
   /^\/favicon\.ico$/,

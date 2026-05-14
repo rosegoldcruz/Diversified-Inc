@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
+import { getMicrosoftWorkspaceStatus } from "@/lib/microsoft-calendar";
 import { HttpError, requireRole } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -10,6 +11,7 @@ type IntegrationStatus = {
   status:
     | "Healthy"
     | "Configured"
+    | "Connected"
     | "Missing"
     | "Partial"
     | "Not Configured"
@@ -29,6 +31,7 @@ export async function GET() {
   const checkedAt = new Date().toISOString();
   try {
     requireRole(["Admin", "Leadership"]);
+    const microsoftStatus = await getMicrosoftWorkspaceStatus();
     let dbHealthy = false;
     try {
       await query("SELECT 1");
@@ -103,11 +106,15 @@ export async function GET() {
       {
         key: "microsoft_365",
         name: "Outlook / Microsoft 365",
-        status: "Not Configured",
-        configured: false,
+        status: microsoftStatus.status,
+        configured: microsoftStatus.configured,
         purpose: "Calendar and mailbox sync",
         lastChecked: checkedAt,
-        notes: "No Microsoft 365 sync is configured in this repository.",
+        notes: !microsoftStatus.configured
+          ? `Missing env: ${microsoftStatus.missingEnv.join(", ")}`
+          : microsoftStatus.connected
+            ? `${microsoftStatus.connectedCount} connected account(s). Last sync: ${microsoftStatus.latestSyncAt ?? "No sync yet"}.`
+            : "Microsoft 365 is configured, but no user has connected yet.",
         clientProductionVisibility: "internal",
       },
       {
