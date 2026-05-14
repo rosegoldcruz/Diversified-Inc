@@ -27,7 +27,6 @@ import {
   CaretLeft,
   CaretRight,
 } from "phosphor-react";
-import { GlassIcons } from "@/components/ui/GlassIcons";
 import { SidebarItem } from "@/components/ui/SidebarItem";
 
 type IconWeight = "thin" | "light" | "regular" | "bold" | "fill" | "duotone";
@@ -234,14 +233,9 @@ export function Sidebar({
         </nav>
 
         {/* Footer */}
-        <div
-          className={[
-            "space-y-3 border-t border-white/25 px-3 py-3 dark:border-white/10",
-            desktopCollapsed ? "lg:hidden" : "",
-          ].join(" ")}
-        >
+        <div className="space-y-3 border-t border-white/25 px-3 py-3 dark:border-white/10">
           {user ? (
-            <div className="rounded-xl border border-white/20 bg-white/40 px-3 py-2 text-xs dark:border-white/10 dark:bg-white/5">
+            <div className="rounded-xl border border-white/20 bg-white/40 px-3 py-2 text-xs dark:border-white/10 dark:bg-white/5 lg:hidden">
               <div className="font-semibold text-textPrimary">{user.name}</div>
               <div className="text-textMuted">{user.role}</div>
               <button
@@ -254,14 +248,9 @@ export function Sidebar({
               </button>
             </div>
           ) : null}
-          <GlassIcons
-            items={[
-              { label: "Tasks", href: "/tasks", icon: CheckSquare },
-              { label: "Reports", href: "/reports", icon: ChartBar },
-            ]}
-            className="grid-cols-2"
-          />
-          <div className="px-1">
+          <div
+            className={["px-1", desktopCollapsed ? "lg:hidden" : ""].join(" ")}
+          >
             <div className="text-[10px] font-medium text-textDisabled">
               Diversified OS
             </div>

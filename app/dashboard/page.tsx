@@ -755,13 +755,13 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="space-y-6 pb-6">
+    <div className="dashboard-shell w-full min-w-0 max-w-full space-y-5 pb-6 sm:space-y-6">
       <FadeContent
         as="section"
         blur={true}
         duration={700}
         delay={40}
-        className="rounded-2xl border border-slate-500/40 bg-gradient-to-r from-slate-100/95 via-slate-100/90 to-white/95 p-5 shadow-soft dark:from-slate-950/95 dark:via-slate-900/95 dark:to-slate-900/95"
+        className="panel w-full min-w-0 rounded-2xl border border-slate-500/40 bg-gradient-to-r from-slate-100/95 via-slate-100/90 to-white/95 p-4 shadow-soft dark:from-slate-950/95 dark:via-slate-900/95 dark:to-slate-900/95 sm:p-5"
       >
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div className="space-y-1.5">
@@ -794,7 +794,7 @@ export default function DashboardPage() {
         <LoadingPanel label="Loading dashboard..." />
       ) : (
         <>
-          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(360px,1.05fr)]">
+          <div className="grid w-full min-w-0 gap-5 xl:grid-cols-[minmax(0,1.65fr)_minmax(360px,1.05fr)]">
             <aside className="order-1 space-y-5 xl:order-2">
               <FadeContent
                 as="article"
@@ -1033,7 +1033,7 @@ export default function DashboardPage() {
                 delay={80}
                 className=""
               >
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-6">
+                <div className="grid w-full min-w-0 grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 xl:grid-cols-6">
                   {summaryStrip.map((item) => (
                     <SummaryStripItem
                       key={item.label}
@@ -1379,7 +1379,7 @@ function AttentionBucket({
   items: Array<{ key: string; label: string; href: string }>;
 }) {
   return (
-    <article className="rounded-xl border border-slate-300/80 bg-slate-50/90 p-3 dark:border-slate-700/70 dark:bg-slate-900/55">
+    <article className="card w-full min-w-0 rounded-xl border border-slate-300/80 bg-slate-50/90 p-3 dark:border-slate-700/70 dark:bg-slate-900/55">
       <div className="flex items-center justify-between gap-2">
         <p className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">
           {title}
@@ -1415,7 +1415,7 @@ function SimpleListCard({
   items: Array<{ key: string; label: string; href: string }>;
 }) {
   return (
-    <article className="rounded-xl border border-slate-300/80 bg-slate-50/90 p-3 dark:border-slate-700/70 dark:bg-slate-900/55">
+    <article className="card w-full min-w-0 rounded-xl border border-slate-300/80 bg-slate-50/90 p-3 dark:border-slate-700/70 dark:bg-slate-900/55">
       <p className="text-[15px] font-semibold text-slate-900 dark:text-slate-100">
         {title}
       </p>
@@ -1442,7 +1442,7 @@ function SimpleListCard({
 
 function SnapshotMetric({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-lg border border-slate-300/80 bg-slate-100/80 px-3 py-2 dark:border-slate-700/70 dark:bg-slate-800/35">
+    <div className="card w-full min-w-0 rounded-lg border border-slate-300/80 bg-slate-100/80 px-3 py-2 dark:border-slate-700/70 dark:bg-slate-800/35">
       <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
         {label}
       </p>
@@ -1476,7 +1476,7 @@ function SummaryStripItem({
   return (
     <Link
       href={href}
-      className={`rounded-xl border px-4 py-3 transition ${toneStyles[tone]}`}
+      className={`card w-full min-w-0 rounded-xl border px-3 py-3 transition sm:px-4 ${toneStyles[tone]}`}
     >
       <p className="text-xs font-semibold uppercase tracking-wide opacity-85">
         {label}

@@ -17,7 +17,6 @@ import {
   MicrophoneSlash,
   PaperPlaneRight,
   Plus,
-  Robot,
   Sparkle,
   SpinnerGap,
   X,
@@ -622,49 +621,47 @@ export default function AiChatPage() {
           ref={messageViewportRef}
           className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-4 pb-3 sm:px-5"
         >
-          {!hasMessages ? (
-            <EmptyState />
-          ) : (
-            messages.map((message) => (
-              <motion.article
-                key={message.id}
-                initial={{ opacity: 0, y: 18, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{
-                  type: "spring",
-                  stiffness: 340,
-                  damping: 28,
-                  mass: 0.8,
-                }}
-                className={[
-                  "max-w-3xl rounded-lg px-4 py-3 text-sm",
-                  message.role === "user"
-                    ? "ml-auto bg-accent text-white"
-                    : "border border-borderSubtle bg-bgDark text-textPrimary",
-                ].join(" ")}
-              >
-                <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide opacity-80">
-                  {message.role === "user" ? "You" : "AEON"}
-                </p>
-                <p className="whitespace-pre-wrap leading-6">
-                  {extractText(message)}
-                </p>
-                {extractFileParts(message).length > 0 ? (
-                  <div className="mt-2 space-y-1.5">
-                    {extractFileParts(message).map((filePart, index) => (
-                      <div
-                        key={`${filePart.filename ?? "file"}-${index}`}
-                        className="inline-flex items-center gap-2 rounded-md border border-borderSubtle bg-surface px-2.5 py-1.5 text-xs"
-                      >
-                        <FileText className="h-3.5 w-3.5" weight="duotone" />
-                        <span>{filePart.filename ?? filePart.mediaType}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-              </motion.article>
-            ))
-          )}
+          {hasMessages
+            ? messages.map((message) => (
+                <motion.article
+                  key={message.id}
+                  initial={{ opacity: 0, y: 18, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 340,
+                    damping: 28,
+                    mass: 0.8,
+                  }}
+                  className={[
+                    "max-w-3xl rounded-lg px-4 py-3 text-sm",
+                    message.role === "user"
+                      ? "ml-auto bg-accent text-white"
+                      : "border border-borderSubtle bg-bgDark text-textPrimary",
+                  ].join(" ")}
+                >
+                  <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide opacity-80">
+                    {message.role === "user" ? "You" : "AEON"}
+                  </p>
+                  <p className="whitespace-pre-wrap leading-6">
+                    {extractText(message)}
+                  </p>
+                  {extractFileParts(message).length > 0 ? (
+                    <div className="mt-2 space-y-1.5">
+                      {extractFileParts(message).map((filePart, index) => (
+                        <div
+                          key={`${filePart.filename ?? "file"}-${index}`}
+                          className="inline-flex items-center gap-2 rounded-md border border-borderSubtle bg-surface px-2.5 py-1.5 text-xs"
+                        >
+                          <FileText className="h-3.5 w-3.5" weight="duotone" />
+                          <span>{filePart.filename ?? filePart.mediaType}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </motion.article>
+              ))
+            : null}
 
           {isLoading && (
             <motion.div
@@ -944,36 +941,6 @@ function extractFileParts(message: {
 
   return message.parts.filter(
     (part): part is FileUIPart => part.type === "file",
-  );
-}
-
-function EmptyState() {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 14 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ type: "spring", stiffness: 320, damping: 28, mass: 0.85 }}
-      className="relative grid min-h-[8.5rem] place-items-center overflow-hidden rounded-lg border border-borderSubtle bg-bgDark px-6 py-6 text-center sm:min-h-[10rem]"
-    >
-      <div className="relative">
-        <div className="mx-auto mb-3 inline-flex h-11 w-11 items-center justify-center rounded-md bg-blue-50 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
-          <Robot className="h-5 w-5" weight="duotone" />
-        </div>
-        <motion.h2
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.08, duration: 0.35 }}
-          className="text-2xl font-semibold tracking-normal text-textPrimary"
-        >
-          AEON is ready
-        </motion.h2>
-        <p className="mt-2 max-w-md text-sm text-textSecondary">
-          Ask AEON to summarize tasks, triage requests, draft SOPs, create work
-          order follow-up plans, or prepare a leadership update. Use a quick
-          prompt on the right to get started.
-        </p>
-      </div>
-    </motion.div>
   );
 }
 
