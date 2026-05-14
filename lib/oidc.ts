@@ -82,21 +82,41 @@ async function parseJson<T>(response: Response): Promise<T> {
   return JSON.parse(text) as T;
 }
 
+function getDiscoveryCandidates(): string[] {
+  const configured = process.env.ZITADEL_DISCOVERY_URL?.trim();
+  if (configured) {
+    return [configured];
+  }
+
+  const issuer = getIssuer();
+  const candidates = [`${issuer}/.well-known/openid-configuration`];
+
+  // Zitadel commonly exposes OIDC discovery beneath /oauth/v2.
+  if (!issuer.endsWith("/oauth/v2")) {
+    candidates.push(`${issuer}/oauth/v2/.well-known/openid-configuration`);
+  }
+
+  return candidates;
+}
+
 export async function getOidcDiscovery(): Promise<OidcDiscovery> {
   if (!discoveryPromise) {
-    discoveryPromise = fetch(
-      `${getIssuer()}/.well-known/openid-configuration`,
-      {
-        cache: "no-store",
-      },
-    ).then(async (response) => {
-      if (!response.ok) {
-        throw new Error(
-          `Failed to load Zitadel discovery document (${response.status})`,
-        );
+    discoveryPromise = (async () => {
+      const candidates = getDiscoveryCandidates();
+      const failures: string[] = [];
+
+      for (const url of candidates) {
+        const response = await fetch(url, { cache: "no-store" });
+        if (response.ok) {
+          return parseJson<OidcDiscovery>(response);
+        }
+        failures.push(`${url} (${response.status})`);
       }
-      return parseJson<OidcDiscovery>(response);
-    });
+
+      throw new Error(
+        `Failed to load Zitadel discovery document: ${failures.join(", ")}`,
+      );
+    })();
   }
 
   return discoveryPromise;
