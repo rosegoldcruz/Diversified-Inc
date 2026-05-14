@@ -53,7 +53,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [desktopCollapsed, setDesktopCollapsed] = useState(false);
   const [mobileSheetOpen, setMobileSheetOpen] = useState(false);
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "/";
 
   const toggleSidebar = useCallback(() => {
     setSidebarOpen((open) => !open);

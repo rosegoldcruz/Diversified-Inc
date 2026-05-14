@@ -34,7 +34,7 @@ type SearchResult = {
 };
 
 export function TopBar({ onMenuToggle }: TopBarProps) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "/";
   const router = useRouter();
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [user, setUser] = useState<SessionUser | null>(null);

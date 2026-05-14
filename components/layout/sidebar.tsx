@@ -101,7 +101,7 @@ export function Sidebar({
   desktopCollapsed = false,
   onDesktopToggle,
 }: SidebarProps) {
-  const pathname = usePathname();
+  const pathname = usePathname() ?? "/";
 
   return (
     <>

@@ -1,10 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   buildAuthorizationUrl,
+  createPkceChallenge,
+  createPkceVerifier,
   createOidcState,
   OIDC_COOKIE_OPTIONS,
   OIDC_NEXT_COOKIE,
   OIDC_STATE_COOKIE,
+  OIDC_VERIFIER_COOKIE,
   sanitizeNextPath,
 } from "@/lib/oidc";
 
@@ -21,11 +24,14 @@ async function startLogin(request: NextRequest) {
   try {
     const nextPath = sanitizeNextPath(request.nextUrl.searchParams.get("next"));
     const state = createOidcState();
-    const authorizationUrl = await buildAuthorizationUrl(state);
+    const verifier = createPkceVerifier();
+    const challenge = createPkceChallenge(verifier);
+    const authorizationUrl = await buildAuthorizationUrl(state, challenge);
 
     const response = NextResponse.redirect(authorizationUrl);
     response.cookies.set(OIDC_STATE_COOKIE, state, OIDC_COOKIE_OPTIONS);
     response.cookies.set(OIDC_NEXT_COOKIE, nextPath, OIDC_COOKIE_OPTIONS);
+    response.cookies.set(OIDC_VERIFIER_COOKIE, verifier, OIDC_COOKIE_OPTIONS);
     return response;
   } catch (error) {
     console.error("[auth.login]", error);

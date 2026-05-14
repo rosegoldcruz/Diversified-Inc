@@ -32,8 +32,8 @@ function TasksPageContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const statusParam = searchParams.get("status");
-  const priorityParam = searchParams.get("priority");
+  const statusParam = searchParams?.get("status") ?? null;
+  const priorityParam = searchParams?.get("priority") ?? null;
 
   const filteredTasks = useMemo(() => {
     return tasks.filter((task) => {

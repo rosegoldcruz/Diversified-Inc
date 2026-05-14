@@ -1,8 +1,9 @@
-import { randomBytes } from "crypto";
+import { createHash, randomBytes } from "crypto";
 import { NextResponse } from "next/server";
 
 export const OIDC_STATE_COOKIE = "divos_oidc_state";
 export const OIDC_NEXT_COOKIE = "divos_oidc_next";
+export const OIDC_VERIFIER_COOKIE = "divos_oidc_verifier";
 
 export const OIDC_COOKIE_OPTIONS = {
   httpOnly: true as const,
@@ -105,6 +106,23 @@ export function createOidcState(): string {
   return randomBytes(24).toString("hex");
 }
 
+function toBase64Url(input: Buffer): string {
+  return input
+    .toString("base64")
+    .replace(/=+$/g, "")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_");
+}
+
+export function createPkceVerifier(): string {
+  // RFC 7636 allows 43-128 chars. 32 random bytes encode to 43 base64url chars.
+  return toBase64Url(randomBytes(32));
+}
+
+export function createPkceChallenge(verifier: string): string {
+  return toBase64Url(createHash("sha256").update(verifier).digest());
+}
+
 export function sanitizeNextPath(value: string | null | undefined): string {
   if (!value || !value.startsWith("/") || value.startsWith("//")) {
     return "/dashboard";
@@ -123,9 +141,17 @@ export function clearOidcHandshakeCookies(response: NextResponse): void {
     maxAge: 0,
     expires: new Date(0),
   });
+  response.cookies.set(OIDC_VERIFIER_COOKIE, "", {
+    ...OIDC_COOKIE_OPTIONS,
+    maxAge: 0,
+    expires: new Date(0),
+  });
 }
 
-export async function buildAuthorizationUrl(state: string): Promise<string> {
+export async function buildAuthorizationUrl(
+  state: string,
+  codeChallenge: string,
+): Promise<string> {
   const discovery = await getOidcDiscovery();
   const url = new URL(discovery.authorization_endpoint);
   url.searchParams.set("client_id", requireEnv("ZITADEL_CLIENT_ID"));
@@ -133,20 +159,27 @@ export async function buildAuthorizationUrl(state: string): Promise<string> {
   url.searchParams.set("response_type", "code");
   url.searchParams.set("scope", "openid profile email");
   url.searchParams.set("state", state);
+  url.searchParams.set("code_challenge", codeChallenge);
+  url.searchParams.set("code_challenge_method", "S256");
   return url.toString();
 }
 
 export async function exchangeCodeForTokens(
   code: string,
+  codeVerifier: string,
 ): Promise<TokenResponse> {
   const discovery = await getOidcDiscovery();
   const body = new URLSearchParams({
     grant_type: "authorization_code",
     code,
     client_id: requireEnv("ZITADEL_CLIENT_ID"),
-    client_secret: requireEnv("ZITADEL_CLIENT_SECRET"),
+    code_verifier: codeVerifier,
     redirect_uri: getRedirectUri(),
   });
+  const clientSecret = process.env.ZITADEL_CLIENT_SECRET?.trim();
+  if (clientSecret) {
+    body.set("client_secret", clientSecret);
+  }
 
   const response = await fetch(discovery.token_endpoint, {
     method: "POST",

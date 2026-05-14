@@ -15,6 +15,7 @@ import {
   getDisplayName,
   OIDC_NEXT_COOKIE,
   OIDC_STATE_COOKIE,
+  OIDC_VERIFIER_COOKIE,
   sanitizeNextPath,
   type OidcUserInfo,
 } from "@/lib/oidc";
@@ -130,6 +131,7 @@ export async function GET(request: NextRequest) {
     const nextPath = sanitizeNextPath(
       request.cookies.get(OIDC_NEXT_COOKIE)?.value,
     );
+    const codeVerifier = request.cookies.get(OIDC_VERIFIER_COOKIE)?.value;
     const state = request.nextUrl.searchParams.get("state");
     const code = request.nextUrl.searchParams.get("code");
 
@@ -147,7 +149,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const tokens = await exchangeCodeForTokens(code);
+    if (!codeVerifier) {
+      return makeLoginErrorResponse(
+        request,
+        "Sign-in verifier cookie is missing. Please try again.",
+      );
+    }
+
+    const tokens = await exchangeCodeForTokens(code, codeVerifier);
     const profile = await fetchOidcUserInfo(tokens.access_token);
     const mapped = await findOrProvisionEmployee(profile);
 
