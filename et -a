@@ -1,0 +1,40 @@
+                                           Table "public.employees"
+       Column        |           Type           | Collation | Nullable |                Default                
+---------------------+--------------------------+-----------+----------+---------------------------------------
+ id                  | integer                  |           | not null | nextval('employees_id_seq'::regclass)
+ name                | character varying(255)   |           | not null | 
+ role                | character varying(255)   |           |          | 
+ department          | character varying(255)   |           |          | 
+ status              | character varying(50)    |           |          | 'active'::character varying
+ email               | character varying(255)   |           |          | 
+ phone               | character varying(50)    |           |          | 
+ avatar_url          | text                     |           |          | 
+ hire_date           | date                     |           |          | 
+ created_at          | timestamp with time zone |           |          | now()
+ password_hash       | text                     |           |          | 
+ last_login_at       | timestamp with time zone |           |          | 
+ auth_provider       | text                     |           |          | 
+ auth_subject        | text                     |           |          | 
+ auth_last_synced_at | timestamp with time zone |           |          | 
+Indexes:
+    "employees_pkey" PRIMARY KEY, btree (id)
+    "employees_auth_subject_unique" UNIQUE, btree (auth_provider, auth_subject) WHERE auth_subject IS NOT NULL
+    "employees_email_unique" UNIQUE, btree (lower(email::text)) WHERE email IS NOT NULL
+    "idx_employees_department" btree (department)
+    "idx_employees_email_lower" btree (lower(email::text))
+    "idx_employees_name_lower" btree (lower(name::text))
+Referenced by:
+    TABLE "document_audit_logs" CONSTRAINT "document_audit_logs_performed_by_fkey" FOREIGN KEY (performed_by) REFERENCES employees(id) ON DELETE SET NULL
+    TABLE "documents" CONSTRAINT "documents_generated_by_fkey" FOREIGN KEY (generated_by) REFERENCES employees(id) ON DELETE SET NULL
+    TABLE "documents" CONSTRAINT "documents_signed_by_fkey" FOREIGN KEY (signed_by) REFERENCES employees(id) ON DELETE SET NULL
+    TABLE "file_records" CONSTRAINT "file_records_uploaded_by_user_id_fkey" FOREIGN KEY (uploaded_by_user_id) REFERENCES employees(id) ON DELETE SET NULL
+    TABLE "forms" CONSTRAINT "forms_submitted_by_fkey" FOREIGN KEY (submitted_by) REFERENCES employees(id)
+    TABLE "notifications" CONSTRAINT "notifications_user_id_fkey" FOREIGN KEY (user_id) REFERENCES employees(id) ON DELETE CASCADE
+    TABLE "sops" CONSTRAINT "sops_owner_fkey" FOREIGN KEY (owner) REFERENCES employees(id)
+    TABLE "tasks" CONSTRAINT "tasks_assigned_to_fkey" FOREIGN KEY (assigned_to) REFERENCES employees(id)
+    TABLE "timeclock_entries" CONSTRAINT "timeclock_entries_employee_id_fkey" FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE SET NULL
+    TABLE "timesheets" CONSTRAINT "timesheets_employee_id_fkey" FOREIGN KEY (employee_id) REFERENCES employees(id) ON DELETE SET NULL
+    TABLE "work_orders" CONSTRAINT "work_orders_created_by_fkey" FOREIGN KEY (created_by) REFERENCES employees(id) ON DELETE SET NULL
+    TABLE "work_orders" CONSTRAINT "work_orders_owner_fkey" FOREIGN KEY (owner) REFERENCES employees(id)
+    TABLE "work_orders" CONSTRAINT "work_orders_updated_by_fkey" FOREIGN KEY (updated_by) REFERENCES employees(id) ON DELETE SET NULL
+

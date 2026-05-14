@@ -1,0 +1,7 @@
+HTTP/1.1 307 Temporary Redirect
+Server: nginx/1.18.0 (Ubuntu)
+Date: Thu, 14 May 2026 00:45:15 GMT
+Connection: keep-alive
+Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-eval' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-src 'self'
+location: /login?next=%2Fdashboard
+

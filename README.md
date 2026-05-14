@@ -1,1066 +1,246 @@
 # Diversified OS
 
-**Diversified OS** is a custom internal operations platform being built for Diversified Companies by SNRG Labs LLC.
+Diversified OS, also called Diversified Employee Workspace, is an internal operations platform for Diversified Companies. It gives employees, managers, admins, and leadership one web workspace for daily execution, SOPs, forms, requests, work orders, files, reports, inventory, time tracking, documents, automations, and system administration.
 
-The active build is the **Workspace Environment Program**: a modern internal operating system for employees, tasks, calendar/projection, forms, requests, work orders, inventory, SOPs, files, reports, timeclock, timesheets, admin settings, mobile access, and AEON AI assistance.
+This repo is the internal OS. It is not a CRM, customer portal, ServiceTitan clone, call center system, ad platform, lead automation product, or Revenue Engine. Revenue Engine and external marketing/lead workflows are future scope and must not be described as current app capabilities.
 
-It is designed to replace scattered SharePoint workflows, manual tracking sheets, disconnected task lists, fragile internal tools, and outdated workspace processes with one internal workspace the company can actually operate from.
+## Current Architecture
 
-This repository is focused on the internal operations system.
+- Next.js 14 App Router
+- TypeScript
+- Tailwind CSS
+- PostgreSQL through [lib/db.ts](lib/db.ts)
+- NocoDB for database/admin visibility
+- n8n webhook targets for workflow automation events
+- Local/server file storage through `FILE_STORAGE_DIR`
+- AI SDK provider routes for assistant features
+- PM2 and nginx for production server deployment
 
-This is not:
+Strict architecture boundary:
 
-- a CRM
-- a customer portal
-- a ServiceTitan clone
-- a call center system
-- a lead automation platform
-- a marketing attribution platform
-- an ads reporting system
-- Lead Workflow / CRM / ServiceTitan-adjacent visibility
-- Marketing / lead generation / profitability reporting
-
----
-
-## Project Status
-
-**Date:** May 11, 2026  
-**Repo:** `rosegoldcruz/Diversified-Inc`  
-**Production URL:** `https://app.snrglabs.com`  
-**Staging / Vercel:** `https://diversified-inc.vercel.app`  
-**Builder:** SNRG Labs LLC
-
----
-
-## Product Definition
-
-Diversified OS is not just a calendar, dashboard, or task manager.
-
-It is a custom internal operating system for daily execution, internal visibility, requests, forms, work orders, employee workload, SOPs, files, time tracking, reports, and operational follow-through.
-
-Future expansion ideas exist, but this repository should stay focused on completing the internal operations system first.
-
-The platform is meant to help leadership, office staff, managers, and employees answer:
-
-- What needs to be done?
-- Who is responsible?
-- What is overdue?
-- What is completed?
-- What is blocked?
-- What is happening across the company?
-- What should leadership care about today?
-- Which workflows are creating bottlenecks?
-- Which systems need automation?
-
----
-
-## Active Scope
-
-### 1. Workspace Environment Program
-
-This is the main active build.
-
-The goal is to modernize Diversified’s internal workspace into a clean daily/weekly execution system.
-
-Primary features:
-
-- Internal dashboard
-- Employee workspace
-- Task management
-- Calendar / projection workflow
-- Work orders
-- Requests
-- Forms
-- Inventory tracking
-- SOP library
-- Timeclock
-- Timesheets
-- Reports and graphs
-- Admin settings
-- Mobile accessibility
-- AI assistance later
-- Phased rollout
-
----
-
-### 2. Lead Workflow / CRM / ServiceTitan-Adjacent Layer
-
-This is a future expansion lane.
-
-The goal is not to immediately replace ServiceTitan. The safer first step is to build a visibility and workflow layer around the existing ServiceTitan environment.
-
-Planned future features:
-
-- Multi-company lead dashboard
-- Lead pipeline
-- Lead assignment
-- Lead routing
-- Lead source tracking
-- Lead status tracking
-- ServiceTitan data visibility
-- ServiceTitan reporting layer
-- Missed call alerts
-- Follow-up tracking
-- Appointment visibility
-- Mobile lead access
-- AI lead summaries later
-
----
-
-### 3. Marketing / Profitability Layer
-
-This is a future expansion lane.
-
-The goal is to show which marketing programs actually generate leads, appointments, revenue, and profit.
-
-Planned future features:
-
-- Lead generation tracking
-- Campaign reporting
-- Meta / Google reporting
-- Call tracking
-- Landing page tracking
-- Cost per lead
-- Cost per booked appointment
-- Revenue attribution
-- ROAS
-- Program profitability
-- Franchise marketing comparison
-- Keep / cut / scale recommendations
-
----
-
-## Technology Stack
-
-| Layer             | Technology                            |
-| ----------------- | ------------------------------------- |
-| Framework         | Next.js 14 App Router                 |
-| Language          | TypeScript                            |
-| Styling           | Tailwind CSS                          |
-| Database          | PostgreSQL                            |
-| DB Client         | `pg` through `lib/db.ts`              |
-| DB Admin          | NocoDB                                |
-| Automation Target | n8n                                   |
-| AI Chat           | AI SDK / streaming route              |
-| Runtime           | Node.js                               |
-| Process Manager   | PM2                                   |
-| Reverse Proxy     | nginx                                 |
-| Deployment        | Manual server deploy + Vercel staging |
-
-Architecture notes:
-
+- No Supabase.
+- No Prisma.
+- No ORM.
 - PostgreSQL is the source of truth.
-- `lib/db.ts` is the main database helper.
-- The app does not use Prisma.
-- The app should not add Supabase as a dependency.
-- The app should not add a new ORM unless the architecture is intentionally changed.
-- NocoDB exists as an admin/database visibility layer, not as the primary application layer.
-
----
-
-## Implemented and Working
-
-These modules have real UI, real API routes, and real PostgreSQL connectivity.
-
----
-
-### Dashboard
+- NocoDB is an admin/database visibility layer, not the application backend.
+- Next.js API routes/server logic are the application control layer.
+
+## Current Modules
+
+Production-connected or substantially wired modules:
+
+- Dashboard: PostgreSQL-backed operational summaries.
+- Tasks: list/create/update/detail with role checks and audit logging.
+- Projection Calendar: task scheduling plus independent `calendar_blocks` persistence.
+- Forms Center: form submission persistence with Forms -> Requests conversion.
+- Requests: request queue, create/update/status workflow, notifications, automation events, audit logs.
+- Work Orders: list/create/update/detail, notifications, automation events, audit logs.
+- Employees: directory and detail API/UI.
+- Inventory: list/detail/update with low-stock automation and audit logging.
+- SOPs: PostgreSQL-backed API with legacy seed fallback only where needed.
+- Files: upload/list/download with local storage, linked records, automation events, audit logs.
+- Documents/eSign: document records, signatures, document audit trail, shared audit logging.
+- Timeclock: clock in/out backed by PostgreSQL.
+- Timesheets: create/update status flow with submit/approve/reject audit events.
+- Reports: backend reports API, CSV export, and UI consumption.
+- Search: backend search API used by the topbar.
+- Automations: durable `automation_events` logging, n8n dispatch, retry/status UI.
+- Admin/Settings: persisted system settings, readiness reporting, environment status, audit views.
+- AI Chat: streaming assistant route using configured AI provider keys.
+
+## Production Status
+
+The app is no longer a static walkthrough shell. Core internal OS modules use PostgreSQL-backed API routes and server-side role checks. Recent production closure work added:
+
+- work order create/update behavior
+- files upload/download and metadata persistence
+- document/eSign foundations
+- RBAC helper enforcement across important routes
+- reports/search APIs
+- automation event logging and n8n webhook dispatch
+- calendar block persistence
+- cross-module audit logging
+
+Known production partials:
+
+- Auth/session exists, but final production identity provider hardening and full RBAC review remain important.
+- Calendar supports persisted blocks and task-linked scheduling, but full drag/resize UX is intentionally limited to implemented behavior.
+- Files use local/server storage unless a future storage backend is explicitly designed.
+- Documents/eSign are internal workflow foundations, not a full external signing vendor replacement.
+- n8n workflow execution depends on configured webhook env vars and external n8n workflow definitions.
+- NocoDB is operational visibility/admin tooling; it does not replace application routes.
+- Some legacy Revenue Engine-style types/data remain archived for future design only and are not active internal OS capability.
+
+## Setup
+
+Install dependencies:
+
+```bash
+npm install
+```
 
-Status: **Working**
-
-Implemented:
-
-- Live stat cards
-- Pulls from `/api/dashboard`
-- Real SQL aggregations
-- Total tasks
-- Open work orders
-- Low stock items
-- Total employees
-- High-priority tasks
-- Blocked tasks
-- Priority watchlist
-- Deep links into filtered modules
-- Loading states
-- Error states
-- Responsive layout
-
----
-
-### Tasks
-
-Status: **Core working**
-
-Implemented:
-
-- Task list page
-- Status filter dropdown
-- Priority filter dropdown
-- URL parameter support
-- Deep links from dashboard
-- Real `GET /api/tasks`
-- Real `POST /api/tasks`
-- SQL join with employees
-- Individual task detail route: `/tasks/[id]`
-- Mobile card layout
-- Desktop table layout
-
-Supported task fields include:
-
-- Title
-- Division
-- Topic
-- Priority
-- Due date
-- Start time
-- End time
-- Assigned employee
-- Estimated hours
-- Description
-- Notes
-- All-day flag
-- Repeat schedule
+Create local environment variables in `.env.local` or the production process environment. Do not commit secrets.
 
-Still missing:
+Required core env vars:
 
-- Task comments UI
-- File attachments
-- Carry unfinished tasks forward
-- Reassign task from UI
-- View by company
-- View by department
-- Canceled / rescheduled status model
-- Full drag-to-calendar workflow
-
----
+```bash
+DATABASE_URL=postgres://user:password@host:5432/database
+SESSION_SECRET=replace-with-strong-secret
+FILE_STORAGE_DIR=/var/lib/diversified-os/files
+NEXT_PUBLIC_APP_URL=https://app.example.com
+APP_URL=https://app.example.com
+```
 
-### Timeclock
+AI provider env vars, at least one when AI chat is enabled:
 
-Status: **Working**
+```bash
+DEEPSEEK_API_KEY=...
+OPENAI_API_KEY=...
+```
 
-Implemented:
+n8n automation env vars:
 
-- Clock in
-- Clock out
-- Real writes to `timeclock_entries`
-- `GET /api/timeclock`
-- `POST /api/timeclock`
-- Active clock-in detection
-- Last 50 entries ordered by clock-in time
-- Open entry updates on clock-out
+```bash
+N8N_WEBHOOK_URL=https://n8n.example.com/webhook/diversified-os
+N8N_WEBHOOK_SECRET=replace-with-shared-secret
+N8N_BASE_URL=https://n8n.example.com
+```
 
-Still missing:
+Optional event-specific n8n webhook env vars:
 
-- Task-level time tracking
-- Projected vs actual time comparison
-- Manager review UI
-- Timeclock-to-timesheet auto-population
+```bash
+N8N_FORM_SUBMITTED_WEBHOOK=...
+N8N_REQUEST_CREATED_WEBHOOK=...
+N8N_TASK_ASSIGNED_WEBHOOK=...
+N8N_TASK_OVERDUE_WEBHOOK=...
+N8N_LOW_INVENTORY_WEBHOOK=...
+N8N_WEEKLY_SUMMARY_WEBHOOK=...
+N8N_WORK_ORDER_CREATED_WEBHOOK=...
+N8N_WORK_ORDER_UPDATED_WEBHOOK=...
+N8N_TIMESHEET_SUBMITTED_WEBHOOK=...
+N8N_FILE_UPLOADED_WEBHOOK=...
+N8N_CALENDAR_BLOCK_WEBHOOK=...
+```
 
----
+## Database Migrations
 
-### Timesheets
+Apply migrations against PostgreSQL in order. Inspect each script before applying in production.
 
-Status: **Core working**
+```bash
+psql "$DATABASE_URL" -f scripts/migrate-settings.sql
+psql "$DATABASE_URL" -f scripts/migrate-work-orders-production.sql
+psql "$DATABASE_URL" -f scripts/migrate-documents-production.sql
+psql "$DATABASE_URL" -f scripts/migrate-files-production.sql
+psql "$DATABASE_URL" -f scripts/migrate-internal-os-capabilities.sql
+```
 
-Implemented:
+Production closure migrations include:
 
-- Weekly timesheet view
-- Monday through Sunday hour columns
-- Employee totals
-- Status badges
-- Summary cards
-- Total timesheets
-- Pending approval count
-- Approved this week count
-- Real `GET /api/timesheets`
-- Real `POST /api/timesheets`
-- `/api/timesheets/[id]` route scaffold
-- Mobile card layout
-- Desktop table layout
+- [scripts/migrate-work-orders-production.sql](scripts/migrate-work-orders-production.sql)
+- [scripts/migrate-documents-production.sql](scripts/migrate-documents-production.sql)
+- [scripts/migrate-files-production.sql](scripts/migrate-files-production.sql)
+- [scripts/migrate-internal-os-capabilities.sql](scripts/migrate-internal-os-capabilities.sql)
+- [scripts/migrate-settings.sql](scripts/migrate-settings.sql)
 
-Still missing:
+`migrate-internal-os-capabilities.sql` adds or extends files, documents, automation events, audit logs, calendar blocks, and search/supporting indexes. The app also includes defensive `CREATE TABLE IF NOT EXISTS` checks in some production APIs for safer incremental deployment, but migration scripts should still be the operational source for database rollout.
 
-- Manager approval action from UI
-- Export
-- Auto-populate from timeclock entries
-- Full approval workflow
+## Local Development
 
----
+Run the app locally:
 
-### Requests
+```bash
+npm run dev
+```
 
-Status: **Working**
+Open the local Next.js URL printed by the dev server. The app expects PostgreSQL via `DATABASE_URL`; it is not designed to run as a Supabase or Prisma project.
 
-Implemented:
+Useful local checks:
 
-- Request list page
-- Slide-over detail panel
-- Real `GET /api/requests`
-- Real `POST /api/requests`
-- Auto-generated request IDs using `REQ-YYYY-###`
-- Status badges
-- Summary cards
+```bash
+npm run build
+npm run lint
+```
 
-Supported statuses:
+## Build
 
-- Submitted
-- Under Review
-- Approved
-- Denied
-- Completed
+Production build:
 
-Still missing:
+```bash
+npm run build
+```
 
-- Notify owner
-- Escalate overdue requests
-- Routing logic to Kathy/admin
-- Request assignment automation
+Start built app:
 
----
+```bash
+npm run start
+```
 
-### SOPs
+## Deployment
 
-Status: **Working**
+Production deployment is server-oriented:
 
-Implemented:
+- Build with `npm run build`.
+- Run with PM2 using [ecosystem.config.js](ecosystem.config.js).
+- Put nginx in front of the Node process.
+- Keep PostgreSQL, NocoDB, and n8n managed as separate services.
+- Store secrets in process environment or server secret management, not in Git.
 
-- SOP card grid
-- Real `GET /api/sops`
-- Search by title
-- Search by description
-- Category badges
-- Version display
-- Status display
+Scripts exist for server deployment/auto-heal workflows under [scripts](scripts). Review scripts before using them in a new environment.
 
-Supported statuses:
+## Audit And Automation
 
-- Active
-- Under Review
-- Archived
+Audit logs:
 
-Still missing:
+- Shared helper: [lib/audit-log.ts](lib/audit-log.ts)
+- Read API: `GET /api/audit-logs`
+- Access: Admin/Leadership
+- Filters: `module`, `action`, `entity_type`, `actor_user_id`, `from`, `to`
 
-- SOP detail/read page
-- SOP edit/create flow
-- Department filtering dropdown
-- AI retrieval from SOP library
+Automation events:
 
----
+- Shared helper: [lib/automation-events.ts](lib/automation-events.ts)
+- Event log API: `GET/POST /api/automation-events`
+- Status API: `GET /api/automations/status`
+- Retry API: `POST /api/automations/retry`
 
-### Inventory
+Workflow events are durable in PostgreSQL before n8n dispatch. Missing webhook configuration is recorded as event state instead of being silently ignored.
 
-Status: **Core working**
+## Scope Boundary
 
-Implemented:
+Current internal OS scope:
 
-- Inventory list page
-- Inventory detail route: `/inventory/[id]`
-- Real `GET /api/inventory`
-- Real `GET /api/inventory/[id]`
-- Low stock count on dashboard
-- Deep link to `?status=low_stock`
-
-Still missing:
-
-- Stock editing
-- Categories
-- Reorder alerts
-- Inventory request workflow
-- Usage history
-- Vehicle inventory
-- Parts/material tracking
-
----
-
-### Work Orders
-
-Status: **Core working**
-
-Implemented:
-
-- Work orders list page
-- Work order detail route: `/work-orders/[id]`
-- Real `GET /api/work-orders`
-- Real `GET /api/work-orders/[id]`
-- Dashboard open work order count
-
-Still missing:
-
-- Create work order UI
-- Edit/update work order UI
-- File attachments
-- Full reporting layer
-
----
-
-### Employees
-
-Status: **Core working**
-
-Implemented:
-
-- Employee list page
-- Employee detail route: `/employees/[id]`
-- Real `GET /api/employees`
-- Real `GET /api/employees/[id]`
-
-Still missing:
-
-- Employee schedule view
-- Active work visibility
-- Time tracking by employee
-- Manager visibility layer
-- Employee workload dashboard
-
----
-
-### AI Chat / AEON
-
-Status: **Working**
-
-Implemented:
-
-- Streaming AI chat
-- Built with `@ai-sdk/react`
-- Uses `useChat`
-- Streams to `/api/ai-chat`
-- Real `POST /api/ai-chat`
-- Quick prompts
-- Animated message bubbles
-- Streaming indicator
-- Stop/retry behavior
-- Mobile bottom sheet for quick prompts
-- Desktop sidebar prompt panel
-
-Built-in quick prompts:
-
-- Daily Ops Sync
-- SOP Assistant
-- Work Order Follow-Up
-- Request Triage
-- Employee Workload Review
-- Inventory Watch
-- Weekly Leadership Summary
-
-Still missing:
-
-- Voice input
-- AI task creation
-- AI calendar block creation
-- AI overdue finder
-- AI schedule suggestions
-- AI meeting notes into tasks
-
----
-
-### Calendar
-
-Status: **Built but feature-incomplete**
-
-Implemented:
-
-- Large calendar implementation
-- Existing task opening logic
-- Multi-view mode switching
-- Complex UI foundation
-
-Still missing / needs confirmation:
-
-- Drag task from task list into calendar
-- Resize scheduled blocks
-- Employee-specific calendar
-- Team-wide calendar view
-- Leadership overview calendar
-- Red/blue/gray status color logic
-- Planned vs actual comparison
-
----
-
-## Half-Baked / Partial Modules
-
-These modules exist but are incomplete, mocked, hardcoded, or not fully connected.
-
----
-
-### Admin
-
-Status: **UI shell / partially hardcoded**
-
-Current issues:
-
-- Employee list is hardcoded in TypeScript.
-- Employees are not pulled from the `employees` table.
-- Role dropdowns are disabled.
-- Add Employee button is disabled.
-- Notification toggles are local React state only.
-- No settings persist.
-- Integration statuses are hardcoded.
-- Danger Zone buttons are disabled / demo mode.
-
-Needed:
-
-- Real employee data from database
-- Role management
-- Department management
-- User management
-- Permission management
-- Persisted system settings
-- Real integration health checks
-- Admin create/edit actions
-
----
-
-### Reports
-
-Status: **Page exists, backend unclear**
-
-Implemented:
-
-- Reports page exists
-- Structure exists
-- Some navigation into inventory detail pages
-
-Issues:
-
-- No `/api/reports` route found
-- Lead reports do not exist
-- Marketing reports do not exist
-- ServiceTitan reports do not exist
-
-Needed:
-
-- Workspace reports API
-- Employee reports
-- Task reports
-- Time reports
-- Inventory reports
-- Lead reports
-- Marketing reports
-- Exportable leadership summaries
-
----
-
-### Forms
-
-Status: **UI only / no backend**
-
-Implemented:
-
-- Forms page exists
-- Multiple form types appear scaffolded
-- Active form switching exists
-
-Issues:
-
-- No `/api/forms` route exists
-- Submissions likely do not persist
-- No routing logic
-- No tracking record conversion
-
-Needed:
-
-- Forms database schema
-- Form submissions API
-- Form submission tracking
-- Form-to-request conversion
-- Form-to-work-order conversion
-- Admin routing
-- Notifications
-
----
-
-### Files
-
-Status: **Partial / needs verification**
-
-Implemented:
-
-- `/files` page exists
-- `/api/files` route exists
-- File listing UI exists
-
-Unknown:
-
-- Whether upload works
-- Whether download works
-- Whether storage is local, database-backed, or external
-- Whether file records connect to tasks, work orders, requests, or SOPs
-
-Needed:
-
-- Upload
-- Download
-- File metadata
-- File-to-module attachments
-- Permissions
-- Storage strategy
-
----
-
-### Documents / eSign
-
-Status: **Scaffolded**
-
-Implemented:
-
-- `/documents` page exists
-- Detail view exists
-- `/documents/esign` subdirectory exists
-
-Unknown:
-
-- eSign depth
-- PDF generation
-- Signature storage
-- Document workflow
-
-Needed:
-
-- Clarify whether this is part of MVP
-- Connect documents to requests/work orders/employees
-- Define eSign requirements
-
----
-
-### Automations
-
-Status: **UI shell**
-
-Implemented:
-
-- `/automations` page exists
-- Admin shows n8n as connected
-
-Issues:
-
-- No clear repo-level workflow trigger logic
-- Actual n8n workflows likely live outside this repo
-
-Needed:
-
-- n8n webhook integration
-- Automation status checks
-- Trigger logging
-- Workflow health display
-- Task/request/form automation triggers
-
----
-
-### Settings
-
-Status: **Scaffolded**
-
-Implemented:
-
-- `/settings`
-- `/settings/billing`
-- `/settings/notifications`
-- `/settings/system`
-
-Unknown:
-
-- Whether anything persists
-- Whether settings are wired to database
-
-Needed:
-
-- Persisted settings
-- User preferences
-- Notification settings
-- System configuration
-
----
-
-## Not Implemented Yet
-
-These areas are described in the product vision but do not currently exist in the codebase.
-
----
-
-### Lead Workflow / CRM Lane
-
-Status: **Not implemented**
-
-Missing:
-
-- `/leads` page
-- `/crm` page
-- Lead pipeline
-- Lead assignment
-- Lead routing
-- Lead status tracking
-- ServiceTitan integration
-- Missed call alerts
-- Follow-up automation
-- Lead source tracking
-- Lead reports
-
-Note:
-
-`lib/types.ts` includes Lead/Homeowner/Installer/Quote/Job style types, but there is no UI or API implementation built on top of those types yet.
-
----
-
-### Marketing Profitability Lane
-
-Status: **Not implemented**
-
-Missing:
-
-- `/marketing` page
-- Campaign tracking
-- Call tracking
-- UTM tracking
-- Meta ads reporting
-- Google ads reporting
-- Cost per lead
-- Cost per booked appointment
-- Revenue attribution
-- ROAS
-- Campaign profitability
-- Landing pages
-- Lead capture forms
-
----
-
-### Advanced Task Features
-
-Status: **Not implemented**
-
-Missing:
-
-- Task comments UI
-- Task notes thread
-- File attachments on tasks
-- Carry unfinished tasks forward
-- View by company
-- View by department
-- Rescheduled status
-- Canceled status
-
----
-
-### Advanced Calendar Features
-
-Status: **Not implemented / needs confirmation**
-
-Missing:
-
-- Employee-specific calendar
-- Team-wide calendar
-- Leadership calendar
-- Drag from task list into calendar
-- Resize blocks
-- Red = canceled
-- Blue = rescheduled
-- Gray = completed
-- Projection vs completion tracking
-
----
-
-### Advanced AI Features
-
-Status: **Not implemented**
-
-Missing:
-
-- Voice task creation
-- Voice calendar creation
-- Voice move/reschedule
-- AI task prioritization
-- AI schedule suggestions
-- AI meeting notes into tasks
-- AI daily assistant
-- AI weekly summary
-- AI “what needs attention?” summary
-- Lead AI
-- Marketing AI
-
----
-
-### Automation Features
-
-Status: **Not implemented in repo**
-
-Missing:
-
-- Task assigned notification
-- Task overdue notification
-- Form submitted routing
-- Inventory low alert
-- Outlook sync trigger
-- Daily summary automation
-- Weekly executive summary
-- Lead follow-up automation
-- Marketing performance automation
-
----
-
-### Mobile PWA
-
-Status: **Partial**
-
-Implemented:
-
-- `app/manifest.ts` exists
-
-Missing:
-
-- Service worker
-- Offline caching
-- Push notifications
-- Installable PWA behavior confirmation
-
----
-
-## Technical Debt / Contradictions
-
-| Issue                                | Detail                                                                                                       |
-| ------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| Supabase contradiction               | README says no Supabase, but `lib/supabase-realtime.ts` exists. Determine if vestigial and remove if unused. |
-| Supabase type header                 | `lib/types.ts` references Supabase auto-sync and `aeon_audit.py`, but no such script exists in repo.         |
-| Admin hardcoded employees            | Admin uses static employee array instead of database.                                                        |
-| Admin settings do not persist        | Toggles are local state only.                                                                                |
-| Forms lack backend                   | `/forms` page exists, but `/api/forms` does not.                                                             |
-| Reports backend unclear              | Reports page exists, but `/api/reports` does not.                                                            |
-| Automations are not wired            | n8n may exist externally, but app triggers are not implemented.                                              |
-| Lead/marketing lanes are vision only | README should mark these as roadmap, not current implementation.                                             |
-
----
-
-## Current Build Scorecard
-
-| Module        | Status                       |
-| ------------- | ---------------------------- |
-| Dashboard     | Working                      |
-| Tasks         | Core working                 |
-| Calendar      | Built but incomplete         |
-| Employees     | Core working                 |
-| Work Orders   | Core working                 |
-| Inventory     | Core working                 |
-| Forms         | UI only                      |
-| Requests      | Working                      |
-| Timeclock     | Working                      |
-| Timesheets    | Core working                 |
-| SOPs          | Working                      |
-| Reports       | Partial / backend unclear    |
-| Admin         | Hardcoded shell              |
-| AI Chat       | Working                      |
-| Files         | Partial / needs verification |
-| Documents     | Scaffolded                   |
-| Automations   | UI shell                     |
-| Settings      | Scaffolded                   |
-| Lead Workflow | Not implemented              |
-| Marketing     | Not implemented              |
-
----
-
-## Practical MVP Definition
-
-The realistic MVP should focus on **Lane 1: Workspace Environment Program** only.
-
-MVP should include:
-
-- Dashboard
-- Tasks
-- Calendar/projection
-- Employees
-- Work orders
-- Requests
-- Forms
-- Inventory
-- Timeclock
-- Timesheets
+- employee execution
+- tasks and projections
+- requests/forms
+- work orders
 - SOPs
-- Reports
-- Admin basics
-- Mobile usability
-- Basic AI chat
+- inventory visibility
+- files/documents
+- reports/search
+- timeclock/timesheets
+- settings/admin
+- audit and automation infrastructure
 
-Do not include in MVP:
+Future scope, not current internal OS capability:
 
-- Full lead workflow
-- Full marketing dashboard
-- Full ServiceTitan replacement
-- Full AI agent automation
-- Full multi-tenant productization
+- Revenue Engine
+- CRM/lead pipeline
+- ServiceTitan replacement
+- ad reporting and attribution
+- external customer portal
+- call center/SMS automation
+- marketing profitability system
 
-Those should remain roadmap items.
+Do not add UI, docs, routes, or claims that present those future lanes as live internal OS features unless they are explicitly scoped and implemented with PostgreSQL-backed routes.
 
----
+## Remaining Production Blockers
 
-## Recommended Next Build Priorities
+Exact next blockers:
 
-### Priority 1 — Fix README Accuracy
-
-The README should clearly separate:
-
-- Built
-- Partially built
-- Roadmap
-- Not implemented
-
-The current README should not imply that lead workflow or marketing profitability are implemented.
-
----
-
-### Priority 2 — Finish Forms Backend
-
-Build:
-
-- `/api/forms`
-- `form_submissions` table if not present
-- Form submission POST
-- Form submission list
-- Submission detail view
-- Submission status
-- Route submitted forms to admin/request owner
-
----
-
-### Priority 3 — Fix Admin
-
-Build:
-
-- Real employees from database
-- Add employee
-- Edit employee role
-- Edit department
-- Persist notification settings
-- Persist system settings
-- Real integration health checks
-
----
-
-### Priority 4 — Strengthen Calendar
-
-Build:
-
-- Drag task into calendar
-- Resize scheduled blocks
-- Employee-specific calendar
-- Team-wide calendar
-- Leadership calendar
-- Color logic
-- Planned vs completed tracking
-
----
-
-### Priority 5 — Add Core Write Actions
-
-Build:
-
-- Create work order
-- Edit work order
-- Edit inventory item
-- Update inventory stock
-- Approve timesheet
-- Edit SOP
-- Create SOP
-- Reassign task
-
----
-
-### Priority 6 — Reports API
-
-Build:
-
-- `/api/reports`
-- Workspace reporting
-- Task reporting
-- Time reporting
-- Inventory reporting
-- Request/form reporting
-- Exportable leadership summary
-
----
-
-### Priority 7 — Auth and Roles
-
-Build:
-
-- Login
-- Sessions
-- Role-based access
-- Company-based access later
-- Admin vs employee permissions
-- Manager vs executive permissions
-
----
-
-## Long-Term Roadmap
-
-### Phase 1 — Workspace Environment MVP
-
-- Finish internal workspace
-- Finish forms
-- Finish admin
-- Finish calendar
-- Finish reports
-- Add auth
-- Polish mobile
-
-### Phase 2 — Automation and AI
-
-- n8n workflow triggers
-- Outlook sync
-- Notifications
-- Daily summaries
-- Weekly summaries
-- Voice input
-- AI task/calendar actions
-
-### Phase 3 — Lead Workflow
-
-- Lead pipeline
-- Company-specific lead views
-- ServiceTitan visibility
-- Follow-up tasks
-- Missed call logic
-- Lead reports
-
-### Phase 4 — Marketing Profitability
-
-- Campaign tracking
-- Lead source tracking
-- Cost per lead
-- Cost per appointment
-- Revenue attribution
-- Profitability dashboards
-
-### Phase 5 — Productization
-
-- Multi-company templates
-- White-label capability
-- Configurable forms
-- Configurable reports
-- Multi-tenant architecture
-- Support/service package
-
----
-
-## Clean Internal Positioning
-
-The current app is not finished, but it is real.
-
-The strongest current positioning is:
-
-> Diversified OS already has the foundation of the Workspace Environment Program live: dashboard, tasks, employees, work orders, inventory, requests, SOPs, timeclock, timesheets, reports structure, and AEON AI chat. The remaining MVP work is wiring unfinished modules, adding admin/auth, strengthening calendar workflows, and completing forms/reports/write actions.
-
-The safest client-facing positioning is:
-
-> This is the first working foundation. The core internal workspace is already active, and the next step is finishing the operational workflows that make it ready for team rollout.
-
----
-
-## Built By
-
-Built by **SNRG Labs LLC**.
-
-SNRG Labs stands for **Strategic Network Revenue Growth**.
-
-Core operating line:
-
-> It all starts in the Lab.
-
-Diversified OS is an internal operations system built under the SNRG Labs operating model.
+- Verify migrations are applied on the live PostgreSQL database.
+- Validate production auth/session secret handling and role mappings.
+- Confirm PM2/nginx production environment variables match this README.
+- Configure n8n webhook URLs and verify outbound workflow delivery.
+- Confirm file storage directory permissions and backup policy.
+- Add deeper tests for audit logging, calendar block writes, and workflow event dispatch.
+- Finish any remaining Admin employee/role management gaps before relying on it as the authority for user administration.
