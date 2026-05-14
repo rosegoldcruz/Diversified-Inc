@@ -25,6 +25,11 @@ interface Timesheet {
   created_at: string;
 }
 
+type SessionUser = {
+  id: number;
+  role: "Employee" | "Manager" | "Admin" | "Leadership";
+};
+
 function formatWeekRange(weekStart: string, weekEnd: string): string {
   const start = new Date(weekStart);
   const end = new Date(weekEnd);
@@ -70,17 +75,28 @@ export default function TimesheetsPage() {
   const [timesheets, setTimesheets] = useState<Timesheet[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [me, setMe] = useState<SessionUser | null>(null);
+  const [actionBusyId, setActionBusyId] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
     const fetchTimesheets = async () => {
       try {
-        const response = await fetch("/api/timesheets", { cache: "no-store" });
+        const [response, meResponse] = await Promise.all([
+          fetch("/api/timesheets", { cache: "no-store" }),
+          fetch("/api/auth/me", { cache: "no-store" }),
+        ]);
         if (!response.ok) throw new Error("Failed to fetch timesheets");
         const data = await response.json();
         if (!cancelled) {
           setTimesheets(data);
+          if (meResponse.ok) {
+            const meData = (await meResponse.json()) as {
+              user: SessionUser | null;
+            };
+            setMe(meData.user);
+          }
           setError(null);
         }
       } catch (err) {
@@ -112,6 +128,47 @@ export default function TimesheetsPage() {
       ts.status === "approved" &&
       toDateOnly(ts.week_start) === currentWeekStart,
   ).length;
+
+  const isManagerLevel =
+    me?.role === "Manager" || me?.role === "Admin" || me?.role === "Leadership";
+
+  async function updateTimesheetStatus(
+    timesheetId: number,
+    status: Timesheet["status"],
+  ) {
+    try {
+      setActionBusyId(timesheetId);
+      const response = await fetch(`/api/timesheets/${timesheetId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      const payload = (await response.json().catch(() => null)) as
+        | Timesheet
+        | { error?: string }
+        | null;
+      if (!response.ok) {
+        throw new Error(
+          (payload as { error?: string } | null)?.error ||
+            `Failed to update timesheet (${response.status})`,
+        );
+      }
+      setTimesheets((prev) =>
+        prev.map((item) =>
+          item.id === timesheetId ? (payload as Timesheet) : item,
+        ),
+      );
+      setError(null);
+    } catch (updateError) {
+      setError(
+        updateError instanceof Error
+          ? updateError.message
+          : "Failed to update timesheet",
+      );
+    } finally {
+      setActionBusyId(null);
+    }
+  }
 
   return (
     <div className="space-y-8 font-sans">
@@ -166,6 +223,7 @@ export default function TimesheetsPage() {
                       Total Hours
                     </th>
                     <th className="px-4 py-3 font-semibold">Status</th>
+                    <th className="px-4 py-3 font-semibold">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-borderSubtle">
@@ -218,6 +276,56 @@ export default function TimesheetsPage() {
                           {timesheet.status.charAt(0).toUpperCase() +
                             timesheet.status.slice(1)}
                         </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap gap-2">
+                          {timesheet.status === "draft" ? (
+                            <button
+                              type="button"
+                              disabled={actionBusyId === timesheet.id}
+                              onClick={() =>
+                                void updateTimesheetStatus(
+                                  timesheet.id,
+                                  "submitted",
+                                )
+                              }
+                              className="rounded-md border border-blue-500/30 bg-blue-500/10 px-2.5 py-1 text-xs font-semibold text-blue-700 disabled:opacity-60 dark:text-blue-300"
+                            >
+                              Submit
+                            </button>
+                          ) : null}
+                          {isManagerLevel &&
+                          timesheet.status === "submitted" ? (
+                            <>
+                              <button
+                                type="button"
+                                disabled={actionBusyId === timesheet.id}
+                                onClick={() =>
+                                  void updateTimesheetStatus(
+                                    timesheet.id,
+                                    "approved",
+                                  )
+                                }
+                                className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-700 disabled:opacity-60 dark:text-emerald-300"
+                              >
+                                Approve
+                              </button>
+                              <button
+                                type="button"
+                                disabled={actionBusyId === timesheet.id}
+                                onClick={() =>
+                                  void updateTimesheetStatus(
+                                    timesheet.id,
+                                    "rejected",
+                                  )
+                                }
+                                className="rounded-md border border-red-500/30 bg-red-500/10 px-2.5 py-1 text-xs font-semibold text-red-700 disabled:opacity-60 dark:text-red-300"
+                              >
+                                Reject
+                              </button>
+                            </>
+                          ) : null}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -280,6 +388,44 @@ export default function TimesheetsPage() {
                       {timesheet.total_hours} hours
                     </span>
                   </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {timesheet.status === "draft" ? (
+                      <button
+                        type="button"
+                        disabled={actionBusyId === timesheet.id}
+                        onClick={() =>
+                          void updateTimesheetStatus(timesheet.id, "submitted")
+                        }
+                        className="rounded-md border border-blue-500/30 bg-blue-500/10 px-2.5 py-1 text-xs font-semibold text-blue-700 disabled:opacity-60 dark:text-blue-300"
+                      >
+                        Submit
+                      </button>
+                    ) : null}
+                    {isManagerLevel && timesheet.status === "submitted" ? (
+                      <>
+                        <button
+                          type="button"
+                          disabled={actionBusyId === timesheet.id}
+                          onClick={() =>
+                            void updateTimesheetStatus(timesheet.id, "approved")
+                          }
+                          className="rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-xs font-semibold text-emerald-700 disabled:opacity-60 dark:text-emerald-300"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          type="button"
+                          disabled={actionBusyId === timesheet.id}
+                          onClick={() =>
+                            void updateTimesheetStatus(timesheet.id, "rejected")
+                          }
+                          className="rounded-md border border-red-500/30 bg-red-500/10 px-2.5 py-1 text-xs font-semibold text-red-700 disabled:opacity-60 dark:text-red-300"
+                        >
+                          Reject
+                        </button>
+                      </>
+                    ) : null}
+                  </div>
                 </div>
               </article>
             ))}

@@ -77,15 +77,23 @@ export default function DocumentsPage() {
         blur={true}
         duration={800}
         delay={50}
-        className="space-y-2"
+        className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between"
       >
-        <h1 className="text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
-          <ShinyText>Documents</ShinyText>
-        </h1>
-        <p className="max-w-3xl text-base text-textSecondary">
-          Internal contracts, permits, completion records, and document records
-          linked to active work.
-        </p>
+        <div className="space-y-2">
+          <h1 className="text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
+            <ShinyText>Documents</ShinyText>
+          </h1>
+          <p className="max-w-3xl text-base text-textSecondary">
+            Internal contracts, permits, completion records, and document
+            records linked to active work.
+          </p>
+        </div>
+        <Link
+          href="/documents/esign"
+          className="inline-flex h-10 items-center justify-center rounded-xl border border-white/30 bg-white/55 px-4 text-sm font-semibold text-textPrimary shadow-glass backdrop-blur-2xl transition hover:bg-white/80 dark:border-white/10 dark:bg-white/5"
+        >
+          + New Document
+        </Link>
       </FadeContent>
 
       <FadeContent

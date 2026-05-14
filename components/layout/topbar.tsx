@@ -43,7 +43,54 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [searchOpen, setSearchOpen] = useState(false);
-  const canGoBack = pathname !== "/";
+  const TOP_LEVEL_PATHS = new Set([
+    "/dashboard",
+    "/tasks",
+    "/calendar",
+    "/work-orders",
+    "/forms",
+    "/employees",
+    "/timeclock",
+    "/timesheets",
+    "/sops",
+    "/requests",
+    "/documents",
+    "/inventory",
+    "/reports",
+    "/files",
+    "/ai-chat",
+    "/ai-tools",
+    "/automations",
+    "/admin",
+    "/settings",
+    "/",
+  ]);
+
+  const parentRoute = pathname.match(/^\/tasks\/\d+/)?.[0]
+    ? "/tasks"
+    : pathname.match(/^\/work-orders\/\d+/)?.[0]
+      ? "/work-orders"
+      : pathname.match(/^\/employees\/\d+/)?.[0]
+        ? "/employees"
+        : pathname.match(/^\/inventory\/\d+/)?.[0]
+          ? "/inventory"
+          : pathname.match(/^\/documents\/\d+/)?.[0]
+            ? "/documents"
+            : pathname.startsWith("/settings/")
+              ? "/settings"
+              : pathname.startsWith("/tasks/")
+                ? "/tasks"
+                : pathname.startsWith("/work-orders/")
+                  ? "/work-orders"
+                  : pathname.startsWith("/employees/")
+                    ? "/employees"
+                    : pathname.startsWith("/inventory/")
+                      ? "/inventory"
+                      : pathname.startsWith("/documents/")
+                        ? "/documents"
+                        : null;
+
+  const canGoBack = !TOP_LEVEL_PATHS.has(pathname) && Boolean(parentRoute);
 
   useEffect(() => {
     const isDark = document.documentElement.classList.contains("dark");
@@ -127,6 +174,14 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
     router.push(result.url);
   }
 
+  function goBackSafely() {
+    if (parentRoute) {
+      router.push(parentRoute);
+      return;
+    }
+    router.push("/dashboard");
+  }
+
   const initials = user
     ? user.name
         .split(/\s+/)
@@ -143,7 +198,7 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
         {canGoBack && (
           <button
             type="button"
-            onClick={() => router.back()}
+            onClick={goBackSafely}
             className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/30 bg-white/55 text-textMuted shadow-glass backdrop-blur-2xl transition-all hover:-translate-y-px hover:border-white/50 hover:bg-white/80 hover:text-textPrimary dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
             aria-label="Go back"
             title="Back"

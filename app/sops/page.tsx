@@ -15,11 +15,32 @@ type Sop = {
   last_updated: string | null;
 };
 
+type SessionUser = {
+  role: "Employee" | "Manager" | "Admin" | "Leadership";
+};
+
+type Owner = {
+  id: number;
+  name: string;
+};
+
 export default function SopsPage() {
   const [sops, setSops] = useState<Sop[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [me, setMe] = useState<SessionUser | null>(null);
+  const [owners, setOwners] = useState<Owner[]>([]);
+  const [expandedSopId, setExpandedSopId] = useState<number | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createBusy, setCreateBusy] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState("Office Procedures");
+  const [status, setStatus] = useState("active");
+  const [version, setVersion] = useState("1.0");
+  const [owner, setOwner] = useState("");
 
   const filteredSops = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -43,6 +64,10 @@ export default function SopsPage() {
         setError(null);
 
         const response = await fetch("/api/sops", { cache: "no-store" });
+        const [meResponse, employeesResponse] = await Promise.all([
+          fetch("/api/auth/me", { cache: "no-store" }),
+          fetch("/api/employees", { cache: "no-store" }),
+        ]);
         if (!response.ok) {
           throw new Error(`Failed to load SOPs (${response.status})`);
         }
@@ -50,6 +75,16 @@ export default function SopsPage() {
         const data = (await response.json()) as Sop[];
         if (!cancelled) {
           setSops(data);
+          if (meResponse.ok) {
+            const meData = (await meResponse.json()) as {
+              user: SessionUser | null;
+            };
+            setMe(meData.user);
+          }
+          if (employeesResponse.ok) {
+            const employeeData = (await employeesResponse.json()) as Owner[];
+            setOwners(employeeData);
+          }
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -73,6 +108,52 @@ export default function SopsPage() {
     };
   }, []);
 
+  const canCreate =
+    me?.role === "Manager" || me?.role === "Admin" || me?.role === "Leadership";
+
+  async function createSop() {
+    try {
+      setCreateBusy(true);
+      setCreateError(null);
+      const response = await fetch("/api/sops", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          description,
+          category,
+          status,
+          version,
+          owner: owner || null,
+        }),
+      });
+      const payload = (await response.json().catch(() => null)) as
+        | Sop
+        | { error?: string }
+        | null;
+      if (!response.ok) {
+        throw new Error(
+          (payload as { error?: string } | null)?.error ||
+            `Failed to create SOP (${response.status})`,
+        );
+      }
+      setSops((prev) => [payload as Sop, ...prev]);
+      setCreateOpen(false);
+      setTitle("");
+      setDescription("");
+      setCategory("Office Procedures");
+      setStatus("active");
+      setVersion("1.0");
+      setOwner("");
+    } catch (createErr) {
+      setCreateError(
+        createErr instanceof Error ? createErr.message : "Create failed",
+      );
+    } finally {
+      setCreateBusy(false);
+    }
+  }
+
   return (
     <div className="space-y-8">
       <FadeContent
@@ -80,20 +161,31 @@ export default function SopsPage() {
         blur={true}
         duration={800}
         delay={50}
-        className="space-y-2"
+        className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between"
       >
-        <div className="flex flex-wrap items-center gap-3">
-          <h1 className="text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
-            <ShinyText>SOPs</ShinyText>
-          </h1>
-          <span className="inline-flex rounded-xl border border-white/30 bg-white/55 px-3 py-1 text-xs font-medium text-textMuted shadow-glass backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
-            {filteredSops.length} of {sops.length} SOPs
-          </span>
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
+              <ShinyText>SOPs</ShinyText>
+            </h1>
+            <span className="inline-flex rounded-xl border border-white/30 bg-white/55 px-3 py-1 text-xs font-medium text-textMuted shadow-glass backdrop-blur-xl dark:border-white/10 dark:bg-white/5">
+              {filteredSops.length} of {sops.length} SOPs
+            </span>
+          </div>
+          <p className="max-w-3xl text-base text-textSecondary">
+            Live standard operating procedures from PostgreSQL with ownership,
+            versioning, and review status.
+          </p>
         </div>
-        <p className="max-w-3xl text-base text-textSecondary">
-          Live standard operating procedures from PostgreSQL with ownership,
-          versioning, and review status.
-        </p>
+        {canCreate ? (
+          <button
+            type="button"
+            onClick={() => setCreateOpen(true)}
+            className="inline-flex h-10 items-center justify-center rounded-xl border border-white/30 bg-white/55 px-4 text-sm font-semibold text-textPrimary shadow-glass backdrop-blur-2xl transition hover:bg-white/80 dark:border-white/10 dark:bg-white/5"
+          >
+            + New SOP
+          </button>
+        ) : null}
       </FadeContent>
 
       <FadeContent
@@ -157,6 +249,24 @@ export default function SopsPage() {
                   value={formatDate(sop.last_updated)}
                 />
               </dl>
+              <div className="mt-4 border-t border-borderSubtle pt-3">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setExpandedSopId((current) =>
+                      current === sop.id ? null : sop.id,
+                    )
+                  }
+                  className="text-sm font-semibold text-accent"
+                >
+                  {expandedSopId === sop.id ? "Hide" : "Open / Read"}
+                </button>
+                {expandedSopId === sop.id ? (
+                  <p className="mt-2 text-sm leading-6 text-textSecondary">
+                    {sop.description || "No SOP description provided."}
+                  </p>
+                ) : null}
+              </div>
             </article>
           ))}
 
@@ -167,6 +277,84 @@ export default function SopsPage() {
           ) : null}
         </FadeContent>
       )}
+
+      {createOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-bgDark/55 px-4">
+          <div className="w-full max-w-xl rounded-2xl border border-borderSubtle bg-surface p-5 shadow-cyberMd">
+            <h2 className="text-lg font-semibold text-textPrimary">New SOP</h2>
+            <div className="mt-4 grid gap-3">
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="SOP title"
+                className="w-full rounded-lg border border-borderSubtle bg-bgDark/80 px-3 py-2 text-sm text-textPrimary"
+              />
+              <input
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                placeholder="Category"
+                className="w-full rounded-lg border border-borderSubtle bg-bgDark/80 px-3 py-2 text-sm text-textPrimary"
+              />
+              <textarea
+                rows={4}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Description"
+                className="w-full rounded-lg border border-borderSubtle bg-bgDark/80 px-3 py-2 text-sm text-textPrimary"
+              />
+              <div className="grid grid-cols-2 gap-3">
+                <select
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value)}
+                  className="w-full rounded-lg border border-borderSubtle bg-bgDark/80 px-3 py-2 text-sm text-textPrimary"
+                >
+                  <option value="active">Active</option>
+                  <option value="under_review">Needs Review</option>
+                  <option value="archived">Archived</option>
+                </select>
+                <input
+                  value={version}
+                  onChange={(e) => setVersion(e.target.value)}
+                  placeholder="Version"
+                  className="w-full rounded-lg border border-borderSubtle bg-bgDark/80 px-3 py-2 text-sm text-textPrimary"
+                />
+              </div>
+              <select
+                value={owner}
+                onChange={(e) => setOwner(e.target.value)}
+                className="w-full rounded-lg border border-borderSubtle bg-bgDark/80 px-3 py-2 text-sm text-textPrimary"
+              >
+                <option value="">Unassigned owner</option>
+                {owners.map((candidate) => (
+                  <option key={candidate.id} value={String(candidate.id)}>
+                    {candidate.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {createError ? (
+              <p className="mt-3 text-sm text-red-500">{createError}</p>
+            ) : null}
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setCreateOpen(false)}
+                className="rounded-lg border border-borderSubtle px-4 py-2 text-sm font-semibold text-textPrimary"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void createSop()}
+                disabled={createBusy}
+                className="rounded-lg border border-accent bg-accent px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                {createBusy ? "Creating..." : "Create SOP"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

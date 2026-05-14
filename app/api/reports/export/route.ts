@@ -17,6 +17,10 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
+    if (request.nextUrl.searchParams.get("check") === "1") {
+      return NextResponse.json({ export: true });
+    }
+
     const filters = parseReportFilters(request.nextUrl.searchParams);
     const report = await getWorkspaceReport(filters);
     const csv = reportToCsv(report);

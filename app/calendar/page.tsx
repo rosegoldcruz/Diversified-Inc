@@ -118,6 +118,16 @@ type DragPayload = {
   origin: "unscheduled" | "scheduled";
 };
 
+type QuickBlockState = {
+  title: string;
+  block_type: string;
+  date: string;
+  start_time: string;
+  end_time: string;
+  assigned_to: string;
+  notes: string;
+};
+
 const DIVISIONS = [
   "Diversified",
   "Marketing",
@@ -182,6 +192,18 @@ export default function CalendarPage() {
     useState<MicrosoftStatusResponse | null>(null);
   const [outlookEvents, setOutlookEvents] = useState<OutlookEvent[]>([]);
   const [syncingOutlook, setSyncingOutlook] = useState(false);
+  const [quickBlockOpen, setQuickBlockOpen] = useState(false);
+  const [quickBlockSaving, setQuickBlockSaving] = useState(false);
+  const [quickBlockError, setQuickBlockError] = useState<string | null>(null);
+  const [quickBlockState, setQuickBlockState] = useState<QuickBlockState>({
+    title: "",
+    block_type: "admin",
+    date: "",
+    start_time: "09:00",
+    end_time: "10:00",
+    assigned_to: "",
+    notes: "",
+  });
 
   async function loadCalendarData(cancelled?: () => boolean) {
     try {
@@ -355,8 +377,12 @@ export default function CalendarPage() {
 
   const weekDays = useMemo(() => getWeekDays(weekOffset), [weekOffset]);
   const currentDay =
-    weekDays[Math.max(0, Math.min(dayIndex, weekDays.length - 1))];
-  const visibleDays = viewMode === "Day" ? [currentDay] : weekDays;
+    weekDays[Math.max(0, Math.min(dayIndex, weekDays.length - 1))] ||
+    weekDays[0] ||
+    new Date();
+  const visibleDays = useMemo(() => {
+    return viewMode === "Day" ? [currentDay] : weekDays;
+  }, [currentDay, viewMode, weekDays]);
   const weekStart = weekDays[0];
   const weekEnd = weekDays[weekDays.length - 1];
 
@@ -443,6 +469,14 @@ export default function CalendarPage() {
     };
   }, [visibleDateRange]);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("action") !== "new-task") return;
+    setSelectedTask(null);
+    setIsNewTask(true);
+    setEditorOpen(true);
+  }, []);
+
   function openExistingTask(task: Task) {
     setSelectedTask(task);
     setIsNewTask(false);
@@ -453,6 +487,86 @@ export default function CalendarPage() {
     setSelectedTask(null);
     setIsNewTask(true);
     setEditorOpen(true);
+  }
+
+  function openNewBlock() {
+    const day = visibleDays[0] ?? new Date();
+    const dateValue = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
+    setQuickBlockState({
+      title: "",
+      block_type: "admin",
+      date: dateValue,
+      start_time: "09:00",
+      end_time: "10:00",
+      assigned_to: "",
+      notes: "",
+    });
+    setQuickBlockError(null);
+    setQuickBlockOpen(true);
+  }
+
+  async function createQuickBlock() {
+    try {
+      setQuickBlockSaving(true);
+      setQuickBlockError(null);
+
+      const title = quickBlockState.title.trim();
+      if (!title) {
+        setQuickBlockError("Block title is required.");
+        return;
+      }
+
+      if (!quickBlockState.date) {
+        setQuickBlockError("Block date is required.");
+        return;
+      }
+
+      const start = new Date(
+        `${quickBlockState.date}T${quickBlockState.start_time}:00`,
+      );
+      const end = new Date(
+        `${quickBlockState.date}T${quickBlockState.end_time}:00`,
+      );
+
+      const response = await fetch("/api/calendar-blocks", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title,
+          block_type: quickBlockState.block_type,
+          start_time: start.toISOString(),
+          end_time: end.toISOString(),
+          assigned_to: quickBlockState.assigned_to || null,
+          notes: quickBlockState.notes || null,
+          status: "scheduled",
+        }),
+      });
+
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => null)) as {
+          error?: string;
+        } | null;
+        throw new Error(
+          payload?.error || `Failed to create block (${response.status})`,
+        );
+      }
+
+      const block = (await response.json()) as CalendarBlock;
+      setCalendarBlocks((current) => {
+        const withoutExisting = current.filter((item) => item.id !== block.id);
+        return [...withoutExisting, block];
+      });
+      setStatusMessage("Calendar block created.");
+      setQuickBlockOpen(false);
+    } catch (createError) {
+      setQuickBlockError(
+        createError instanceof Error
+          ? createError.message
+          : "Failed to create block",
+      );
+    } finally {
+      setQuickBlockSaving(false);
+    }
   }
 
   async function handleSave() {
@@ -898,6 +1012,20 @@ export default function CalendarPage() {
             ) : null}
             <button
               type="button"
+              onClick={openNewTask}
+              className="rounded-xl border border-accent/40 bg-accent/10 px-3 py-2 text-sm font-semibold text-accent transition-all hover:-translate-y-px hover:bg-accent/20"
+            >
+              + New Task
+            </button>
+            <button
+              type="button"
+              onClick={openNewBlock}
+              className="rounded-xl border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-sm font-semibold text-emerald-700 transition-all hover:-translate-y-px hover:bg-emerald-500/20 dark:text-emerald-300"
+            >
+              + New Block
+            </button>
+            <button
+              type="button"
               onClick={() => {
                 window.location.href = "/api/integrations/microsoft/connect";
               }}
@@ -957,6 +1085,18 @@ export default function CalendarPage() {
           onSave={() => void handleSave()}
           onComplete={() => void handleComplete()}
           onLockToggle={() => void handleLockToggle()}
+        />
+      ) : null}
+
+      {quickBlockOpen ? (
+        <QuickBlockModal
+          state={quickBlockState}
+          setState={setQuickBlockState}
+          employees={employees}
+          saving={quickBlockSaving}
+          error={quickBlockError}
+          onClose={() => setQuickBlockOpen(false)}
+          onSave={() => void createQuickBlock()}
         />
       ) : null}
     </div>
@@ -1692,6 +1832,168 @@ function TaskEditorModal({
               </button>
             ) : null}
           </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function QuickBlockModal({
+  state,
+  setState,
+  employees,
+  saving,
+  error,
+  onClose,
+  onSave,
+}: {
+  state: QuickBlockState;
+  setState: Dispatch<SetStateAction<QuickBlockState>>;
+  employees: Employee[];
+  saving: boolean;
+  error: string | null;
+  onClose: () => void;
+  onSave: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-bgDark/55 px-4">
+      <div className="w-full max-w-2xl rounded-2xl border border-borderSubtle bg-surface p-5 shadow-cyberMd">
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-textPrimary">
+            Create Calendar Block
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md border border-borderSubtle p-2 text-textSecondary"
+          >
+            <X className="h-4 w-4" weight="bold" />
+          </button>
+        </div>
+
+        <div className="mt-4 grid gap-3 md:grid-cols-2">
+          <Field label="Title" className="md:col-span-2">
+            <input
+              value={state.title}
+              onChange={(event) =>
+                setState((current) => ({
+                  ...current,
+                  title: event.target.value,
+                }))
+              }
+              placeholder="Review queued requests"
+              className="w-full rounded-lg border border-borderSubtle bg-bgDark px-3 py-2 text-sm text-textPrimary outline-none focus:border-accent"
+            />
+          </Field>
+          <Field label="Block Type">
+            <select
+              value={state.block_type}
+              onChange={(event) =>
+                setState((current) => ({
+                  ...current,
+                  block_type: event.target.value,
+                }))
+              }
+              className="w-full rounded-lg border border-borderSubtle bg-bgDark px-3 py-2 text-sm text-textPrimary outline-none focus:border-accent"
+            >
+              <option value="task_work">Task Work</option>
+              <option value="meeting">Meeting</option>
+              <option value="admin">Admin</option>
+              <option value="follow_up">Follow-Up</option>
+              <option value="review">Review</option>
+            </select>
+          </Field>
+          <Field label="Assigned To">
+            <select
+              value={state.assigned_to}
+              onChange={(event) =>
+                setState((current) => ({
+                  ...current,
+                  assigned_to: event.target.value,
+                }))
+              }
+              className="w-full rounded-lg border border-borderSubtle bg-bgDark px-3 py-2 text-sm text-textPrimary outline-none focus:border-accent"
+            >
+              <option value="">Unassigned</option>
+              {employees.map((employee) => (
+                <option key={employee.id} value={String(employee.id)}>
+                  {employee.name}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="Date">
+            <input
+              type="date"
+              value={state.date}
+              onChange={(event) =>
+                setState((current) => ({
+                  ...current,
+                  date: event.target.value,
+                }))
+              }
+              className="w-full rounded-lg border border-borderSubtle bg-bgDark px-3 py-2 text-sm text-textPrimary outline-none focus:border-accent"
+            />
+          </Field>
+          <Field label="Start Time">
+            <input
+              type="time"
+              value={state.start_time}
+              onChange={(event) =>
+                setState((current) => ({
+                  ...current,
+                  start_time: event.target.value,
+                }))
+              }
+              className="w-full rounded-lg border border-borderSubtle bg-bgDark px-3 py-2 text-sm text-textPrimary outline-none focus:border-accent"
+            />
+          </Field>
+          <Field label="End Time">
+            <input
+              type="time"
+              value={state.end_time}
+              onChange={(event) =>
+                setState((current) => ({
+                  ...current,
+                  end_time: event.target.value,
+                }))
+              }
+              className="w-full rounded-lg border border-borderSubtle bg-bgDark px-3 py-2 text-sm text-textPrimary outline-none focus:border-accent"
+            />
+          </Field>
+          <Field label="Notes" className="md:col-span-2">
+            <textarea
+              rows={3}
+              value={state.notes}
+              onChange={(event) =>
+                setState((current) => ({
+                  ...current,
+                  notes: event.target.value,
+                }))
+              }
+              className="w-full rounded-lg border border-borderSubtle bg-bgDark px-3 py-2 text-sm text-textPrimary outline-none focus:border-accent"
+            />
+          </Field>
+        </div>
+
+        {error ? <p className="mt-3 text-sm text-red-500">{error}</p> : null}
+
+        <div className="mt-4 flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg border border-borderSubtle px-4 py-2 text-sm font-semibold text-textPrimary"
+          >
+            Cancel
+          </button>
+          <button
+            type="button"
+            onClick={onSave}
+            disabled={saving}
+            className="rounded-lg border border-accent bg-accent px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+          >
+            {saving ? "Creating..." : "Create Block"}
+          </button>
         </div>
       </div>
     </div>

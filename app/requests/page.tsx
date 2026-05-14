@@ -66,6 +66,16 @@ export default function RequestsPage() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionBusy, setActionBusy] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createBusy, setCreateBusy] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [createTitle, setCreateTitle] = useState("");
+  const [createCategory, setCreateCategory] = useState(
+    "General Internal Request",
+  );
+  const [createPriority, setCreatePriority] =
+    useState<RequestPriority>("Medium");
+  const [createDescription, setCreateDescription] = useState("");
 
   const loadAll = useCallback(async () => {
     setLoading(true);
@@ -149,6 +159,43 @@ export default function RequestsPage() {
     }
   }
 
+  async function createRequest() {
+    try {
+      setCreateBusy(true);
+      setCreateError(null);
+      const response = await fetch("/api/requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: createTitle.trim() || undefined,
+          category: createCategory,
+          priority: createPriority,
+          description: createDescription.trim() || undefined,
+        }),
+      });
+      const payload = (await response.json().catch(() => null)) as
+        | Request
+        | { error?: string }
+        | null;
+      if (!response.ok) {
+        throw new Error(
+          (payload as { error?: string } | null)?.error ||
+            `Failed to create request (${response.status})`,
+        );
+      }
+      setRequests((prev) => [payload as Request, ...prev]);
+      setCreateOpen(false);
+      setCreateTitle("");
+      setCreateCategory("General Internal Request");
+      setCreatePriority("Medium");
+      setCreateDescription("");
+    } catch (err) {
+      setCreateError(err instanceof Error ? err.message : "Create failed");
+    } finally {
+      setCreateBusy(false);
+    }
+  }
+
   return (
     <div className="space-y-8">
       <FadeContent
@@ -156,14 +203,23 @@ export default function RequestsPage() {
         blur={true}
         duration={800}
         delay={50}
-        className="space-y-2"
+        className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between"
       >
-        <h1 className="text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
-          <ShinyText>Requests</ShinyText>
-        </h1>
-        <p className="max-w-3xl text-base text-textSecondary">
-          Internal requests from submission through approval.
-        </p>
+        <div className="space-y-2">
+          <h1 className="text-3xl font-semibold tracking-normal text-textPrimary md:text-4xl">
+            <ShinyText>Requests</ShinyText>
+          </h1>
+          <p className="max-w-3xl text-base text-textSecondary">
+            Internal requests from submission through approval.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setCreateOpen(true)}
+          className="inline-flex h-10 items-center justify-center rounded-xl border border-white/30 bg-white/55 px-4 text-sm font-semibold text-textPrimary shadow-glass backdrop-blur-2xl transition hover:bg-white/80 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+        >
+          + New Request
+        </button>
       </FadeContent>
 
       <FadeContent
@@ -422,6 +478,91 @@ export default function RequestsPage() {
           </div>
         ) : null}
       </aside>
+
+      {createOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-bgDark/55 px-4">
+          <div className="w-full max-w-xl rounded-2xl border border-borderSubtle bg-surface p-5 shadow-cyberMd">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold text-textPrimary">
+                New Request
+              </h2>
+              <button
+                type="button"
+                onClick={() => setCreateOpen(false)}
+                className="rounded-md border border-borderSubtle p-1.5 text-textSecondary"
+              >
+                <X className="h-4 w-4" weight="bold" />
+              </button>
+            </div>
+
+            <div className="mt-4 grid gap-3">
+              <label className="text-sm text-textSecondary">
+                Title
+                <input
+                  value={createTitle}
+                  onChange={(event) => setCreateTitle(event.target.value)}
+                  placeholder="Optional title"
+                  className="mt-1 w-full rounded-lg border border-borderSubtle bg-bgDark/80 px-3 py-2 text-sm text-textPrimary"
+                />
+              </label>
+              <label className="text-sm text-textSecondary">
+                Category
+                <input
+                  value={createCategory}
+                  onChange={(event) => setCreateCategory(event.target.value)}
+                  className="mt-1 w-full rounded-lg border border-borderSubtle bg-bgDark/80 px-3 py-2 text-sm text-textPrimary"
+                />
+              </label>
+              <label className="text-sm text-textSecondary">
+                Priority
+                <select
+                  value={createPriority}
+                  onChange={(event) =>
+                    setCreatePriority(event.target.value as RequestPriority)
+                  }
+                  className="mt-1 w-full rounded-lg border border-borderSubtle bg-bgDark/80 px-3 py-2 text-sm text-textPrimary"
+                >
+                  <option>Low</option>
+                  <option>Medium</option>
+                  <option>High</option>
+                  <option>Urgent</option>
+                </select>
+              </label>
+              <label className="text-sm text-textSecondary">
+                Description
+                <textarea
+                  rows={4}
+                  value={createDescription}
+                  onChange={(event) => setCreateDescription(event.target.value)}
+                  className="mt-1 w-full rounded-lg border border-borderSubtle bg-bgDark/80 px-3 py-2 text-sm text-textPrimary"
+                />
+              </label>
+            </div>
+
+            {createError ? (
+              <p className="mt-3 text-sm text-red-500">{createError}</p>
+            ) : null}
+
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setCreateOpen(false)}
+                className="rounded-lg border border-borderSubtle px-4 py-2 text-sm font-semibold text-textPrimary"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void createRequest()}
+                disabled={createBusy}
+                className="rounded-lg border border-accent bg-accent px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                {createBusy ? "Creating..." : "Create Request"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

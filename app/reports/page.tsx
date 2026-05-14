@@ -64,6 +64,7 @@ export default function ReportsPage() {
   const [report, setReport] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
+  const [exportReady, setExportReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -98,6 +99,42 @@ export default function ReportsPage() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function checkExportAvailability() {
+      try {
+        const response = await fetch("/api/reports/export?check=1", {
+          cache: "no-store",
+        });
+        if (!response.ok) {
+          if (!cancelled) setExportReady(false);
+          return;
+        }
+        const payload = (await response.json()) as { export: boolean };
+        if (!cancelled) setExportReady(Boolean(payload.export));
+      } catch {
+        if (!cancelled) setExportReady(false);
+      }
+    }
+
+    void checkExportAvailability();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const tasksByStatus = report?.tasksByStatus ?? [];
+  const tasksByPriority = report?.tasksByPriority ?? [];
+  const requestsByStatus = report?.requestsByStatus ?? [];
+  const workOrdersByStatus = report?.workOrdersByStatus ?? [];
+  const timesheetApprovalCounts = report?.timesheetApprovalCounts ?? [];
+  const sopsNeedingReview = report?.sopsNeedingReview ?? [];
+  const employeeWorkload = report?.employeeWorkload ?? [];
+  const lowInventory = report?.lowInventory ?? [];
+  const recentOperationalActivity = report?.recentOperationalActivity ?? [];
 
   const cards = useMemo(() => {
     if (!report) return [];
@@ -180,15 +217,17 @@ export default function ReportsPage() {
             </p>
           ) : null}
         </div>
-        <button
-          type="button"
-          onClick={() => void exportCsv()}
-          disabled={exporting || loading || !report}
-          className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-white/30 bg-white/55 px-4 text-sm font-semibold text-textPrimary shadow-glass backdrop-blur-2xl transition hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
-        >
-          <DownloadSimple className="h-4 w-4" weight="bold" />
-          {exporting ? "Exporting" : "Export CSV"}
-        </button>
+        {exportReady ? (
+          <button
+            type="button"
+            onClick={() => void exportCsv()}
+            disabled={exporting || loading || !report}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-white/30 bg-white/55 px-4 text-sm font-semibold text-textPrimary shadow-glass backdrop-blur-2xl transition hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-60 dark:border-white/10 dark:bg-white/5 dark:hover:bg-white/10"
+          >
+            <DownloadSimple className="h-4 w-4" weight="bold" />
+            {exporting ? "Exporting" : "Export CSV"}
+          </button>
+        ) : null}
       </FadeContent>
 
       {error ? <ErrorPanel message={error} /> : null}
@@ -209,7 +248,10 @@ export default function ReportsPage() {
             className="grid gap-5 md:grid-cols-2 xl:grid-cols-5"
           >
             {cards.map((card) => (
-              <article key={card.label} className="glass-surface p-6">
+              <article
+                key={card.label}
+                className="glass-surface cursor-default p-6"
+              >
                 <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">
                   {card.label}
                 </p>
@@ -221,30 +263,21 @@ export default function ReportsPage() {
           </FadeContent>
 
           <div className="grid gap-6 xl:grid-cols-2">
-            <BreakdownTable
-              title="Tasks by Status"
-              rows={report.tasksByStatus}
-            />
-            <BreakdownTable
-              title="Tasks by Priority"
-              rows={report.tasksByPriority}
-            />
+            <BreakdownTable title="Tasks by Status" rows={tasksByStatus} />
+            <BreakdownTable title="Tasks by Priority" rows={tasksByPriority} />
             <BreakdownTable
               title="Requests by Status"
-              rows={report.requestsByStatus}
+              rows={requestsByStatus}
             />
             <BreakdownTable
               title="Work Orders by Status"
-              rows={report.workOrdersByStatus}
+              rows={workOrdersByStatus}
             />
             <BreakdownTable
               title="Timesheet Approval Counts"
-              rows={report.timesheetApprovalCounts}
+              rows={timesheetApprovalCounts}
             />
-            <BreakdownTable
-              title="SOP Review Needs"
-              rows={report.sopsNeedingReview}
-            />
+            <BreakdownTable title="SOP Review Needs" rows={sopsNeedingReview} />
           </div>
 
           <FadeContent
@@ -257,8 +290,8 @@ export default function ReportsPage() {
             <h2 className="text-lg font-semibold text-textPrimary">
               Employee Workload
             </h2>
-            <DataTableEmpty visible={report.employeeWorkload.length === 0} />
-            {report.employeeWorkload.length > 0 ? (
+            <DataTableEmpty visible={employeeWorkload.length === 0} />
+            {employeeWorkload.length > 0 ? (
               <div className="mt-4 overflow-x-auto">
                 <table className="min-w-full text-left text-sm">
                   <thead className="bg-white/35 text-xs uppercase tracking-wide text-textMuted dark:bg-white/5">
@@ -272,7 +305,7 @@ export default function ReportsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/30 dark:divide-white/10">
-                    {report.employeeWorkload.map((row) => (
+                    {employeeWorkload.map((row) => (
                       <tr key={row.employee_id}>
                         <td className="px-4 py-3 font-medium text-textPrimary">
                           {row.employee_name}
@@ -304,8 +337,8 @@ export default function ReportsPage() {
             <h2 className="text-lg font-semibold text-textPrimary">
               Inventory Alerts
             </h2>
-            <DataTableEmpty visible={report.lowInventory.length === 0} />
-            {report.lowInventory.length > 0 ? (
+            <DataTableEmpty visible={lowInventory.length === 0} />
+            {lowInventory.length > 0 ? (
               <div className="mt-4 overflow-x-auto">
                 <table className="min-w-full text-left text-sm">
                   <thead className="bg-white/35 text-xs uppercase tracking-wide text-textMuted dark:bg-white/5">
@@ -318,7 +351,7 @@ export default function ReportsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/30 dark:divide-white/10">
-                    {report.lowInventory.map((item) => (
+                    {lowInventory.map((item) => (
                       <tr key={item.id}>
                         <td className="px-4 py-3 font-medium text-textPrimary">
                           {item.item_name}
@@ -353,10 +386,8 @@ export default function ReportsPage() {
             <h2 className="text-lg font-semibold text-textPrimary">
               Recent Operational Activity
             </h2>
-            <DataTableEmpty
-              visible={report.recentOperationalActivity.length === 0}
-            />
-            {report.recentOperationalActivity.length > 0 ? (
+            <DataTableEmpty visible={recentOperationalActivity.length === 0} />
+            {recentOperationalActivity.length > 0 ? (
               <div className="mt-4 overflow-x-auto">
                 <table className="min-w-full text-left text-sm">
                   <thead className="bg-white/35 text-xs uppercase tracking-wide text-textMuted dark:bg-white/5">
@@ -368,7 +399,7 @@ export default function ReportsPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/30 dark:divide-white/10">
-                    {report.recentOperationalActivity.map((activity, index) => (
+                    {recentOperationalActivity.map((activity, index) => (
                       <tr
                         key={`${activity.module}-${activity.action}-${index}`}
                       >

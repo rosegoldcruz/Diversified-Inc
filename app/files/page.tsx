@@ -179,22 +179,9 @@ export default function FilesPage() {
       </FadeContent>
 
       <FadeContent
-        as="section"
         blur={true}
         duration={800}
         delay={90}
-        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
-      >
-        <StatCard label="Total Files" value={metrics.total} />
-        <StatCard label="Contracts" value={metrics.contracts} />
-        <StatCard label="Photos" value={metrics.photos} />
-        <StatCard label="Permits" value={metrics.permits} />
-      </FadeContent>
-
-      <FadeContent
-        blur={true}
-        duration={800}
-        delay={120}
         className="glass-surface p-5"
       >
         <form onSubmit={uploadFile} className="space-y-4">
@@ -281,6 +268,19 @@ export default function FilesPage() {
             {uploading ? "Uploading..." : "Upload File"}
           </button>
         </form>
+      </FadeContent>
+
+      <FadeContent
+        as="section"
+        blur={true}
+        duration={800}
+        delay={120}
+        className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
+      >
+        <StatCard label="Total Files" value={metrics.total} />
+        <StatCard label="Contracts" value={metrics.contracts} />
+        <StatCard label="Photos" value={metrics.photos} />
+        <StatCard label="Permits" value={metrics.permits} />
       </FadeContent>
 
       <FadeContent

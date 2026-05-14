@@ -19,10 +19,23 @@ type Employee = {
   phone: string | null;
 };
 
+type SessionUser = {
+  role: "Employee" | "Manager" | "Admin" | "Leadership";
+};
+
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [me, setMe] = useState<SessionUser | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createBusy, setCreateBusy] = useState(false);
+  const [createError, setCreateError] = useState<string | null>(null);
+  const [name, setName] = useState("");
+  const [role, setRole] = useState("Employee");
+  const [department, setDepartment] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
 
   useEffect(() => {
     let cancelled = false;
@@ -33,6 +46,7 @@ export default function EmployeesPage() {
         setError(null);
 
         const response = await fetch("/api/employees", { cache: "no-store" });
+        const meResponse = await fetch("/api/auth/me", { cache: "no-store" });
         if (!response.ok) {
           throw new Error(`Failed to load employees (${response.status})`);
         }
@@ -40,6 +54,12 @@ export default function EmployeesPage() {
         const data = (await response.json()) as Employee[];
         if (!cancelled) {
           setEmployees(data);
+          if (meResponse.ok) {
+            const meData = (await meResponse.json()) as {
+              user: SessionUser | null;
+            };
+            setMe(meData.user);
+          }
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -62,6 +82,49 @@ export default function EmployeesPage() {
       cancelled = true;
     };
   }, []);
+
+  const canCreate = me?.role === "Admin" || me?.role === "Leadership";
+
+  async function createEmployee() {
+    try {
+      setCreateBusy(true);
+      setCreateError(null);
+      const response = await fetch("/api/employees", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          role,
+          department,
+          email,
+          phone,
+        }),
+      });
+      const payload = (await response.json().catch(() => null)) as
+        | Employee
+        | { error?: string }
+        | null;
+      if (!response.ok) {
+        throw new Error(
+          (payload as { error?: string } | null)?.error ||
+            `Failed to create employee (${response.status})`,
+        );
+      }
+      setEmployees((prev) => [payload as Employee, ...prev]);
+      setCreateOpen(false);
+      setName("");
+      setRole("Employee");
+      setDepartment("");
+      setEmail("");
+      setPhone("");
+    } catch (createErr) {
+      setCreateError(
+        createErr instanceof Error ? createErr.message : "Create failed",
+      );
+    } finally {
+      setCreateBusy(false);
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -94,6 +157,15 @@ export default function EmployeesPage() {
               ).length
             }
           />
+          {canCreate ? (
+            <button
+              type="button"
+              onClick={() => setCreateOpen(true)}
+              className="inline-flex h-10 items-center justify-center rounded-xl border border-white/30 bg-white/55 px-4 text-sm font-semibold text-textPrimary shadow-glass backdrop-blur-2xl transition hover:bg-white/80 dark:border-white/10 dark:bg-white/5"
+            >
+              + Add Employee
+            </button>
+          ) : null}
         </div>
       </FadeContent>
 
@@ -151,6 +223,72 @@ export default function EmployeesPage() {
           ))}
         </FadeContent>
       )}
+
+      {createOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-bgDark/55 px-4">
+          <div className="w-full max-w-xl rounded-2xl border border-borderSubtle bg-surface p-5 shadow-cyberMd">
+            <h2 className="text-lg font-semibold text-textPrimary">
+              Add Employee
+            </h2>
+            <div className="mt-4 grid gap-3">
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Full name"
+                className="w-full rounded-lg border border-borderSubtle bg-bgDark/80 px-3 py-2 text-sm text-textPrimary"
+              />
+              <input
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Email"
+                className="w-full rounded-lg border border-borderSubtle bg-bgDark/80 px-3 py-2 text-sm text-textPrimary"
+              />
+              <input
+                value={department}
+                onChange={(e) => setDepartment(e.target.value)}
+                placeholder="Department"
+                className="w-full rounded-lg border border-borderSubtle bg-bgDark/80 px-3 py-2 text-sm text-textPrimary"
+              />
+              <input
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="Phone"
+                className="w-full rounded-lg border border-borderSubtle bg-bgDark/80 px-3 py-2 text-sm text-textPrimary"
+              />
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="w-full rounded-lg border border-borderSubtle bg-bgDark/80 px-3 py-2 text-sm text-textPrimary"
+              >
+                <option>Employee</option>
+                <option>Manager</option>
+                <option>Admin</option>
+                {me?.role === "Leadership" ? <option>Leadership</option> : null}
+              </select>
+            </div>
+            {createError ? (
+              <p className="mt-3 text-sm text-red-500">{createError}</p>
+            ) : null}
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setCreateOpen(false)}
+                className="rounded-lg border border-borderSubtle px-4 py-2 text-sm font-semibold text-textPrimary"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => void createEmployee()}
+                disabled={createBusy}
+                className="rounded-lg border border-accent bg-accent px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+              >
+                {createBusy ? "Creating..." : "Create"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -116,6 +116,12 @@ function TasksPageContent() {
         </p>
       </FadeContent>
 
+      <Link
+        href="/calendar?action=new-task"
+        className="inline-flex h-10 items-center justify-center rounded-xl border border-white/30 bg-white/55 px-4 text-sm font-semibold text-textPrimary shadow-glass backdrop-blur-2xl transition hover:bg-white/80 dark:border-white/10 dark:bg-white/5"
+      >
+        + New Task
+      </Link>
       <FadeContent
         as="section"
         blur={true}
