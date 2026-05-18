@@ -6,12 +6,14 @@ import {
   optionalString,
   requireString,
 } from "@/lib/validators";
+import { ensureSopEngineTables } from "@/lib/sop-engine";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
     requireUser();
+    await ensureSopEngineTables();
     const rows = await query(`
       SELECT
         s.*,
@@ -37,6 +39,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     requireRole(["Manager", "Admin", "Leadership"]);
+    await ensureSopEngineTables();
 
     const body = (await request.json().catch(() => null)) as Record<
       string,

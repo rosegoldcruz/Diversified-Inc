@@ -84,10 +84,10 @@ export default function NotificationBell() {
   }
 
   return (
-    <div className="relative">
+    <div className="relative z-40">
       <button
         onClick={() => setIsOpen((prev) => !prev)}
-        className="relative rounded-lg p-2 transition hover:bg-bgDark/50"
+        className="relative z-20 rounded-lg p-2 transition hover:bg-slate-200/80 dark:hover:bg-white/10"
         aria-label="Notifications"
       >
         <Bell className="h-5 w-5 text-textSecondary" weight="duotone" />
@@ -101,11 +101,11 @@ export default function NotificationBell() {
       {isOpen ? (
         <>
           <div
-            className="fixed inset-0 z-40"
+            className="fixed inset-0 z-10"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute right-0 top-12 z-50 flex max-h-[600px] w-96 flex-col rounded-lg border border-borderSubtle bg-surface/95 shadow-glass backdrop-blur-xl">
-            <div className="flex items-center justify-between border-b border-borderSubtle p-4">
+          <div className="absolute right-0 top-12 z-20 flex max-h-[min(600px,calc(100vh-6rem))] w-96 max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl ring-1 ring-slate-950/10 dark:border-slate-700 dark:bg-slate-950 dark:ring-white/10">
+            <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900">
               <h3 className="font-semibold text-textPrimary">Notifications</h3>
               {unreadCount > 0 ? (
                 <Button
@@ -119,31 +119,35 @@ export default function NotificationBell() {
               ) : null}
             </div>
 
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto bg-white dark:bg-slate-950">
               {loading && notifications.length === 0 ? (
-                <div className="p-8 text-center">
+                <div className="flex min-h-40 items-center justify-center p-8 text-center">
                   <p className="text-sm text-textMuted">Loading...</p>
                 </div>
               ) : null}
 
               {!loading && notifications.length === 0 ? (
-                <div className="p-8 text-center">
+                <div className="flex min-h-48 flex-col items-center justify-center p-8 text-center">
                   <Bell
-                    className="mx-auto mb-3 h-12 w-12 text-textMuted"
+                    className="mb-3 h-12 w-12 text-textMuted"
                     weight="duotone"
                   />
-                  <p className="text-sm text-textMuted">No notifications yet</p>
+                  <p className="text-sm font-medium text-textSecondary">
+                    No notifications yet
+                  </p>
                 </div>
               ) : null}
 
               {notifications.length > 0 ? (
-                <div className="divide-y divide-borderSubtle">
+                <div className="divide-y divide-slate-200 dark:divide-slate-800">
                   {notifications.map((notification) => (
                     <div
                       key={notification.id}
                       onClick={() => handleClick(notification)}
-                      className={`cursor-pointer p-4 transition hover:bg-bgDark/40 ${
-                        !notification.read_at ? "bg-blue-500/5" : ""
+                      className={`cursor-pointer p-4 transition hover:bg-slate-100 dark:hover:bg-slate-900 ${
+                        !notification.read_at
+                          ? "bg-blue-50 dark:bg-blue-950/30"
+                          : ""
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">

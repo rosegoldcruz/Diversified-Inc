@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { HttpError, requireRole, requireUser } from "@/lib/session";
 import { ValidationError, requireEnum, requireString } from "@/lib/validators";
-import {
-  SOP_RUN_STATUSES,
-  blockSopRun,
-  getSopRunDetail,
-  resumeSopRun,
-} from "@/lib/sop-engine";
+import { blockSopRun, getSopRunDetail, resumeSopRun } from "@/lib/sop-engine";
 
 export const dynamic = "force-dynamic";
 
@@ -34,16 +29,27 @@ export async function GET(_request: NextRequest, { params }: RouteContext) {
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
   try {
     const session = requireRole(["Employee", "Manager", "Admin", "Leadership"]);
-    const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
+    const body = (await request.json().catch(() => null)) as Record<
+      string,
+      unknown
+    > | null;
     if (!body) {
-      return NextResponse.json({ error: "JSON body required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "JSON body required" },
+        { status: 400 },
+      );
     }
 
-    const action = requireEnum(body.action, ["block", "resume"] as const, "action");
+    const action = requireEnum(
+      body.action,
+      ["block", "resume"] as const,
+      "action",
+    );
 
     if (action === "block") {
       const reason = requireString(body.reason, "reason", 2000);
-      const waitType = typeof body.wait_type === "string" ? body.wait_type : null;
+      const waitType =
+        typeof body.wait_type === "string" ? body.wait_type : null;
       const run = await blockSopRun({
         runId: params.id,
         actorUserId: session.userId,
@@ -67,7 +73,10 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 
 function handleSopError(error: unknown, fallback: string) {
   if (error instanceof HttpError) {
-    return NextResponse.json({ error: error.message }, { status: error.status });
+    return NextResponse.json(
+      { error: error.message },
+      { status: error.status },
+    );
   }
   if (error instanceof ValidationError) {
     return NextResponse.json(

@@ -5,7 +5,12 @@ import { safeCreateAutomationEvent } from "@/lib/automation-events";
 import { createNotification } from "@/lib/notifications";
 import { ValidationError } from "@/lib/validators";
 
-export const SOP_TEMPLATE_STATUSES = ["draft", "active", "under_review", "archived"] as const;
+export const SOP_TEMPLATE_STATUSES = [
+  "draft",
+  "active",
+  "under_review",
+  "archived",
+] as const;
 export const SOP_RUN_STATUSES = [
   "not_started",
   "running",
@@ -23,7 +28,11 @@ export const SOP_RUN_STEP_STATUSES = [
   "completed",
   "skipped",
 ] as const;
-export const SOP_APPROVAL_STATUSES = ["pending", "approved", "rejected"] as const;
+export const SOP_APPROVAL_STATUSES = [
+  "pending",
+  "approved",
+  "rejected",
+] as const;
 
 export type SopTemplateStatus = (typeof SOP_TEMPLATE_STATUSES)[number];
 export type SopRunStatus = (typeof SOP_RUN_STATUSES)[number];
@@ -101,12 +110,26 @@ export type SopApprovalRow = {
   resolved_at: string | null;
 };
 
+export type SopRunStepDetail = SopRunStepRow & {
+  sop_id: number;
+  template_step_order: number;
+  title: string;
+  instructions: string | null;
+  required_role: string | null;
+  requires_evidence: boolean;
+  requires_approval: boolean;
+  estimated_minutes: number | null;
+  branch_condition: Record<string, unknown> | null;
+  template_created_at: string;
+  template_updated_at: string;
+};
+
 export type SopRunDetail = SopRunRow & {
   sop_title: string;
   assigned_to_name: string | null;
   started_by_name: string | null;
   current_step_title: string | null;
-  steps: Array<SopRunStepRow & SopStepRow>;
+  steps: SopRunStepDetail[];
   approvals: SopApprovalRow[];
 };
 
@@ -124,6 +147,7 @@ export async function ensureSopEngineTables() {
 
   await query(`
     ALTER TABLE sops
+      ADD COLUMN IF NOT EXISTS description TEXT,
       ADD COLUMN IF NOT EXISTS department TEXT,
       ADD COLUMN IF NOT EXISTS created_by INTEGER,
       ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -335,9 +359,10 @@ export async function createSopStep(input: {
     ],
   );
 
-  await query(`UPDATE sops SET last_updated = NOW(), updated_at = NOW() WHERE id = $1`, [
-    input.sopId,
-  ]);
+  await query(
+    `UPDATE sops SET last_updated = NOW(), updated_at = NOW() WHERE id = $1`,
+    [input.sopId],
+  );
 
   await createAuditLog({
     actorUserId: input.actorUserId,
@@ -394,15 +419,19 @@ export async function listSopRuns(filters: {
   );
 }
 
-export async function getSopRunDetail(runId: string): Promise<SopRunDetail | null> {
+export async function getSopRunDetail(
+  runId: string,
+): Promise<SopRunDetail | null> {
   await ensureSopEngineTables();
 
-  const rows = await query<SopRunRow & {
-    sop_title: string;
-    assigned_to_name: string | null;
-    started_by_name: string | null;
-    current_step_title: string | null;
-  }>(
+  const rows = await query<
+    SopRunRow & {
+      sop_title: string;
+      assigned_to_name: string | null;
+      started_by_name: string | null;
+      current_step_title: string | null;
+    }
+  >(
     `SELECT
        r.*,
        s.title AS sop_title,
@@ -422,7 +451,7 @@ export async function getSopRunDetail(runId: string): Promise<SopRunDetail | nul
   const run = rows[0];
   if (!run) return null;
 
-  const steps = await query<Array<SopRunStepRow & SopStepRow>>(
+  const steps = await query<SopRunStepDetail>(
     `SELECT
        rs.*,
        st.sop_id,
@@ -464,10 +493,9 @@ export async function startSopRun(input: {
   await ensureSopEngineTables();
 
   const result = await withTransaction(async (q) => {
-    const [sop] = await q<SopRow>(
-      `SELECT * FROM sops WHERE id = $1 LIMIT 1`,
-      [input.sopId],
-    );
+    const [sop] = await q<SopRow>(`SELECT * FROM sops WHERE id = $1 LIMIT 1`, [
+      input.sopId,
+    ]);
     if (!sop) throw new ValidationError("SOP not found");
 
     if (input.assignedTo) {
@@ -476,7 +504,9 @@ export async function startSopRun(input: {
         [input.assignedTo],
       );
       if (employee.length === 0) {
-        throw new ValidationError("assigned_to must reference an existing employee");
+        throw new ValidationError(
+          "assigned_to must reference an existing employee",
+        );
       }
     }
 
@@ -488,7 +518,9 @@ export async function startSopRun(input: {
       [input.sopId],
     );
     if (steps.length === 0) {
-      throw new ValidationError("SOP must have at least one step before it can be started");
+      throw new ValidationError(
+        "SOP must have at least one step before it can be started",
+      );
     }
 
     const [run] = await q<SopRunRow>(
@@ -593,7 +625,9 @@ export async function completeSopRunStep(input: {
       Boolean(input.evidenceUrl && input.evidenceUrl.trim()) ||
       Boolean(input.notes && input.notes.trim());
     if (step.requires_evidence && !hasEvidence) {
-      throw new ValidationError("This SOP step requires notes or evidence before completion");
+      throw new ValidationError(
+        "This SOP step requires notes or evidence before completion",
+      );
     }
 
     await q(
@@ -602,7 +636,12 @@ export async function completeSopRunStep(input: {
            evidence_url = $4,
            updated_at = NOW()
        WHERE sop_run_id = $1 AND sop_step_id = $2`,
-      [input.runId, input.stepId, input.notes ?? null, input.evidenceUrl ?? null],
+      [
+        input.runId,
+        input.stepId,
+        input.notes ?? null,
+        input.evidenceUrl ?? null,
+      ],
     );
 
     if (step.requires_approval) {
@@ -754,7 +793,9 @@ export async function resumeSopRun(input: {
   const before = await getSopRunDetail(input.runId);
   if (!before) throw new ValidationError("SOP run not found");
   if (before.status !== "blocked" && before.status !== "waiting") {
-    throw new ValidationError("Only blocked or waiting SOP runs can be resumed");
+    throw new ValidationError(
+      "Only blocked or waiting SOP runs can be resumed",
+    );
   }
 
   const rows = await query<SopRunRow>(
@@ -844,7 +885,9 @@ export async function resolveSopApproval(input: {
         [
           input.runId,
           approval.sop_step_id,
-          input.comment ? `\nApproval rejected: ${input.comment}` : "\nApproval rejected.",
+          input.comment
+            ? `\nApproval rejected: ${input.comment}`
+            : "\nApproval rejected.",
         ],
       );
 
@@ -1006,7 +1049,10 @@ async function createUpdatedAtTrigger(tableName: string, triggerName: string) {
   `);
 }
 
-export function parsePositiveInteger(value: string | number | null | undefined, label: string) {
+export function parsePositiveInteger(value: unknown, label: string) {
+  if (typeof value !== "string" && typeof value !== "number") {
+    throw new ValidationError(`${label} must be a positive integer`);
+  }
   const parsed = Number(value);
   if (!Number.isInteger(parsed) || parsed <= 0) {
     throw new ValidationError(`${label} must be a positive integer`);
@@ -1030,7 +1076,10 @@ export function parseBoolean(value: unknown) {
   return Boolean(value);
 }
 
-export function parseJsonObject(value: unknown, label: string): Record<string, unknown> | null {
+export function parseJsonObject(
+  value: unknown,
+  label: string,
+): Record<string, unknown> | null {
   if (value === null || value === undefined || value === "") return null;
   if (typeof value !== "object" || Array.isArray(value)) {
     throw new ValidationError(`${label} must be an object`);
