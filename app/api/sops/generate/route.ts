@@ -44,6 +44,7 @@ const DEFAULT_MODEL =
   MODEL_ALIASES[
     process.env.DEEPSEEK_DEFAULT_MODEL ?? process.env.DEEPSEEK_MODEL ?? ""
   ] ?? "deepseek-v4-flash";
+const GENERATION_TIMEOUT_MS = 85_000;
 
 export async function POST(request: NextRequest) {
   try {
@@ -68,8 +69,7 @@ export async function POST(request: NextRequest) {
     }
 
     const requestedTitle = requireString(body.title, "title", 250);
-    const category =
-      optionalString(body.category, "category", 120) || "Office Procedures";
+    const category = optionalString(body.category, "category", 120) || "General";
     const department = optionalString(body.department, "department", 120);
     const notes = requireString(body.notes, "notes", 8000);
     const audience = optionalString(body.audience, "audience", 250);
@@ -80,24 +80,51 @@ export async function POST(request: NextRequest) {
         ? 7
         : requireInteger(body.step_count, "step_count", { min: 3, max: 15 });
 
+    const meaningfulNotes = notes.trim();
+    if (
+      meaningfulNotes.length < 20 &&
+      meaningfulNotes.split(/\s+/).filter(Boolean).length < 5
+    ) {
+      throw new ValidationError("notes must include meaningful process details", {
+        notes: "Provide at least 5 words or around 20 characters of process notes.",
+      });
+    }
+
     await ensureSopEngineTables();
 
-    const generated = normalizeGeneratedSop(
-      await generateSopJson({
-        title: requestedTitle,
-        category,
-        department,
-        notes,
-        audience,
-        stepCount,
-      }),
-      {
-        title: requestedTitle,
-        category,
-        department,
-        stepCount,
-      },
-    );
+    let generated: GeneratedSop;
+    try {
+      generated = normalizeGeneratedSop(
+        await generateSopJson({
+          title: requestedTitle,
+          category,
+          department,
+          notes: meaningfulNotes,
+          audience,
+          stepCount,
+        }),
+        {
+          title: requestedTitle,
+          category,
+          department,
+          stepCount,
+        },
+      );
+    } catch (generationError) {
+      const details =
+        generationError instanceof Error
+          ? generationError.message
+          : "Unknown provider failure";
+      const status =
+        details.toLowerCase().includes("timed out") ||
+        details.toLowerCase().includes("timeout")
+          ? 504
+          : 500;
+      return NextResponse.json(
+        { error: "SOP generation failed", details },
+        { status },
+      );
+    }
 
     const ownerRows = await query<{ id: number }>(
       `SELECT id FROM employees WHERE id = $1 LIMIT 1`,
@@ -199,16 +226,17 @@ async function generateSopJson(input: {
   audience: string | null;
   stepCount: number;
 }) {
-  const result = await generateText({
-    model: deepseek(DEFAULT_MODEL),
-    temperature: 0.25,
-    maxOutputTokens: 2200,
-    system: `You generate internal SOPs for Diversified OS, an internal operations platform for a garage door and operations-heavy company.
+  const result = await withTimeout(
+    generateText({
+      model: deepseek(DEFAULT_MODEL),
+      temperature: 0.25,
+      maxOutputTokens: 2200,
+      system: `You generate internal SOPs for Diversified OS, an internal operations platform for a garage door and operations-heavy company.
 Return strict JSON only. No markdown, no commentary, no code fences.
 Avoid ServiceTitan integration claims and marketing/ad claims unless explicitly requested.
 Frame safety-sensitive content as internal procedure and include manager verification when appropriate.
 Use evidence/photo/documentation steps when useful and approval steps when escalation or manager signoff is appropriate.`,
-    prompt: `Create a practical internal SOP draft.
+      prompt: `Create a practical internal SOP draft.
 
 Required JSON shape:
 {
@@ -235,9 +263,30 @@ Audience/role: ${input.audience || "Not specified"}
 Target step count: ${input.stepCount}
 Rough notes/process:
 ${input.notes}`,
-  });
+    }),
+    GENERATION_TIMEOUT_MS,
+  );
 
   return parseStrictJson(result.text);
+}
+
+async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
+
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        timeoutHandle = setTimeout(() => {
+          reject(
+            new Error("AI provider timed out while generating SOP. Please retry."),
+          );
+        }, timeoutMs);
+      }),
+    ]);
+  } finally {
+    if (timeoutHandle) clearTimeout(timeoutHandle);
+  }
 }
 
 function parseStrictJson(text: string): unknown {

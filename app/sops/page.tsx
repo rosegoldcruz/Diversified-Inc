@@ -103,6 +103,7 @@ export default function SopsPage() {
   const [owner, setOwner] = useState("");
   const [generateOpen, setGenerateOpen] = useState(false);
   const [generateBusy, setGenerateBusy] = useState(false);
+  const [generateElapsedMs, setGenerateElapsedMs] = useState(0);
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [generatedDraftNotice, setGeneratedDraftNotice] = useState(false);
   const [genTitle, setGenTitle] = useState("");
@@ -128,6 +129,18 @@ export default function SopsPage() {
   );
   const pendingApprovals =
     run?.approvals.filter((approval) => approval.status === "pending") ?? [];
+  const parsedStepCount = Number(genStepCount);
+  const stepCountValid =
+    Number.isInteger(parsedStepCount) &&
+    parsedStepCount >= 3 &&
+    parsedStepCount <= 15;
+  const generateSubmitLabel = !generateBusy
+    ? "Generate SOP"
+    : generateElapsedMs >= 45_000
+      ? "Almost done or still waiting on provider response..."
+      : generateElapsedMs >= 15_000
+        ? "Still generating - AI can take up to a minute..."
+        : "Generating SOP...";
 
   useEffect(() => {
     let cancelled = false;
@@ -167,6 +180,22 @@ export default function SopsPage() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (!generateBusy) {
+      setGenerateElapsedMs(0);
+      return;
+    }
+
+    const startedAt = Date.now();
+    const timer = window.setInterval(() => {
+      setGenerateElapsedMs(Date.now() - startedAt);
+    }, 1000);
+
+    return () => {
+      window.clearInterval(timer);
+    };
+  }, [generateBusy]);
 
   async function openSop(sopId: number, draftNotice = false) {
     setSelectedSopId(sopId);
@@ -233,30 +262,67 @@ export default function SopsPage() {
   }
 
   async function generateSop() {
+    const stepCount = Number(genStepCount);
+    if (!Number.isInteger(stepCount) || stepCount < 3 || stepCount > 15) {
+      setGenerateError("Number of steps must be an integer between 3 and 15.");
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 90_000);
+
     try {
       setGenerateBusy(true);
       setGenerateError(null);
       const response = await fetch("/api/sops/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           title: genTitle,
           category: genCategory,
           department: genDepartment,
           audience: genAudience,
           notes: genNotes,
-          step_count: Number(genStepCount) || undefined,
+          step_count: stepCount,
         }),
       });
-      const payload = await readResponse<{
+
+      const payload = (await response.json().catch(() => null)) as
+        | {
+            sop: Sop;
+            steps: SopStep[];
+            generated: true;
+            error?: string;
+            details?: string;
+          }
+        | null;
+
+      if (!response.ok) {
+        const details =
+          payload && typeof payload.details === "string" ? payload.details : "";
+        const errorMessage =
+          payload && typeof payload.error === "string"
+            ? payload.error
+            : `Failed to generate SOP (${response.status})`;
+        throw new Error(details ? `${errorMessage}: ${details}` : errorMessage);
+      }
+
+      const successPayload = payload as {
         sop: Sop;
         steps: SopStep[];
         generated: true;
-      }>(response, "Failed to generate SOP");
+      };
+
       setSops((previous) => [
-        payload.sop,
-        ...previous.filter((sop) => sop.id !== payload.sop.id),
+        successPayload.sop,
+        ...previous.filter((sop) => sop.id !== successPayload.sop.id),
       ]);
+
+      await openSop(successPayload.sop.id, true);
+      setActionMessage(
+        `Generated SOP draft saved with ${successPayload.steps.length} steps.`,
+      );
       setGenerateOpen(false);
       setGenTitle("");
       setGenCategory("Office Procedures");
@@ -264,14 +330,39 @@ export default function SopsPage() {
       setGenAudience("");
       setGenNotes("");
       setGenStepCount("7");
-      await openSop(payload.sop.id, true);
     } catch (generateErr) {
-      setGenerateError(
-        generateErr instanceof Error ? generateErr.message : "Generate failed",
-      );
+      if (generateErr instanceof DOMException && generateErr.name === "AbortError") {
+        setGenerateError(
+          "SOP generation timed out. The AI provider took too long. Try again with shorter notes or fewer steps.",
+        );
+      } else {
+        setGenerateError(
+          generateErr instanceof Error ? generateErr.message : "Generate failed",
+        );
+      }
     } finally {
+      window.clearTimeout(timeoutId);
       setGenerateBusy(false);
     }
+  }
+
+  function closeGenerateModal() {
+    if (generateBusy) return;
+    setGenerateOpen(false);
+  }
+
+  function renderGeneratorField(props: {
+    label: string;
+    helper: string;
+    children: React.ReactNode;
+  }) {
+    return (
+      <label className="grid gap-1.5">
+        <span className="text-sm font-semibold text-textPrimary">{props.label}</span>
+        {props.children}
+        <span className="text-xs leading-5 text-textMuted">{props.helper}</span>
+      </label>
+    );
   }
 
   async function addStep() {
@@ -802,53 +893,115 @@ export default function SopsPage() {
       {generateOpen ? (
         <StandardModal
           title="Generate SOP with AI"
-          onClose={() => setGenerateOpen(false)}
+          onClose={closeGenerateModal}
         >
-          <div className="grid gap-3">
-            <input
-              value={genTitle}
-              onChange={(event) => setGenTitle(event.target.value)}
-              placeholder="SOP title"
-              className={FIELD_CLASS}
-            />
-            <input
-              value={genCategory}
-              onChange={(event) => setGenCategory(event.target.value)}
-              placeholder="Category"
-              className={FIELD_CLASS}
-            />
-            <input
-              value={genDepartment}
-              onChange={(event) => setGenDepartment(event.target.value)}
-              placeholder="Department"
-              className={FIELD_CLASS}
-            />
-            <input
-              value={genAudience}
-              onChange={(event) => setGenAudience(event.target.value)}
-              placeholder="Audience / role"
-              className={FIELD_CLASS}
-            />
-            <textarea
-              rows={6}
-              value={genNotes}
-              onChange={(event) => setGenNotes(event.target.value)}
-              placeholder="Rough notes / process"
-              className={FIELD_CLASS}
-            />
-            <input
-              value={genStepCount}
-              onChange={(event) => setGenStepCount(event.target.value)}
-              inputMode="numeric"
-              placeholder="Step count"
-              className={FIELD_CLASS}
-            />
+          <div className="grid max-h-[72vh] gap-4 overflow-y-auto pr-1 sm:max-h-[74vh]">
+            {renderGeneratorField({
+              label: "SOP title",
+              helper: "Name the process this SOP should cover.",
+              children: (
+                <input
+                  value={genTitle}
+                  onChange={(event) => setGenTitle(event.target.value)}
+                  placeholder="Example: Garage Door Warranty Call Intake"
+                  className={FIELD_CLASS}
+                />
+              ),
+            })}
+
+            {renderGeneratorField({
+              label: "Category",
+              helper:
+                "Group this SOP under the area where the team would look for it.",
+              children: (
+                <input
+                  value={genCategory}
+                  onChange={(event) => setGenCategory(event.target.value)}
+                  placeholder="Example: Customer Follow-Up, Safety, Inventory, Work Orders"
+                  className={FIELD_CLASS}
+                />
+              ),
+            })}
+
+            {renderGeneratorField({
+              label: "Department",
+              helper: "Which team or department owns this process?",
+              children: (
+                <input
+                  value={genDepartment}
+                  onChange={(event) => setGenDepartment(event.target.value)}
+                  placeholder="Example: Operations, Office, Service, Install, Admin"
+                  className={FIELD_CLASS}
+                />
+              ),
+            })}
+
+            {renderGeneratorField({
+              label: "Audience or role",
+              helper: "Who is supposed to follow this SOP?",
+              children: (
+                <input
+                  value={genAudience}
+                  onChange={(event) => setGenAudience(event.target.value)}
+                  placeholder="Example: Office Admin, Technician, Manager, Dispatcher"
+                  className={FIELD_CLASS}
+                />
+              ),
+            })}
+
+            {renderGeneratorField({
+              label: "Process notes",
+              helper:
+                "Paste rough notes, bullets, or messy instructions. The AI will turn them into steps.",
+              children: (
+                <textarea
+                  rows={7}
+                  value={genNotes}
+                  onChange={(event) => setGenNotes(event.target.value)}
+                  placeholder={"Example:\nWhen a warranty call comes in, confirm customer name, job address, original work order, issue description, photos, urgency, and who should follow up."}
+                  className={`${FIELD_CLASS} resize-y`}
+                />
+              ),
+            })}
+
+            {renderGeneratorField({
+              label: "Number of steps",
+              helper:
+                "This controls how many draft steps the AI should create. Use 5 for simple processes, 7 for normal workflows, 10+ for detailed procedures.",
+              children: (
+                <input
+                  type="number"
+                  min={3}
+                  max={15}
+                  value={genStepCount}
+                  onChange={(event) => setGenStepCount(event.target.value)}
+                  inputMode="numeric"
+                  placeholder="Example: 5, 7, or 10"
+                  className={FIELD_CLASS}
+                />
+              ),
+            })}
+
+            {!stepCountValid && genStepCount.trim() ? (
+              <ErrorPanel message="Number of steps must be an integer between 3 and 15." />
+            ) : null}
+
             {generateError ? <ErrorPanel message={generateError} /> : null}
             <ModalActions
-              onCancel={() => setGenerateOpen(false)}
+              onCancel={closeGenerateModal}
               onSubmit={() => void generateSop()}
-              submitLabel={generateBusy ? "Generating SOP..." : "Generate SOP"}
-              disabled={generateBusy || !genTitle.trim() || !genNotes.trim()}
+              submitLabel={generateSubmitLabel}
+              helperText={
+                generateBusy
+                  ? "This creates a real SOP and steps in the database. Do not close this panel while it is running."
+                  : undefined
+              }
+              disabled={
+                generateBusy ||
+                !genTitle.trim() ||
+                !genNotes.trim() ||
+                !stepCountValid
+              }
             />
           </div>
         </StandardModal>
@@ -1114,7 +1267,7 @@ function StandardModal({
   return (
     <div
       role="presentation"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-bgDark/60 px-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-bgDark/60 p-0 backdrop-blur-sm sm:items-center sm:px-4"
       onClick={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
@@ -1122,7 +1275,7 @@ function StandardModal({
       <div
         role="dialog"
         aria-modal="true"
-        className="max-h-[90vh] w-full max-w-xl overflow-y-auto rounded-2xl border border-borderSubtle bg-surface p-5 shadow-cyberMd dark:bg-bgDark"
+        className="max-h-[92vh] w-full overflow-y-auto rounded-t-2xl border border-borderSubtle bg-surface p-4 shadow-cyberMd dark:bg-bgDark sm:max-h-[90vh] sm:max-w-xl sm:rounded-2xl sm:p-5"
         onClick={(event) => event.stopPropagation()}
       >
         <h2 className="text-lg font-semibold text-textPrimary">{title}</h2>
@@ -1135,30 +1288,37 @@ function ModalActions({
   onCancel,
   onSubmit,
   submitLabel,
+  helperText,
   disabled,
 }: {
   onCancel: () => void;
   onSubmit: () => void;
   submitLabel: string;
+  helperText?: string;
   disabled?: boolean;
 }) {
   return (
-    <div className="grid gap-2 sm:grid-cols-2">
-      <button
-        type="button"
-        onClick={onCancel}
-        className="min-h-10 rounded-lg border border-borderSubtle px-4 py-2 text-sm font-semibold text-textPrimary"
-      >
-        Cancel
-      </button>
-      <button
-        type="button"
-        onClick={onSubmit}
-        disabled={disabled}
-        className="min-h-10 rounded-lg border border-accent bg-accent px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-      >
-        {submitLabel}
-      </button>
+    <div className="grid gap-2">
+      <div className="grid gap-2 sm:grid-cols-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="min-h-10 rounded-lg border border-borderSubtle px-4 py-2 text-sm font-semibold text-textPrimary"
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={onSubmit}
+          disabled={disabled}
+          className="min-h-10 rounded-lg border border-accent bg-accent px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+        >
+          {submitLabel}
+        </button>
+      </div>
+      {helperText ? (
+        <p className="text-xs leading-5 text-textMuted">{helperText}</p>
+      ) : null}
     </div>
   );
 }
