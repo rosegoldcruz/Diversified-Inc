@@ -290,6 +290,10 @@ collect_staged_files
 check_staged_files_safe
 run_build_check
 
+# Stage all safe changes before commit
+git add .
+collect_staged_files
+
 if git diff --cached --quiet; then
   echo "No staged changes to commit; skipping commit step"
 else

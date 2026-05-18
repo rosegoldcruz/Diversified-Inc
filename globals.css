@@ -6,6 +6,8 @@
 
 html,
 body {
+  max-width: 100vw;
+  overflow-x: hidden;
   background:
     radial-gradient(
       circle at 12% 8%,
@@ -24,6 +26,32 @@ body {
     ),
     rgb(var(--color-bg-dark));
   overscroll-behavior: none;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+.main-content,
+.page-shell,
+.dashboard-shell,
+.card,
+.panel,
+main,
+section,
+article {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 :root {

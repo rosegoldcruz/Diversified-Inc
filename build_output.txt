@@ -1,0 +1,149 @@
+
+> diversified-os@0.1.0 build
+> next build
+
+  ▲ Next.js 14.2.21
+  - Environments: .env.local, .env
+
+   Creating an optimized production build ...
+Browserslist: caniuse-lite is outdated. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+
+./app/api/forms/route.ts
+5:21  Warning: 'getSession' is defined but never used.  @typescript-eslint/no-unused-vars
+68:11  Warning: 'session' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./app/api/integrations/microsoft/connect/route.ts
+14:27  Warning: '_request' is defined but never used.  @typescript-eslint/no-unused-vars
+
+./app/api/requests/route.ts
+23:11  Warning: 'session' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./app/calendar/page.tsx
+379:9  Warning: The 'currentDay' logical expression could make the dependencies of useMemo Hook (at line 385) change on every render. To fix this, wrap the initialization of 'currentDay' in its own useMemo() Hook.  react-hooks/exhaustive-deps
+379:9  Warning: The 'currentDay' logical expression could make the dependencies of useMemo Hook (at line 435) change on every render. To fix this, wrap the initialization of 'currentDay' in its own useMemo() Hook.  react-hooks/exhaustive-deps
+
+./app/documents/esign/page.tsx
+56:10  Warning: 'auditLogs' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./components/LiveIndicator.tsx
+76:23  Warning: 'setIsConnected' is assigned a value but never used.  @typescript-eslint/no-unused-vars
+
+./lib/session.ts
+97:3  Warning: '_timesheet' is defined but never used.  @typescript-eslint/no-unused-vars
+
+info  - Need to disable some ESLint rules? Learn more here: https://nextjs.org/docs/basic-features/eslint#disabling-rules
+   Collecting page data ...
+ ⚠ Using edge runtime on a page currently disables static generation for that page
+   Generating static pages (0/30) ...
+   Generating static pages (7/30) 
+   Generating static pages (14/30) 
+   Generating static pages (22/30) 
+ ✓ Generating static pages (30/30)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                                    Size     First Load JS
+┌ ○ /                                          142 B          87.3 kB
+├ ○ /_not-found                                876 B          88.1 kB
+├ ○ /admin                                     9 kB            145 kB
+├ ○ /ai-chat                                   63.3 kB         194 kB
+├ ○ /ai-tools                                  5.21 kB         141 kB
+├ ƒ /api/ai-chat                               0 B                0 B
+├ ƒ /api/ai-chat/extract-file                  0 B                0 B
+├ ƒ /api/audit-logs                            0 B                0 B
+├ ƒ /api/auth/callback                         0 B                0 B
+├ ƒ /api/auth/local-login                      0 B                0 B
+├ ƒ /api/auth/login                            0 B                0 B
+├ ƒ /api/auth/logout                           0 B                0 B
+├ ƒ /api/auth/me                               0 B                0 B
+├ ƒ /api/automation-events                     0 B                0 B
+├ ƒ /api/automations/retry                     0 B                0 B
+├ ƒ /api/automations/status                    0 B                0 B
+├ ƒ /api/calendar-blocks                       0 B                0 B
+├ ƒ /api/calendar-blocks/[id]                  0 B                0 B
+├ ƒ /api/calendar/outlook-events               0 B                0 B
+├ ƒ /api/dashboard                             0 B                0 B
+├ ƒ /api/documents                             0 B                0 B
+├ ƒ /api/documents/[id]                        0 B                0 B
+├ ƒ /api/documents/[id]/audit                  0 B                0 B
+├ ƒ /api/documents/[id]/signature              0 B                0 B
+├ ƒ /api/documents/[id]/signatures             0 B                0 B
+├ ƒ /api/documents/[id]/versions               0 B                0 B
+├ ƒ /api/documents/sign                        0 B                0 B
+├ ƒ /api/employees                             0 B                0 B
+├ ƒ /api/employees/[id]                        0 B                0 B
+├ ƒ /api/files                                 0 B                0 B
+├ ƒ /api/files/[id]                            0 B                0 B
+├ ƒ /api/files/[id]/download                   0 B                0 B
+├ ƒ /api/forms                                 0 B                0 B
+├ ƒ /api/forms/[id]                            0 B                0 B
+├ ƒ /api/integrations/microsoft/callback       0 B                0 B
+├ ƒ /api/integrations/microsoft/connect        0 B                0 B
+├ ƒ /api/integrations/microsoft/status         0 B                0 B
+├ ƒ /api/integrations/microsoft/sync-calendar  0 B                0 B
+├ ƒ /api/inventory                             0 B                0 B
+├ ƒ /api/inventory/[id]                        0 B                0 B
+├ ƒ /api/notifications                         0 B                0 B
+├ ƒ /api/notifications/[id]/read               0 B                0 B
+├ ƒ /api/reports                               0 B                0 B
+├ ƒ /api/reports/export                        0 B                0 B
+├ ƒ /api/requests                              0 B                0 B
+├ ƒ /api/requests/[id]                         0 B                0 B
+├ ƒ /api/search                                0 B                0 B
+├ ƒ /api/settings                              0 B                0 B
+├ ƒ /api/settings/audit-logs                   0 B                0 B
+├ ƒ /api/settings/env-status                   0 B                0 B
+├ ƒ /api/settings/integrations                 0 B                0 B
+├ ƒ /api/settings/system-health                0 B                0 B
+├ ƒ /api/settings/test-n8n                     0 B                0 B
+├ ƒ /api/sops                                  0 B                0 B
+├ ƒ /api/tasks                                 0 B                0 B
+├ ƒ /api/tasks/[id]                            0 B                0 B
+├ ƒ /api/timeclock                             0 B                0 B
+├ ƒ /api/timeclock/active                      0 B                0 B
+├ ƒ /api/timesheets                            0 B                0 B
+├ ƒ /api/timesheets/[id]                       0 B                0 B
+├ ƒ /api/work-orders                           0 B                0 B
+├ ƒ /api/work-orders/[id]                      0 B                0 B
+├ ○ /automations                               5.2 kB          141 kB
+├ ○ /calendar                                  11.8 kB         107 kB
+├ ○ /dashboard                                 10.8 kB         153 kB
+├ ○ /dashboard/metrics                         3.98 kB         102 kB
+├ ○ /documents                                 2.58 kB         145 kB
+├ ƒ /documents/[id]                            5.47 kB         101 kB
+├ ○ /documents/esign                           6.54 kB         102 kB
+├ ○ /employees                                 3.63 kB         148 kB
+├ ƒ /employees/[id]                            3.43 kB         101 kB
+├ ○ /files                                     5.87 kB         141 kB
+├ ○ /forms                                     6.32 kB         149 kB
+├ ○ /inventory                                 4.29 kB         140 kB
+├ ƒ /inventory/[id]                            1.93 kB        89.1 kB
+├ ƒ /login                                     178 B          94.2 kB
+├ ○ /manifest.webmanifest                      0 B                0 B
+├ ○ /reports                                   4.42 kB         140 kB
+├ ○ /requests                                  7 kB            143 kB
+├ ○ /settings                                  4.22 kB         106 kB
+├ ○ /settings/notifications                    3.58 kB        98.9 kB
+├ ○ /settings/system                           5.83 kB         101 kB
+├ ○ /sops                                      3.84 kB         139 kB
+├ ○ /tasks                                     3.44 kB         146 kB
+├ ƒ /tasks/[id]                                2.21 kB        89.4 kB
+├ ○ /timeclock                                 3.71 kB         146 kB
+├ ○ /timesheets                                3.22 kB         139 kB
+├ ○ /work-orders                               4.6 kB          147 kB
+└ ƒ /work-orders/[id]                          2.33 kB        89.5 kB
++ First Load JS shared by all                  87.2 kB
+  ├ chunks/2117-50a48dbac2e8df1b.js            31.6 kB
+  ├ chunks/fd9d1056-39b3200568d8d092.js        53.6 kB
+  └ other shared chunks (total)                1.96 kB
+
+
+ƒ Middleware                                   26.5 kB
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand
+
