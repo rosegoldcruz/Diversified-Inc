@@ -125,10 +125,10 @@ type SyncCalendarResult = {
 
 function getMissingMicrosoftEnv() {
   const required = [
-    "MICROSOFT_CLIENT_ID",
-    "MICROSOFT_CLIENT_SECRET",
-    "MICROSOFT_REDIRECT_URI",
-    "MICROSOFT_TOKEN_ENCRYPTION_SECRET",
+    "MICROSOFT_GRAPH_CLIENT_ID",
+    "MICROSOFT_GRAPH_CLIENT_SECRET",
+    "MICROSOFT_GRAPH_REDIRECT_URI",
+    "MICROSOFT_GRAPH_TOKEN_ENCRYPTION_KEY",
   ];
 
   const missing = required.filter(
@@ -136,10 +136,10 @@ function getMissingMicrosoftEnv() {
   );
 
   if (
-    process.env.MICROSOFT_TOKEN_ENCRYPTION_SECRET &&
-    process.env.MICROSOFT_TOKEN_ENCRYPTION_SECRET.length < 32
+    process.env.MICROSOFT_GRAPH_TOKEN_ENCRYPTION_KEY &&
+    process.env.MICROSOFT_GRAPH_TOKEN_ENCRYPTION_KEY.length < 32
   ) {
-    missing.push("MICROSOFT_TOKEN_ENCRYPTION_SECRET(>=32 chars)");
+    missing.push("MICROSOFT_GRAPH_TOKEN_ENCRYPTION_KEY(>=32 chars)");
   }
 
   return missing;
@@ -158,10 +158,10 @@ function requireMicrosoftEnv() {
   }
 
   return {
-    clientId: process.env.MICROSOFT_CLIENT_ID as string,
-    clientSecret: process.env.MICROSOFT_CLIENT_SECRET as string,
-    tenantId: process.env.MICROSOFT_TENANT_ID?.trim() || "organizations",
-    redirectUri: process.env.MICROSOFT_REDIRECT_URI as string,
+    clientId: process.env.MICROSOFT_GRAPH_CLIENT_ID as string,
+    clientSecret: process.env.MICROSOFT_GRAPH_CLIENT_SECRET as string,
+    tenantId: process.env.MICROSOFT_GRAPH_TENANT_ID?.trim() || "common",
+    redirectUri: process.env.MICROSOFT_GRAPH_REDIRECT_URI as string,
     scopes: getMicrosoftScopes(),
   };
 }
@@ -173,10 +173,10 @@ function getMicrosoftScopes() {
 }
 
 function getTokenEncryptionKey() {
-  const secret = process.env.MICROSOFT_TOKEN_ENCRYPTION_SECRET;
+  const secret = process.env.MICROSOFT_GRAPH_TOKEN_ENCRYPTION_KEY;
   if (!secret || secret.length < 32) {
     throw new Error(
-      "MICROSOFT_TOKEN_ENCRYPTION_SECRET must be set and at least 32 characters.",
+      "MICROSOFT_GRAPH_TOKEN_ENCRYPTION_KEY must be set and at least 32 characters.",
     );
   }
   return createHash("sha256").update(secret).digest();
@@ -924,4 +924,14 @@ export function parseDateRange(fromRaw: string | null, toRaw: string | null) {
   }
 
   return { from, to };
+}
+
+export async function disconnectMicrosoftGraphConnection(userId: number) {
+  await ensureMicrosoftCalendarTables();
+  await query(
+    `UPDATE microsoft_connections
+     SET status = 'disconnected', updated_at = NOW()
+     WHERE user_id = $1 AND status = 'connected'`,
+    [userId],
+  );
 }
