@@ -39,7 +39,9 @@ export async function GET(request: NextRequest) {
     }
 
     const message =
-      error instanceof Error ? error.message : "Failed to fetch calendar events";
+      error instanceof Error
+        ? error.message
+        : "Failed to fetch calendar events";
 
     if (message.toLowerCase().includes("not connected")) {
       return NextResponse.json(

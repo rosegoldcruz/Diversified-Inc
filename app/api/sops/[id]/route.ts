@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { HttpError, requireRole, requireUser } from "@/lib/session";
-import { ValidationError, optionalString, requireEnum, requireString } from "@/lib/validators";
+import {
+  ValidationError,
+  optionalString,
+  requireEnum,
+  requireString,
+} from "@/lib/validators";
 import { query } from "@/lib/db";
 import { createAuditLog } from "@/lib/audit-log";
 import {
@@ -45,9 +50,15 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ error: "SOP not found" }, { status: 404 });
     }
 
-    const body = (await request.json().catch(() => null)) as Record<string, unknown> | null;
+    const body = (await request.json().catch(() => null)) as Record<
+      string,
+      unknown
+    > | null;
     if (!body) {
-      return NextResponse.json({ error: "JSON body required" }, { status: 400 });
+      return NextResponse.json(
+        { error: "JSON body required" },
+        { status: 400 },
+      );
     }
 
     const updates: string[] = [];
@@ -79,7 +90,9 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     }
     if (body.owner !== undefined) {
       const owner =
-        body.owner === null || body.owner === "" ? null : parsePositiveInteger(body.owner as string | number, "owner");
+        body.owner === null || body.owner === ""
+          ? null
+          : parsePositiveInteger(body.owner as string | number, "owner");
       if (owner !== null) {
         const employee = await query<{ id: number }>(
           `SELECT id FROM employees WHERE id = $1 LIMIT 1`,
@@ -97,7 +110,10 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     }
 
     if (updates.length === 0) {
-      return NextResponse.json({ error: "No SOP fields provided" }, { status: 400 });
+      return NextResponse.json(
+        { error: "No SOP fields provided" },
+        { status: 400 },
+      );
     }
 
     updates.push(`last_updated = NOW()`);
@@ -130,9 +146,56 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   }
 }
 
+export async function DELETE(request: NextRequest, { params }: RouteContext) {
+  try {
+    const session = requireRole(["Admin", "Leadership"]);
+    await ensureSopEngineTables();
+
+    const sopId = parsePositiveInteger(params.id, "sop id");
+    const before = await getSopTemplate(sopId);
+    if (!before) {
+      return NextResponse.json({ error: "SOP not found" }, { status: 404 });
+    }
+
+    const runRows = await query<{ total: string }>(
+      `SELECT COUNT(*)::text AS total FROM sop_runs WHERE sop_id = $1`,
+      [sopId],
+    );
+    const runCount = Number(runRows[0]?.total ?? "0");
+    if (runCount > 0) {
+      return NextResponse.json(
+        {
+          error:
+            "Cannot delete SOP with execution history. Archive it instead.",
+        },
+        { status: 409 },
+      );
+    }
+
+    await query(`DELETE FROM sops WHERE id = $1`, [sopId]);
+
+    await createAuditLog({
+      actorUserId: session.userId,
+      action: "sop.deleted",
+      module: "sops",
+      entityType: "sop",
+      entityId: sopId,
+      beforeData: before,
+      request,
+    });
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    return handleSopError(error, "Failed to delete SOP");
+  }
+}
+
 function handleSopError(error: unknown, fallback: string) {
   if (error instanceof HttpError) {
-    return NextResponse.json({ error: error.message }, { status: error.status });
+    return NextResponse.json(
+      { error: error.message },
+      { status: error.status },
+    );
   }
   if (error instanceof ValidationError) {
     return NextResponse.json(

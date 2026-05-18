@@ -83,6 +83,7 @@ export default function SopsPage() {
   const [actionMessage, setActionMessage] = useState<string | null>(null);
   const [run, setRun] = useState<SopRun | null>(null);
   const [busyAction, setBusyAction] = useState<string | null>(null);
+  const [deletingSop, setDeletingSop] = useState(false);
   const [stepTitle, setStepTitle] = useState("");
   const [stepInstructions, setStepInstructions] = useState("");
   const [stepRequiresEvidence, setStepRequiresEvidence] = useState(false);
@@ -124,6 +125,7 @@ export default function SopsPage() {
   }, [search, sops]);
 
   const canManage = me ? MANAGER_ROLES.includes(me.role) : false;
+  const canDeleteSop = me?.role === "Admin" || me?.role === "Leadership";
   const currentStep = run?.steps.find(
     (step) => step.sop_step_id === run.current_step_id,
   );
@@ -554,6 +556,46 @@ export default function SopsPage() {
     }
   }
 
+  async function deleteSelectedSop() {
+    if (!selectedSopId || !selectedSop) return;
+    const confirmed = window.confirm(
+      `Delete SOP \"${selectedSop.title}\"? This action cannot be undone.`,
+    );
+    if (!confirmed) return;
+
+    try {
+      setDeletingSop(true);
+      setActionError(null);
+      setActionMessage(null);
+      const response = await fetch(`/api/sops/${selectedSopId}`, {
+        method: "DELETE",
+      });
+      const payload = (await response.json().catch(() => null)) as {
+        ok?: boolean;
+        error?: string;
+      } | null;
+      if (!response.ok) {
+        throw new Error(
+          payload?.error || `Failed to delete SOP (${response.status})`,
+        );
+      }
+
+      setSops((previous) => previous.filter((sop) => sop.id !== selectedSopId));
+      setSelectedSopId(null);
+      setSelectedSop(null);
+      setRun(null);
+      setActionMessage("SOP deleted.");
+    } catch (deleteError) {
+      setActionError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Failed to delete SOP",
+      );
+    } finally {
+      setDeletingSop(false);
+    }
+  }
+
   return (
     <div className="space-y-8">
       <FadeContent
@@ -680,13 +722,25 @@ export default function SopsPage() {
                     </p>
                   </div>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setSelectedSopId(null)}
-                  className="min-h-10 rounded-lg border border-borderSubtle bg-surface px-4 text-sm font-semibold text-textPrimary transition hover:bg-bgDark/40"
-                >
-                  Close
-                </button>
+                <div className="flex items-center gap-2">
+                  {canDeleteSop ? (
+                    <button
+                      type="button"
+                      onClick={() => void deleteSelectedSop()}
+                      disabled={deletingSop}
+                      className="min-h-10 rounded-lg border border-red-300 bg-red-50 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300"
+                    >
+                      {deletingSop ? "Deleting..." : "Delete SOP"}
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedSopId(null)}
+                    className="min-h-10 rounded-lg border border-borderSubtle bg-surface px-4 text-sm font-semibold text-textPrimary transition hover:bg-bgDark/40"
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
               {generatedDraftNotice ? (
                 <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm font-medium text-amber-800 dark:text-amber-200">
