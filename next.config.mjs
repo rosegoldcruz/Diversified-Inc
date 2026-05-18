@@ -1,6 +1,14 @@
+import path from "path";
+
 /** @type {import("next").NextConfig} */
 const nextConfig = {
   // App directory is now stable in Next.js 14, no experimental flag needed
+  webpack(config) {
+    config.resolve = config.resolve || {};
+    config.resolve.alias = config.resolve.alias || {};
+    config.resolve.alias["@"] = path.resolve(process.cwd());
+    return config;
+  },
   async headers() {
     return [
       {

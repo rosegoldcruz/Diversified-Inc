@@ -69,7 +69,8 @@ export async function POST(request: NextRequest) {
     }
 
     const requestedTitle = requireString(body.title, "title", 250);
-    const category = optionalString(body.category, "category", 120) || "General";
+    const category =
+      optionalString(body.category, "category", 120) || "General";
     const department = optionalString(body.department, "department", 120);
     const notes = requireString(body.notes, "notes", 8000);
     const audience = optionalString(body.audience, "audience", 250);
@@ -85,9 +86,13 @@ export async function POST(request: NextRequest) {
       meaningfulNotes.length < 20 &&
       meaningfulNotes.split(/\s+/).filter(Boolean).length < 5
     ) {
-      throw new ValidationError("notes must include meaningful process details", {
-        notes: "Provide at least 5 words or around 20 characters of process notes.",
-      });
+      throw new ValidationError(
+        "notes must include meaningful process details",
+        {
+          notes:
+            "Provide at least 5 words or around 20 characters of process notes.",
+        },
+      );
     }
 
     await ensureSopEngineTables();
@@ -270,7 +275,10 @@ ${input.notes}`,
   return parseStrictJson(result.text);
 }
 
-async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+async function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+): Promise<T> {
   let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
 
   try {
@@ -279,7 +287,9 @@ async function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T
       new Promise<T>((_, reject) => {
         timeoutHandle = setTimeout(() => {
           reject(
-            new Error("AI provider timed out while generating SOP. Please retry."),
+            new Error(
+              "AI provider timed out while generating SOP. Please retry.",
+            ),
           );
         }, timeoutMs);
       }),

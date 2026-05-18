@@ -288,15 +288,13 @@ export default function SopsPage() {
         }),
       });
 
-      const payload = (await response.json().catch(() => null)) as
-        | {
-            sop: Sop;
-            steps: SopStep[];
-            generated: true;
-            error?: string;
-            details?: string;
-          }
-        | null;
+      const payload = (await response.json().catch(() => null)) as {
+        sop: Sop;
+        steps: SopStep[];
+        generated: true;
+        error?: string;
+        details?: string;
+      } | null;
 
       if (!response.ok) {
         const details =
@@ -331,13 +329,18 @@ export default function SopsPage() {
       setGenNotes("");
       setGenStepCount("7");
     } catch (generateErr) {
-      if (generateErr instanceof DOMException && generateErr.name === "AbortError") {
+      if (
+        generateErr instanceof DOMException &&
+        generateErr.name === "AbortError"
+      ) {
         setGenerateError(
           "SOP generation timed out. The AI provider took too long. Try again with shorter notes or fewer steps.",
         );
       } else {
         setGenerateError(
-          generateErr instanceof Error ? generateErr.message : "Generate failed",
+          generateErr instanceof Error
+            ? generateErr.message
+            : "Generate failed",
         );
       }
     } finally {
@@ -358,7 +361,9 @@ export default function SopsPage() {
   }) {
     return (
       <label className="grid gap-1.5">
-        <span className="text-sm font-semibold text-textPrimary">{props.label}</span>
+        <span className="text-sm font-semibold text-textPrimary">
+          {props.label}
+        </span>
         {props.children}
         <span className="text-xs leading-5 text-textMuted">{props.helper}</span>
       </label>
@@ -958,7 +963,9 @@ export default function SopsPage() {
                   rows={7}
                   value={genNotes}
                   onChange={(event) => setGenNotes(event.target.value)}
-                  placeholder={"Example:\nWhen a warranty call comes in, confirm customer name, job address, original work order, issue description, photos, urgency, and who should follow up."}
+                  placeholder={
+                    "Example:\nWhen a warranty call comes in, confirm customer name, job address, original work order, issue description, photos, urgency, and who should follow up."
+                  }
                   className={`${FIELD_CLASS} resize-y`}
                 />
               ),
