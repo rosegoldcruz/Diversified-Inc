@@ -195,6 +195,7 @@ export default function CalendarPage() {
   const [quickBlockOpen, setQuickBlockOpen] = useState(false);
   const [quickBlockSaving, setQuickBlockSaving] = useState(false);
   const [quickBlockError, setQuickBlockError] = useState<string | null>(null);
+  const [isDesktopLayout, setIsDesktopLayout] = useState(false);
   const [quickBlockState, setQuickBlockState] = useState<QuickBlockState>({
     title: "",
     block_type: "admin",
@@ -375,11 +376,28 @@ export default function CalendarPage() {
     return () => window.clearTimeout(timeout);
   }, [statusMessage]);
 
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(min-width: 1024px)");
+    const updateLayout = () => setIsDesktopLayout(mediaQuery.matches);
+    updateLayout();
+
+    if (typeof mediaQuery.addEventListener === "function") {
+      mediaQuery.addEventListener("change", updateLayout);
+      return () => mediaQuery.removeEventListener("change", updateLayout);
+    }
+
+    mediaQuery.addListener(updateLayout);
+    return () => mediaQuery.removeListener(updateLayout);
+  }, []);
+
   const weekDays = useMemo(() => getWeekDays(weekOffset), [weekOffset]);
-  const currentDay =
-    weekDays[Math.max(0, Math.min(dayIndex, weekDays.length - 1))] ||
-    weekDays[0] ||
-    new Date();
+  const currentDay = useMemo(() => {
+    return (
+      weekDays[Math.max(0, Math.min(dayIndex, weekDays.length - 1))] ||
+      weekDays[0] ||
+      new Date()
+    );
+  }, [dayIndex, weekDays]);
   const visibleDays = useMemo(() => {
     return viewMode === "Day" ? [currentDay] : weekDays;
   }, [currentDay, viewMode, weekDays]);
@@ -833,6 +851,7 @@ export default function CalendarPage() {
           onDropToDay={handleDropToSlot}
           onTaskDragStart={handleTaskDragStart}
           dropTargetKey={dropTargetKey}
+          enableDrag={isDesktopLayout}
         />
       );
     }
@@ -851,9 +870,10 @@ export default function CalendarPage() {
             onDropToSlot={handleDropToSlot}
             onTaskDragStart={handleTaskDragStart}
             dropTargetKey={dropTargetKey}
+            enableDrag={isDesktopLayout}
           />
         </div>
-        <div className="flex-1 overflow-auto lg:hidden">
+        <div className="flex-1 overflow-y-auto overscroll-contain pb-20 touch-pan-y lg:hidden">
           <MobileWeekGrid
             visibleDays={visibleDays}
             calendarTasks={calendarTasks}
@@ -865,6 +885,7 @@ export default function CalendarPage() {
             onDropToSlot={handleDropToSlot}
             onTaskDragStart={handleTaskDragStart}
             dropTargetKey={dropTargetKey}
+            enableDrag={false}
           />
         </div>
       </>
@@ -886,7 +907,9 @@ export default function CalendarPage() {
             </span>
           </div>
           <p className="mt-2 text-xs text-textMuted">
-            Drag tasks into a day/time slot to create projected work blocks.
+            {isDesktopLayout
+              ? "Drag tasks into a day/time slot to create projected work blocks."
+              : "Tap a task to adjust schedule details. Mobile keeps scrolling touch-first."}
           </p>
           <input
             type="search"
@@ -926,6 +949,7 @@ export default function CalendarPage() {
                   task={task}
                   onOpen={() => openExistingTask(task)}
                   onDragStart={handleTaskDragStart}
+                  enableDrag={isDesktopLayout}
                 />
               ))
             : null}
@@ -1114,6 +1138,7 @@ function DesktopWeekGrid({
   onDropToSlot,
   onTaskDragStart,
   dropTargetKey,
+  enableDrag,
 }: {
   visibleDays: Date[];
   calendarTasks: Task[];
@@ -1132,6 +1157,7 @@ function DesktopWeekGrid({
     payload: DragPayload,
   ) => void;
   dropTargetKey: string | null;
+  enableDrag: boolean;
 }) {
   return (
     <div className="min-w-[1080px]">
@@ -1197,6 +1223,7 @@ function DesktopWeekGrid({
                       task={task}
                       onClick={() => onOpenTask(task)}
                       onDragStart={onTaskDragStart}
+                      enableDrag={enableDrag}
                     />
                   ))}
                   {slotBlocks.map((block) => (
@@ -1229,6 +1256,7 @@ function MobileWeekGrid({
   onDropToSlot,
   onTaskDragStart,
   dropTargetKey,
+  enableDrag,
 }: {
   visibleDays: Date[];
   calendarTasks: Task[];
@@ -1247,9 +1275,10 @@ function MobileWeekGrid({
     payload: DragPayload,
   ) => void;
   dropTargetKey: string | null;
+  enableDrag: boolean;
 }) {
   return (
-    <div className="space-y-4 p-3">
+    <div className="space-y-4 p-3 pb-24 touch-pan-y">
       {visibleDays.map((day) => (
         <section
           key={toDateKey(day)}
@@ -1273,9 +1302,19 @@ function MobileWeekGrid({
               return (
                 <div
                   key={slotKey}
-                  onDragOver={(event) => onDragOver(event, slotKey)}
-                  onDragLeave={() => onDragLeave(slotKey)}
-                  onDrop={(event) => void onDropToSlot(event, day, hour)}
+                  onDragOver={
+                    enableDrag
+                      ? (event) => onDragOver(event, slotKey)
+                      : undefined
+                  }
+                  onDragLeave={
+                    enableDrag ? () => onDragLeave(slotKey) : undefined
+                  }
+                  onDrop={
+                    enableDrag
+                      ? (event) => void onDropToSlot(event, day, hour)
+                      : undefined
+                  }
                   className={`rounded-lg border border-borderSubtle p-2 transition ${
                     dropTargetKey === slotKey ? "bg-accent/10" : "bg-bgDark/30"
                   }`}
@@ -1290,6 +1329,7 @@ function MobileWeekGrid({
                         task={task}
                         onClick={() => onOpenTask(task)}
                         onDragStart={onTaskDragStart}
+                        enableDrag={enableDrag}
                       />
                     ))}
                     {slotBlocks.map((block) => (
@@ -1305,7 +1345,9 @@ function MobileWeekGrid({
                     slotBlocks.length === 0 &&
                     slotOutlookEvents.length === 0 ? (
                       <p className="text-[11px] text-textMuted">
-                        Drop projected task here
+                        {enableDrag
+                          ? "Drop projected task here"
+                          : "No projected work in this slot"}
                       </p>
                     ) : null}
                   </div>
@@ -1330,6 +1372,7 @@ function MonthProjectionView({
   onDropToDay,
   onTaskDragStart,
   dropTargetKey,
+  enableDrag,
 }: {
   monthMatrix: Date[];
   tasks: Task[];
@@ -1348,6 +1391,7 @@ function MonthProjectionView({
     payload: DragPayload,
   ) => void;
   dropTargetKey: string | null;
+  enableDrag: boolean;
 }) {
   return (
     <div className="grid grid-cols-1 gap-2 p-3 sm:grid-cols-2 xl:grid-cols-7">
@@ -1369,9 +1413,15 @@ function MonthProjectionView({
         return (
           <article
             key={dayKey}
-            onDragOver={(event) => onDragOver(event, slotKey)}
-            onDragLeave={() => onDragLeave(slotKey)}
-            onDrop={(event) => void onDropToDay(event, day, 9)}
+            onDragOver={
+              enableDrag ? (event) => onDragOver(event, slotKey) : undefined
+            }
+            onDragLeave={enableDrag ? () => onDragLeave(slotKey) : undefined}
+            onDrop={
+              enableDrag
+                ? (event) => void onDropToDay(event, day, 9)
+                : undefined
+            }
             className={`min-h-32 rounded-xl border border-borderSubtle bg-surface/80 p-3 transition ${
               dropTargetKey === slotKey ? "bg-accent/10" : ""
             }`}
@@ -1386,6 +1436,7 @@ function MonthProjectionView({
                   task={task}
                   onClick={() => onOpenTask(task)}
                   onDragStart={onTaskDragStart}
+                  enableDrag={enableDrag}
                 />
               ))}
               {dayBlocks
@@ -1416,7 +1467,9 @@ function MonthProjectionView({
               dayBlocks.length === 0 &&
               dayOutlookEvents.length === 0 ? (
                 <p className="text-xs text-textMuted">
-                  Drop to schedule at 9:00 AM
+                  {enableDrag
+                    ? "Drop to schedule at 9:00 AM"
+                    : "No projected work"}
                 </p>
               ) : null}
             </div>
@@ -1431,18 +1484,25 @@ function UnscheduledTaskCard({
   task,
   onOpen,
   onDragStart,
+  enableDrag,
 }: {
   task: Task;
   onOpen: () => void;
   onDragStart: (event: DragEvent<HTMLElement>, payload: DragPayload) => void;
+  enableDrag: boolean;
 }) {
   return (
     <article
-      draggable
-      onDragStart={(event) =>
-        onDragStart(event, { taskId: task.id, origin: "unscheduled" })
+      draggable={enableDrag}
+      onDragStart={
+        enableDrag
+          ? (event) =>
+              onDragStart(event, { taskId: task.id, origin: "unscheduled" })
+          : undefined
       }
-      className="cursor-grab border-b border-borderSubtle p-4 active:cursor-grabbing"
+      className={`border-b border-borderSubtle p-4 ${
+        enableDrag ? "cursor-grab active:cursor-grabbing" : ""
+      }`}
     >
       <button type="button" onClick={onOpen} className="block w-full text-left">
         <p className="text-sm font-medium text-textPrimary">{task.title}</p>
@@ -2048,21 +2108,28 @@ function TaskChip({
   task,
   onClick,
   onDragStart,
+  enableDrag,
 }: {
   task: Task;
   onClick: () => void;
   onDragStart: (event: DragEvent<HTMLElement>, payload: DragPayload) => void;
+  enableDrag: boolean;
 }) {
   return (
     <button
       type="button"
-      draggable
-      onDragStart={(event) =>
-        onDragStart(event, { taskId: task.id, origin: "scheduled" })
+      draggable={enableDrag}
+      onDragStart={
+        enableDrag
+          ? (event) =>
+              onDragStart(event, { taskId: task.id, origin: "scheduled" })
+          : undefined
       }
       onClick={onClick}
-      className={`mb-1 w-full cursor-grab rounded border px-1.5 py-1 text-left text-xs font-medium active:cursor-grabbing ${getCalendarBlockClass(task)}`}
-      title="Drag to move projection"
+      className={`mb-1 w-full rounded border px-1.5 py-1 text-left text-xs font-medium ${
+        enableDrag ? "cursor-grab active:cursor-grabbing" : ""
+      } ${getCalendarBlockClass(task)}`}
+      title={enableDrag ? "Drag to move projection" : "Tap to edit schedule"}
     >
       <span className="block truncate">{task.title}</span>
       <span className="block truncate text-[10px] opacity-80">
