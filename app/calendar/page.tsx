@@ -93,6 +93,8 @@ type MicrosoftStatusResponse = {
   checkedAt: string;
 };
 
+type MicrosoftStatusErrorKind = "none" | "sign-in-required" | "unavailable";
+
 type EditorState = {
   title: string;
   division: string;
@@ -190,6 +192,9 @@ export default function CalendarPage() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [microsoftStatus, setMicrosoftStatus] =
     useState<MicrosoftStatusResponse | null>(null);
+  const [microsoftStatusLoading, setMicrosoftStatusLoading] = useState(true);
+  const [microsoftStatusErrorKind, setMicrosoftStatusErrorKind] =
+    useState<MicrosoftStatusErrorKind>("none");
   const [outlookEvents, setOutlookEvents] = useState<OutlookEvent[]>([]);
   const [syncingOutlook, setSyncingOutlook] = useState(false);
   const [quickBlockOpen, setQuickBlockOpen] = useState(false);
@@ -264,20 +269,40 @@ export default function CalendarPage() {
   }
 
   async function loadMicrosoftStatus(cancelled?: () => boolean) {
+    if (!cancelled?.()) {
+      setMicrosoftStatusLoading(true);
+    }
+
     try {
       const response = await fetch("/api/integrations/microsoft/status", {
         cache: "no-store",
       });
+
+      if (response.status === 401) {
+        if (!cancelled?.()) {
+          setMicrosoftStatus(null);
+          setMicrosoftStatusErrorKind("sign-in-required");
+        }
+        return;
+      }
+
       if (!response.ok) {
         throw new Error(`Failed to load Microsoft status (${response.status})`);
       }
+
       const status = (await response.json()) as MicrosoftStatusResponse;
       if (!cancelled?.()) {
         setMicrosoftStatus(status);
+        setMicrosoftStatusErrorKind("none");
       }
     } catch {
       if (!cancelled?.()) {
         setMicrosoftStatus(null);
+        setMicrosoftStatusErrorKind("unavailable");
+      }
+    } finally {
+      if (!cancelled?.()) {
+        setMicrosoftStatusLoading(false);
       }
     }
   }
@@ -307,6 +332,11 @@ export default function CalendarPage() {
   }
 
   async function handleSyncOutlook() {
+    if (!microsoftStatus?.connected) {
+      setStatusMessage("Microsoft 365 is not connected.");
+      return;
+    }
+
     try {
       setSyncingOutlook(true);
       setStatusMessage("Syncing Outlook current week...");
@@ -316,6 +346,10 @@ export default function CalendarPage() {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            from: visibleDateRange.from.toISOString(),
+            to: visibleDateRange.to.toISOString(),
+          }),
         },
       );
       const payload = (await response.json().catch(() => null)) as {
@@ -324,6 +358,10 @@ export default function CalendarPage() {
       } | null;
 
       if (!response.ok) {
+        if (response.status === 400 || response.status === 409) {
+          setMicrosoftStatus(null);
+          setMicrosoftStatusErrorKind("none");
+        }
         throw new Error(
           payload?.error || `Outlook sync failed (${response.status})`,
         );
@@ -353,6 +391,28 @@ export default function CalendarPage() {
     return () => {
       cancelled = true;
     };
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const microsoftResult = params.get("microsoft");
+    const details = params.get("details");
+
+    if (!microsoftResult) return;
+
+    if (microsoftResult === "connected") {
+      setStatusMessage("Microsoft 365 connected.");
+    } else if (microsoftResult === "error") {
+      setStatusMessage(details || "Microsoft 365 connection failed.");
+    }
+
+    void loadMicrosoftStatus();
+
+    params.delete("microsoft");
+    params.delete("details");
+    const next = params.toString();
+    const nextUrl = next ? `/calendar?${next}` : "/calendar";
+    window.history.replaceState({}, "", nextUrl);
   }, []);
 
   useEffect(() => {
@@ -473,6 +533,35 @@ export default function CalendarPage() {
       return isWithinInclusive(eventDate, weekStart, weekEnd);
     });
   }, [outlookEvents, weekEnd, weekStart]);
+
+  const microsoftConnected = microsoftStatus?.connected === true;
+  const microsoftIdentity =
+    microsoftStatus?.connection?.email ||
+    microsoftStatus?.connection?.displayName ||
+    null;
+
+  const microsoftStatusLabel = useMemo(() => {
+    if (microsoftStatusLoading) {
+      return "Microsoft 365: Checking connection";
+    }
+    if (microsoftStatusErrorKind === "sign-in-required") {
+      return "Microsoft 365: Sign in required";
+    }
+    if (microsoftStatusErrorKind === "unavailable") {
+      return "Microsoft 365: Status unavailable";
+    }
+    if (microsoftConnected) {
+      return microsoftIdentity
+        ? `Microsoft 365: Connected as ${microsoftIdentity}`
+        : "Microsoft 365: Connected";
+    }
+    return "Microsoft 365: Not connected";
+  }, [
+    microsoftConnected,
+    microsoftIdentity,
+    microsoftStatusErrorKind,
+    microsoftStatusLoading,
+  ]);
 
   useEffect(() => {
     let cancelled = false;
@@ -1060,18 +1149,20 @@ export default function CalendarPage() {
               }
               className="rounded-xl border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-sm font-semibold text-sky-700 transition-all hover:-translate-y-px hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60 dark:text-sky-300"
             >
-              Connect Microsoft 365
+              {microsoftConnected
+                ? "Reconnect Microsoft 365"
+                : "Connect Microsoft 365"}
             </button>
             <button
               type="button"
               onClick={() => void handleSyncOutlook()}
-              disabled={syncingOutlook || !microsoftStatus?.connected}
+              disabled={syncingOutlook || !microsoftConnected}
               className="rounded-xl border border-slate-500/30 bg-slate-500/10 px-3 py-2 text-sm font-semibold text-slate-700 transition-all hover:-translate-y-px hover:bg-slate-500/20 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-300"
             >
-              {syncingOutlook ? "Syncing Outlook..." : "Sync Outlook Week"}
+              {syncingOutlook ? "Syncing..." : "Sync Outlook Week"}
             </button>
             <span className="text-xs text-textMuted">
-              Outlook: {microsoftStatus?.status || "Checking"}
+              {microsoftStatusLabel}
             </span>
           </div>
         </div>

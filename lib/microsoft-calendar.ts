@@ -193,7 +193,9 @@ function requireMicrosoftEnv() {
   }
 
   if (!clientSecret) {
-    throw new Error("MICROSOFT_GRAPH_CLIENT_SECRET is empty after normalization.");
+    throw new Error(
+      "MICROSOFT_GRAPH_CLIENT_SECRET is empty after normalization.",
+    );
   }
 
   return {
