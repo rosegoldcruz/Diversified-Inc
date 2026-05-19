@@ -31,6 +31,10 @@ usage() {
   echo "Usage: scripts/push-and-deploy.sh \"commit message\" [branch]"
 }
 
+current_branch() {
+  git rev-parse --abbrev-ref HEAD
+}
+
 require_cmd() {
   if ! command -v "$1" >/dev/null 2>&1; then
     echo "ERROR: required command not found: $1"
@@ -268,7 +272,7 @@ if [[ $# -lt 1 ]]; then
 fi
 
 COMMIT_MESSAGE="$1"
-BRANCH="${2:-main}"
+BRANCH="${2:-$(current_branch)}"
 DID_COMMIT=0
 
 cd "$APP_DIR"
@@ -285,23 +289,24 @@ echo "Current git status"
 git status --short
 
 check_worktree_for_suspicious_files
-stage_safe_paths
-collect_staged_files
-check_staged_files_safe
 run_build_check
 
-# Stage all safe changes before commit
+# Required git flow
+echo "Running git add ."
 git add .
 collect_staged_files
+check_staged_files_safe
 
 if git diff --cached --quiet; then
   echo "No staged changes to commit; skipping commit step"
 else
+  echo "Running git commit -m ..."
   git commit -m "$COMMIT_MESSAGE"
   DID_COMMIT=1
   COMMIT_HASH="$(git rev-parse HEAD)"
 fi
 
+echo "Running git push origin ${BRANCH}"
 if git push origin "$BRANCH"; then
   DEPLOY_RESULT="push succeeded"
 else
