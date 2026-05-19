@@ -66,6 +66,20 @@ ensure_command() {
   fi
 }
 
+load_runtime_env() {
+  if [[ -f "$APP_DIR/.env" ]]; then
+    set -a
+    source "$APP_DIR/.env"
+    set +a
+  fi
+
+  if [[ -f "$APP_DIR/.env.local" ]]; then
+    set -a
+    source "$APP_DIR/.env.local"
+    set +a
+  fi
+}
+
 login_css_candidates() {
   curl -fsSL "http://127.0.0.1:3000/login" | grep -o '/_next[^" ]*\.css[^" ]*'
 }
@@ -83,6 +97,28 @@ dashboard_status_ok() {
   [[ "$status" == "200" || "$status" == "307" ]]
 }
 
+auth_endpoint_ok() {
+  local base_url="$1"
+  local headers
+  local location
+
+  headers="$(curl -sS -D - -o /dev/null -X POST "${base_url}/api/auth/local-login" \
+    -H 'content-type: application/x-www-form-urlencoded' \
+    --data 'email=healthcheck%40example.com&password=nottherightpassword' || true)"
+
+  location="$(printf '%s\n' "$headers" | awk -F': ' 'tolower($1)=="location" {print $2}' | tail -n 1 | tr -d '\r')"
+
+  if [[ -z "$location" ]]; then
+    return 1
+  fi
+
+  if [[ "$location" == *"password+authentication+failed"* || "$location" == *"DATABASE_URL+is+not+set"* ]]; then
+    return 1
+  fi
+
+  return 0
+}
+
 health_check() {
   local quiet="${1:-0}"
   local css_candidates
@@ -91,6 +127,8 @@ health_check() {
   local local_css_status=""
   local domain_css_status=""
   local found_working_css=0
+  local local_auth_ok=0
+  local domain_auth_ok=0
 
   if [[ -z "$css_candidates" ]]; then
     if [[ "$quiet" -ne 1 ]]; then
@@ -115,11 +153,21 @@ health_check() {
   local_login_status="$(http_status "http://127.0.0.1:3000/login" || true)"
   domain_login_status="$(http_status "${APP_PUBLIC_URL}/login" || true)"
 
-  log "Health check statuses: local_login=${local_login_status} domain_login=${domain_login_status} local_css=${local_css_status} domain_css=${domain_css_status}"
+  if auth_endpoint_ok "http://127.0.0.1:3000"; then
+    local_auth_ok=1
+  fi
+
+  if auth_endpoint_ok "${APP_PUBLIC_URL}"; then
+    domain_auth_ok=1
+  fi
+
+  log "Health check statuses: local_login=${local_login_status} domain_login=${domain_login_status} local_css=${local_css_status} domain_css=${domain_css_status} local_auth=${local_auth_ok} domain_auth=${domain_auth_ok}"
 
   dashboard_status_ok "$local_login_status" && \
     dashboard_status_ok "$domain_login_status" && \
-    [[ "$found_working_css" -eq 1 ]]
+    [[ "$found_working_css" -eq 1 ]] && \
+    [[ "$local_auth_ok" -eq 1 ]] && \
+    [[ "$domain_auth_ok" -eq 1 ]]
 }
 
 read_fail_count() {
@@ -187,6 +235,7 @@ ensure_pm2_running() {
 
 deploy_once() {
   cd "$APP_DIR"
+  load_runtime_env
 
   if [[ "$SKIP_FETCH" -ne 1 ]]; then
     log "Fetching latest origin/${BRANCH}"
@@ -221,6 +270,7 @@ deploy_once() {
 
 heal_once() {
   cd "$APP_DIR"
+  load_runtime_env
 
   log "Attempting restart-only heal"
   ensure_pm2_running
@@ -266,6 +316,7 @@ main() {
 
   log "Auto-heal run starting"
   cd "$APP_DIR"
+  load_runtime_env
 
   if [[ "$FORCE_DEPLOY" -eq 1 ]]; then
     log "Forced deploy requested (--force-deploy)"
