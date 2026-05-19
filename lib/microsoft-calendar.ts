@@ -145,6 +145,18 @@ function getMissingMicrosoftEnv() {
   return missing;
 }
 
+function normalizeEnvValue(value: string | undefined) {
+  const trimmed = (value || "").trim();
+  if (trimmed.length >= 2) {
+    const first = trimmed[0];
+    const last = trimmed[trimmed.length - 1];
+    if ((first === '"' && last === '"') || (first === "'" && last === "'")) {
+      return trimmed.slice(1, -1).trim();
+    }
+  }
+  return trimmed;
+}
+
 export function hasMicrosoftEnvConfigured() {
   return getMissingMicrosoftEnv().length === 0;
 }
@@ -157,11 +169,32 @@ function requireMicrosoftEnv() {
     );
   }
 
+  const clientId = normalizeEnvValue(process.env.MICROSOFT_GRAPH_CLIENT_ID);
+  const clientSecret = normalizeEnvValue(
+    process.env.MICROSOFT_GRAPH_CLIENT_SECRET,
+  );
+  const tenantId =
+    normalizeEnvValue(process.env.MICROSOFT_GRAPH_TENANT_ID) || "common";
+  const redirectUri = normalizeEnvValue(
+    process.env.MICROSOFT_GRAPH_REDIRECT_URI,
+  );
+
+  const uuidLikeSecret =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      clientSecret,
+    );
+
+  if (uuidLikeSecret) {
+    throw new Error(
+      "MICROSOFT_GRAPH_CLIENT_SECRET looks like a Secret ID (GUID). Use the Client Secret VALUE from Entra, not the Secret ID.",
+    );
+  }
+
   return {
-    clientId: process.env.MICROSOFT_GRAPH_CLIENT_ID as string,
-    clientSecret: process.env.MICROSOFT_GRAPH_CLIENT_SECRET as string,
-    tenantId: process.env.MICROSOFT_GRAPH_TENANT_ID?.trim() || "common",
-    redirectUri: process.env.MICROSOFT_GRAPH_REDIRECT_URI as string,
+    clientId,
+    clientSecret,
+    tenantId,
+    redirectUri,
     scopes: getMicrosoftScopes(),
   };
 }
