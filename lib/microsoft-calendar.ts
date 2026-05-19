@@ -145,18 +145,6 @@ function getMissingMicrosoftEnv() {
   return missing;
 }
 
-function normalizeEnvValue(value: string | undefined) {
-  const trimmed = (value || "").trim();
-  if (trimmed.length >= 2) {
-    const first = trimmed[0];
-    const last = trimmed[trimmed.length - 1];
-    if ((first === '"' && last === '"') || (first === "'" && last === "'")) {
-      return trimmed.slice(1, -1).trim();
-    }
-  }
-  return trimmed;
-}
-
 export function hasMicrosoftEnvConfigured() {
   return getMissingMicrosoftEnv().length === 0;
 }
@@ -169,14 +157,28 @@ function requireMicrosoftEnv() {
     );
   }
 
-  const clientId = normalizeEnvValue(process.env.MICROSOFT_GRAPH_CLIENT_ID);
-  const clientSecret = normalizeEnvValue(
-    process.env.MICROSOFT_GRAPH_CLIENT_SECRET,
+  const normalizeEnvValue = (value: string) => {
+    const trimmed = value.trim().replace(/[\r\n]+/g, "");
+    if (
+      (trimmed.startsWith('"') && trimmed.endsWith('"')) ||
+      (trimmed.startsWith("'") && trimmed.endsWith("'"))
+    ) {
+      return trimmed.slice(1, -1).trim();
+    }
+    return trimmed;
+  };
+
+  const clientId = normalizeEnvValue(
+    process.env.MICROSOFT_GRAPH_CLIENT_ID as string,
   );
-  const tenantId =
-    normalizeEnvValue(process.env.MICROSOFT_GRAPH_TENANT_ID) || "common";
+  const clientSecret = normalizeEnvValue(
+    process.env.MICROSOFT_GRAPH_CLIENT_SECRET as string,
+  );
+  const tenantId = normalizeEnvValue(
+    process.env.MICROSOFT_GRAPH_TENANT_ID?.trim() || "common",
+  );
   const redirectUri = normalizeEnvValue(
-    process.env.MICROSOFT_GRAPH_REDIRECT_URI,
+    process.env.MICROSOFT_GRAPH_REDIRECT_URI as string,
   );
 
   const uuidLikeSecret =
@@ -186,8 +188,12 @@ function requireMicrosoftEnv() {
 
   if (uuidLikeSecret) {
     throw new Error(
-      "MICROSOFT_GRAPH_CLIENT_SECRET looks like a Secret ID (GUID). Use the Client Secret VALUE from Entra, not the Secret ID.",
+      "MICROSOFT_GRAPH_CLIENT_SECRET appears to be a Secret ID (UUID). Use the Secret VALUE from Entra.",
     );
+  }
+
+  if (!clientSecret) {
+    throw new Error("MICROSOFT_GRAPH_CLIENT_SECRET is empty after normalization.");
   }
 
   return {
