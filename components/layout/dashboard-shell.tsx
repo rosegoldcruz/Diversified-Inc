@@ -24,7 +24,11 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   }, []);
 
   // Auth pages render outside the dashboard chrome.
-  if (pathname === "/login" || pathname?.startsWith("/login/")) {
+  if (
+    pathname === "/login" ||
+    pathname?.startsWith("/login/") ||
+    pathname === "/admin/login"
+  ) {
     return <>{children}</>;
   }
 

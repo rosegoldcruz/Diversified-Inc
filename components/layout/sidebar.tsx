@@ -83,7 +83,8 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "AI Chat", href: "/ai-chat", icon: ChatCircle },
       { label: "AI Tools", href: "/ai-tools", icon: Robot },
       { label: "Automations", href: "/automations", icon: Lightning },
-      { label: "Admin Settings", href: "/settings", icon: GearSix },
+      { label: "Settings", href: "/settings", icon: GearSix },
+      { label: "Admin Settings", href: "/admin", icon: GearSix },
     ],
   },
 ];

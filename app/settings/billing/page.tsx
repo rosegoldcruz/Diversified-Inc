@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
-export default function LegacyNotificationsSettingsPage() {
+export default function LegacyBillingSettingsPage() {
   redirect("/settings");
 }

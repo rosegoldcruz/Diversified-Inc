@@ -289,3 +289,27 @@ export function getDisplayName(
     fallbackEmail
   );
 }
+
+export async function verifyOidcToken(
+  token: string,
+  userId: number,
+): Promise<boolean> {
+  try {
+    const discovery = await getOidcDiscovery();
+    const response = await fetch(discovery.userinfo_endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+      console.error("OIDC token verification failed", await response.text());
+      return false;
+    }
+
+    const userInfo = await parseJson<OidcUserInfo>(response);
+    return userInfo.sub === String(userId);
+  } catch (error) {
+    console.error("Error verifying OIDC token", error);
+    return false;
+  }
+}
