@@ -226,8 +226,8 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 export async function DELETE(_request: NextRequest, { params }: RouteContext) {
   try {
     await ensureSchema();
-    // Destructive: only Leadership can delete/deactivate.
-    const session = requireRole(["Leadership"]);
+    // Destructive: Admin and Leadership can delete/deactivate.
+    const session = requireRole(["Admin", "Leadership"]);
     const employeeId = parseId(params.id);
     if (!employeeId) {
       return NextResponse.json(

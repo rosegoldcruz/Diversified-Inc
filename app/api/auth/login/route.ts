@@ -4,6 +4,7 @@ import {
   createPkceChallenge,
   createPkceVerifier,
   createOidcState,
+  getAppRelativeUrl,
   OIDC_COOKIE_OPTIONS,
   OIDC_NEXT_COOKIE,
   OIDC_STATE_COOKIE,
@@ -14,8 +15,8 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function redirectToLoginError(request: NextRequest, message: string) {
-  const loginUrl = new URL("/login", request.url);
+function redirectToLoginError(message: string) {
+  const loginUrl = getAppRelativeUrl("/login");
   loginUrl.searchParams.set("error", message);
   return NextResponse.redirect(loginUrl);
 }
@@ -39,7 +40,7 @@ async function startLogin(request: NextRequest) {
       error instanceof Error
         ? error.message
         : "Authentication is not configured";
-    return redirectToLoginError(request, message);
+    return redirectToLoginError(message);
   }
 }
 

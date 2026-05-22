@@ -58,3 +58,39 @@ backend/venv/
 
 # Utility tools
 catalog-scraper/
+
+# local secrets
+.env
+.env.*
+!.env.example
+
+# build/runtime output
+.next/
+node_modules/
+out.txt
+curl_out.txt
+pm2_out.txt
+build_output.txt
+verify_endpoint.py
+
+# local backups
+backups/
+*.backup.*
+
+# local secrets
+.env
+.env.*
+!.env.example
+
+# build/runtime output
+.next/
+node_modules/
+out.txt
+curl_out.txt
+pm2_out.txt
+build_output.txt
+verify_endpoint.py
+
+# local backups
+backups/
+*.backup.*

@@ -1,26 +1,28 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { FadeContent } from "@/components/ui/FadeContent";
 import { ShinyText } from "@/components/ui/ShinyText";
 
 type SessionUser = {
   id: number;
-  email: string;
+  email: string | null;
   name: string;
-  role: "Employee" | "Manager" | "Admin" | "Leadership";
+  role: string | null;
+  department: string | null;
+  status: string | null;
 };
 
 type EmployeeOption = {
   id: number;
   name: string;
-  status: string;
+  email: string | null;
+  role: string | null;
+  department: string | null;
+  status: string | null;
 };
 
-const SUPERVISOR_ROLES = new Set(["Manager", "Admin", "Leadership"]);
-
-interface TimeclockEntry {
+type TimeclockEntry = {
   id: number;
   employee_id: number | null;
   employee_name: string;
@@ -29,262 +31,246 @@ interface TimeclockEntry {
   total_minutes: number | null;
   notes: string | null;
   created_at: string;
-}
+  source?: "manual" | "self";
+  is_manual?: boolean;
+};
 
-interface PunchMessage {
+type TimeclockStatus = {
+  user: SessionUser;
+  canManageTimeclock: boolean;
+  managerScope: "all" | "self";
+  selectedEmployee: EmployeeOption;
+  activeEntry: TimeclockEntry | null;
+  recentEntries: TimeclockEntry[];
+  activeEntries: TimeclockEntry[];
+  employees: EmployeeOption[];
+};
+
+type PunchMessage = {
   type: "success" | "error";
   text: string;
+};
+
+function formatTime(isoString: string) {
+  return new Date(isoString).toLocaleTimeString("en-US", {
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  });
+}
+
+function formatDateTime(isoString: string) {
+  return new Date(isoString).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function formatDuration(minutes: number | null) {
+  if (minutes === null) return "-";
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (hours === 0) return `${mins}m`;
+  return `${hours}h ${mins}m`;
+}
+
+function calculateElapsedTime(clockInIso: string) {
+  const diffMinutes = Math.max(
+    0,
+    Math.floor((Date.now() - new Date(clockInIso).getTime()) / 60000),
+  );
+  const hours = Math.floor(diffMinutes / 60);
+  const minutes = diffMinutes % 60;
+  if (hours === 0) return `${minutes}m elapsed`;
+  return `${hours}h ${minutes}m elapsed`;
+}
+
+function todayForInput() {
+  const now = new Date();
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  return now.toISOString().slice(0, 16);
 }
 
 export default function TimeclockPage() {
-  const [me, setMe] = useState<SessionUser | null>(null);
-  const [employees, setEmployees] = useState<EmployeeOption[]>([]);
+  const [status, setStatus] = useState<TimeclockStatus | null>(null);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(
     null,
   );
-  const [entries, setEntries] = useState<TimeclockEntry[]>([]);
-  const [activeEntries, setActiveEntries] = useState<TimeclockEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadingActive, setLoadingActive] = useState(true);
+  const [pendingAction, setPendingAction] = useState<
+    "in" | "out" | "manual" | null
+  >(null);
   const [error, setError] = useState<string | null>(null);
-  const [errorActive, setErrorActive] = useState<string | null>(null);
   const [message, setMessage] = useState<PunchMessage | null>(null);
-  const [elapsedTimes, setElapsedTimes] = useState<Record<number, string>>({});
+  const [manualClockIn, setManualClockIn] = useState(todayForInput);
+  const [manualClockOut, setManualClockOut] = useState(todayForInput);
+  const [manualNotes, setManualNotes] = useState("");
+  const [nowTick, setNowTick] = useState(0);
 
-  const isSupervisor = me ? SUPERVISOR_ROLES.has(me.role) : false;
-
-  // Load session + employee directory.
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const [meRes, empRes] = await Promise.all([
-          fetch("/api/auth/me", { cache: "no-store" }),
-          fetch("/api/employees", { cache: "no-store" }),
-        ]);
-        if (meRes.ok) {
-          const data = (await meRes.json()) as { user: SessionUser | null };
-          if (!cancelled && data.user) {
-            setMe(data.user);
-            setSelectedEmployeeId(data.user.id);
-          }
-        }
-        if (empRes.ok) {
-          const list = (await empRes.json()) as EmployeeOption[];
-          if (!cancelled) {
-            setEmployees(list.filter((e) => e.status === "active"));
-          }
-        }
-      } catch {
-        // swallow; UI shows error state separately
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // Fetch all entries (all time)
-  useEffect(() => {
-    let cancelled = false;
-
-    const fetchEntries = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const response = await fetch("/api/timeclock", { cache: "no-store" });
-        if (!response.ok) {
-          throw new Error(
-            `Failed to fetch timeclock entries (${response.status})`,
-          );
-        }
-
-        const data = (await response.json()) as TimeclockEntry[];
-        if (!cancelled) {
-          setEntries(data);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(
-            err instanceof Error ? err.message : "Failed to fetch entries",
-          );
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchEntries();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // Fetch active entries (currently clocked in)
-  useEffect(() => {
-    let cancelled = false;
-
-    const fetchActive = async () => {
-      try {
-        setLoadingActive(true);
-        setErrorActive(null);
-
-        const response = await fetch("/api/timeclock/active", {
-          cache: "no-store",
-        });
-        if (!response.ok) {
-          throw new Error(
-            `Failed to fetch active entries (${response.status})`,
-          );
-        }
-
-        const data = (await response.json()) as TimeclockEntry[];
-        if (!cancelled) {
-          setActiveEntries(data);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setErrorActive(
-            err instanceof Error
-              ? err.message
-              : "Failed to fetch active entries",
-          );
-        }
-      } finally {
-        if (!cancelled) {
-          setLoadingActive(false);
-        }
-      }
-    };
-
-    fetchActive();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  // Update elapsed times every 60 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const times: Record<number, string> = {};
-      activeEntries.forEach((entry) => {
-        times[entry.id] = calculateElapsedTime(entry.clock_in);
+  const loadStatus = useCallback(async (employeeId?: number | null) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const params =
+        employeeId !== undefined && employeeId !== null
+          ? `?employee_id=${employeeId}`
+          : "";
+      const response = await fetch(`/api/timeclock/active${params}`, {
+        cache: "no-store",
       });
-      setElapsedTimes(times);
-    }, 60000);
+      const data = (await response.json().catch(() => null)) as
+        | TimeclockStatus
+        | { error?: string }
+        | null;
 
-    // Initial calculation
-    const times: Record<number, string> = {};
-    activeEntries.forEach((entry) => {
-      times[entry.id] = calculateElapsedTime(entry.clock_in);
-    });
-    setElapsedTimes(times);
+      if (!response.ok) {
+        throw new Error(
+          (data && "error" in data && data.error) ||
+            `Failed to load timeclock (${response.status})`,
+        );
+      }
 
-    return () => clearInterval(interval);
-  }, [activeEntries]);
-
-  // Auto-dismiss message after 3 seconds
-  useEffect(() => {
-    if (message) {
-      const timeout = setTimeout(() => setMessage(null), 3000);
-      return () => clearTimeout(timeout);
+      const nextStatus = data as TimeclockStatus;
+      setStatus(nextStatus);
+      setSelectedEmployeeId(nextStatus.selectedEmployee.id);
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Failed to load timeclock",
+      );
+    } finally {
+      setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    loadStatus();
+  }, [loadStatus]);
+
+  useEffect(() => {
+    const interval = setInterval(() => setNowTick((value) => value + 1), 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (!message) return;
+    const timeout = setTimeout(() => setMessage(null), 5000);
+    return () => clearTimeout(timeout);
   }, [message]);
 
-  const calculateElapsedTime = (clockInIso: string): string => {
-    const clockInDate = new Date(clockInIso);
-    const now = new Date();
-    const diffMs = now.getTime() - clockInDate.getTime();
-    const diffMinutes = Math.floor(diffMs / 60000);
+  const activeEntry = status?.activeEntry ?? null;
+  const selectedEmployee = status?.selectedEmployee ?? null;
+  const canManageTimeclock = status?.canManageTimeclock ?? false;
+  const actionLabel = activeEntry ? "Clock Out" : "Clock In";
+  const action = activeEntry ? "out" : "in";
 
-    const hours = Math.floor(diffMinutes / 60);
-    const minutes = diffMinutes % 60;
+  const selectedEmployeeName = useMemo(() => {
+    if (!status) return "Employee";
+    return selectedEmployee?.name ?? status.user.name;
+  }, [selectedEmployee, status]);
 
-    if (hours === 0) {
-      return `${minutes} minute${minutes !== 1 ? "s" : ""} elapsed`;
-    }
-
-    return `${hours} hour${hours !== 1 ? "s" : ""} ${minutes} minute${minutes !== 1 ? "s" : ""} elapsed`;
+  const handleEmployeeChange = async (employeeId: number) => {
+    setSelectedEmployeeId(employeeId);
+    await loadStatus(employeeId);
   };
 
-  const formatTime = (isoString: string): string => {
-    const date = new Date(isoString);
-    return date.toLocaleTimeString("en-US", {
-      hour: "numeric",
-      minute: "2-digit",
-      hour12: true,
-    });
-  };
+  const handlePunch = async () => {
+    if (!status || pendingAction) return;
 
-  const handlePunch = async (action: "in" | "out") => {
-    if (!me) {
-      setMessage({ type: "error", text: "You must be signed in to punch" });
-      return;
-    }
-    const targetId = isSupervisor ? (selectedEmployeeId ?? me.id) : me.id;
-    const targetEmployee = employees.find((e) => e.id === targetId);
-    const targetName = targetEmployee?.name ?? me.name;
+    const targetId = canManageTimeclock
+      ? selectedEmployeeId ?? status.user.id
+      : status.user.id;
 
     try {
+      setPendingAction(action);
       const response = await fetch("/api/timeclock", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ employee_id: targetId, action }),
       });
+      const result = (await response.json().catch(() => ({}))) as {
+        error?: string;
+        activeEntry?: TimeclockEntry;
+        clock_in?: string;
+        clock_out?: string | null;
+      };
 
-      const result = (await response.json().catch(() => ({}))) as Record<
-        string,
-        unknown
-      >;
+      if (!response.ok) {
+        const conflictSync =
+          response.status === 409 && result.activeEntry
+            ? " Status has been synced."
+            : "";
+        setMessage({
+          type: "error",
+          text:
+            (result.error || `Failed to ${actionLabel.toLowerCase()}`) +
+            conflictSync,
+        });
+        await loadStatus(targetId);
+        return;
+      }
+
+      const punchTime =
+        action === "out"
+          ? result.clock_out || new Date().toISOString()
+          : result.clock_in || new Date().toISOString();
+      setMessage({
+        type: "success",
+        text: `${selectedEmployeeName} ${action === "out" ? "clocked out" : "clocked in"} at ${formatTime(punchTime)}.`,
+      });
+      await loadStatus(targetId);
+    } catch {
+      setMessage({ type: "error", text: "Network error" });
+    } finally {
+      setPendingAction(null);
+    }
+  };
+
+  const handleManualCorrection = async () => {
+    if (!status || !canManageTimeclock || pendingAction) return;
+    const targetId = selectedEmployeeId ?? status.user.id;
+
+    try {
+      setPendingAction("manual");
+      const response = await fetch("/api/timeclock", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "manual",
+          employee_id: targetId,
+          clock_in: new Date(manualClockIn).toISOString(),
+          clock_out: new Date(manualClockOut).toISOString(),
+          notes: manualNotes,
+        }),
+      });
+      const result = (await response.json().catch(() => ({}))) as {
+        error?: string;
+      };
 
       if (!response.ok) {
         setMessage({
           type: "error",
-          text:
-            (result?.error as string) ??
-            `Failed to clock ${action === "in" ? "in" : "out"} ${targetName}`,
+          text: result.error || "Failed to save manual correction",
         });
         return;
       }
 
-      const time = formatTime(
-        (result.clock_in as string) ?? new Date().toISOString(),
-      );
+      setManualNotes("");
       setMessage({
         type: "success",
-        text: `✓ ${targetName} clocked ${action === "in" ? "in" : "out"} at ${time}`,
+        text: `Manual correction saved for ${selectedEmployeeName}.`,
       });
-
-      await Promise.all([
-        (async () => {
-          const r = await fetch("/api/timeclock", { cache: "no-store" });
-          if (r.ok) setEntries(await r.json());
-        })(),
-        (async () => {
-          const r = await fetch("/api/timeclock/active", { cache: "no-store" });
-          if (r.ok) setActiveEntries(await r.json());
-        })(),
-      ]);
+      await loadStatus(targetId);
     } catch {
       setMessage({ type: "error", text: "Network error" });
+    } finally {
+      setPendingAction(null);
     }
   };
 
-  // Filter entries to today only
-  const todayEntries = entries.filter((entry) => {
-    const entryDate = new Date(entry.clock_in).toDateString();
-    const todayDate = new Date().toDateString();
-    return entryDate === todayDate;
-  });
-
   return (
     <div className="space-y-8">
-      {/* Header */}
       <FadeContent
         as="section"
         blur={true}
@@ -296,161 +282,232 @@ export default function TimeclockPage() {
           <ShinyText>Timeclock</ShinyText>
         </h1>
         <p className="max-w-3xl text-base text-textSecondary">
-          Log employee clock-ins and clock-outs in real time.
+          Punch tracking for employee shifts, manager review, and payroll prep.
         </p>
       </FadeContent>
 
-      {/* SECTION A: Punch Panel */}
+      {message ? (
+        <div
+          className={`rounded-lg border p-4 text-sm font-medium shadow-soft ${
+            message.type === "success"
+              ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-300"
+              : "border-red-200 bg-red-50 text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300"
+          }`}
+        >
+          {message.text}
+        </div>
+      ) : null}
+
+      {error ? <ErrorPanel message={error} /> : null}
+
       <FadeContent
         as="section"
         blur={true}
         duration={800}
         delay={100}
-        className="glass-surface space-y-5 p-6 md:p-8"
+        className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]"
       >
-        <div>
-          <h2 className="text-lg font-semibold text-textPrimary">
-            Clock In / Clock Out
-          </h2>
-          <p className="mt-1 text-sm text-textSecondary">
-            Select an employee and click Clock In to start their shift. Click
-            Clock Out to end their shift.
-          </p>
-        </div>
+        <div className="glass-surface space-y-5 p-6 md:p-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <h2 className="text-lg font-semibold text-textPrimary">
+                {selectedEmployeeName}
+              </h2>
+              <p className="mt-1 text-sm text-textSecondary">
+                {canManageTimeclock
+                  ? "Admin timeclock management"
+                  : status?.user.role === "Manager"
+                    ? "Self-only manager view"
+                    : "Employee timeclock"}
+              </p>
+            </div>
 
-        {/* Message Display */}
-        {message && (
-          <div
-            className={`rounded-lg p-3 text-sm font-medium ${
-              message.type === "success"
-                ? "text-emerald-600 dark:text-emerald-400"
-                : "text-red-600 dark:text-red-400"
-            }`}
-          >
-            {message.text}
-          </div>
-        )}
-
-        {/* Controls */}
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
-          <div className="flex-1">
-            <label
-              htmlFor="employee-select"
-              className="block text-sm font-medium text-textPrimary"
-            >
-              Employee
-            </label>
-            {isSupervisor ? (
-              <select
-                id="employee-select"
-                value={selectedEmployeeId ?? ""}
-                onChange={(e) =>
-                  setSelectedEmployeeId(
-                    e.target.value ? Number(e.target.value) : null,
-                  )
-                }
-                className="mt-2 w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary shadow-soft transition-colors focus:border-borderFocus focus:outline-none dark:bg-bgDark"
-              >
-                {me ? (
-                  <option value={me.id}>{me.name} (you)</option>
-                ) : (
-                  <option value="">-- Choose an employee --</option>
-                )}
-                {employees
-                  .filter((emp) => !me || emp.id !== me.id)
-                  .map((emp) => (
-                    <option key={emp.id} value={emp.id}>
-                      {emp.name}
+            {canManageTimeclock ? (
+              <div className="w-full sm:w-72">
+                <label
+                  htmlFor="employee-select"
+                  className="block text-sm font-medium text-textPrimary"
+                >
+                  Employee
+                </label>
+                <select
+                  id="employee-select"
+                  value={selectedEmployeeId ?? ""}
+                  disabled={loading || pendingAction !== null}
+                  onChange={(event) =>
+                    handleEmployeeChange(Number(event.target.value))
+                  }
+                  className="mt-2 w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary shadow-soft transition-colors focus:border-borderFocus focus:outline-none disabled:opacity-60 dark:bg-bgDark"
+                >
+                  {status?.employees.map((employee) => (
+                    <option key={employee.id} value={employee.id}>
+                      {employee.name}
                     </option>
                   ))}
-              </select>
-            ) : (
-              <div
-                id="employee-select"
-                className="mt-2 w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary shadow-soft dark:bg-bgDark"
-              >
-                {me?.name ?? "Sign in to punch"}
-                <span className="ml-2 text-xs text-textMuted">{me?.role}</span>
+                </select>
               </div>
-            )}
+            ) : null}
           </div>
 
-          <div className="flex gap-2">
-            <button
-              onClick={() => handlePunch("in")}
-              className="px-4 py-2 rounded-md bg-emerald-600 text-white hover:bg-emerald-700 transition-colors font-medium"
-            >
-              Clock In
-            </button>
-            <button
-              onClick={() => handlePunch("out")}
-              className="rounded-md border border-borderSubtle bg-surface px-4 py-2 font-medium text-textSecondary transition-colors hover:bg-bgDark hover:text-textPrimary"
-            >
-              Clock Out
-            </button>
+          {loading && !status ? (
+            <LoadingPanel label="Loading timeclock..." />
+          ) : (
+            <div className="grid gap-4 md:grid-cols-[220px_minmax(0,1fr)]">
+              <div
+                className={`rounded-xl border p-5 shadow-soft ${
+                  activeEntry
+                    ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200"
+                    : "border-borderSubtle bg-surface/95 text-textPrimary"
+                }`}
+              >
+                <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">
+                  Status
+                </p>
+                <p className="mt-2 text-2xl font-semibold">
+                  {activeEntry ? "Clocked In" : "Clocked Out"}
+                </p>
+                <p className="mt-2 text-sm text-textSecondary">
+                  {activeEntry
+                    ? `Since ${formatTime(activeEntry.clock_in)}`
+                    : "No active shift"}
+                </p>
+                {activeEntry ? (
+                  <p className="mt-1 text-sm font-medium">
+                    {calculateElapsedTime(activeEntry.clock_in)}
+                    <span className="sr-only">{nowTick}</span>
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="rounded-xl border border-borderSubtle bg-surface/95 p-5 shadow-soft">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-textPrimary">
+                      Current Punch
+                    </p>
+                    <p className="mt-1 text-sm text-textSecondary">
+                      {activeEntry
+                        ? `${selectedEmployeeName} has an open shift.`
+                        : `${selectedEmployeeName} is not currently clocked in.`}
+                    </p>
+                  </div>
+                  <button
+                    onClick={handlePunch}
+                    disabled={loading || pendingAction !== null || !status}
+                    className={`rounded-md px-4 py-2 text-sm font-semibold text-white shadow-soft transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
+                      activeEntry
+                        ? "bg-slate-700 hover:bg-slate-800 dark:bg-slate-600 dark:hover:bg-slate-500"
+                        : "bg-emerald-600 hover:bg-emerald-700"
+                    }`}
+                  >
+                    {pendingAction === action ? "Saving..." : actionLabel}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="glass-surface space-y-4 p-6">
+          <div>
+            <h2 className="text-lg font-semibold text-textPrimary">
+              Active Now
+            </h2>
+            <p className="mt-1 text-sm text-textSecondary">
+              {canManageTimeclock ? "All open shifts" : "Your open shift"}
+            </p>
           </div>
+          {!status || loading ? (
+            <LoadingPanel label="Loading active shifts..." />
+          ) : canManageTimeclock ? (
+            status.activeEntries.length === 0 ? (
+              <EmptyPanel label="No employees are currently clocked in." />
+            ) : (
+              <div className="space-y-3">
+                {status.activeEntries.map((entry) => (
+                  <MiniActiveEntry key={entry.id} entry={entry} />
+                ))}
+              </div>
+            )
+          ) : activeEntry ? (
+            <MiniActiveEntry entry={activeEntry} />
+          ) : (
+            <EmptyPanel label="You are currently clocked out." />
+          )}
         </div>
       </FadeContent>
 
-      {/* SECTION B: Currently Clocked In */}
+      {canManageTimeclock ? (
+        <section className="glass-surface space-y-5 p-6 md:p-8">
+          <div>
+            <h2 className="text-lg font-semibold text-textPrimary">
+              Manual Correction
+            </h2>
+            <p className="mt-1 text-sm text-textSecondary">
+              Admin-created corrections are marked on the punch and written to
+              the audit log.
+            </p>
+          </div>
+          <div className="grid gap-3 md:grid-cols-[1fr_1fr_minmax(180px,1fr)_auto] md:items-end">
+            <label className="block text-sm font-medium text-textPrimary">
+              Clock In
+              <input
+                type="datetime-local"
+                value={manualClockIn}
+                onChange={(event) => setManualClockIn(event.target.value)}
+                className="mt-2 w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary shadow-soft focus:border-borderFocus focus:outline-none dark:bg-bgDark"
+              />
+            </label>
+            <label className="block text-sm font-medium text-textPrimary">
+              Clock Out
+              <input
+                type="datetime-local"
+                value={manualClockOut}
+                onChange={(event) => setManualClockOut(event.target.value)}
+                className="mt-2 w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary shadow-soft focus:border-borderFocus focus:outline-none dark:bg-bgDark"
+              />
+            </label>
+            <label className="block text-sm font-medium text-textPrimary">
+              Note
+              <input
+                type="text"
+                value={manualNotes}
+                onChange={(event) => setManualNotes(event.target.value)}
+                placeholder="Reason"
+                className="mt-2 w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary shadow-soft focus:border-borderFocus focus:outline-none dark:bg-bgDark"
+              />
+            </label>
+            <button
+              onClick={handleManualCorrection}
+              disabled={loading || pendingAction !== null || !status}
+              className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white shadow-soft transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {pendingAction === "manual" ? "Saving..." : "Save Correction"}
+            </button>
+          </div>
+        </section>
+      ) : null}
+
       <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-textPrimary">
-          Currently Clocked In
-        </h2>
-
-        {errorActive ? <ErrorPanel message={errorActive} /> : null}
-
-        {loadingActive ? (
-          <LoadingPanel label="Loading active entries..." />
-        ) : activeEntries.length === 0 ? (
-          <div className="rounded-xl border border-borderSubtle bg-surface/95 p-8 text-center text-sm text-textMuted shadow-soft backdrop-blur-xl">
-            No employees currently clocked in.
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-textPrimary">
+              Recent Punches
+            </h2>
+            <p className="text-sm text-textSecondary">
+              {canManageTimeclock
+                ? `Showing ${selectedEmployeeName}`
+                : "Showing your punches only"}
+            </p>
           </div>
-        ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {activeEntries.map((entry) => (
-              <div
-                key={entry.id}
-                className="rounded-xl border border-borderSubtle bg-surface/95 p-5 shadow-soft backdrop-blur-xl"
-              >
-                <h3 className="text-lg font-semibold text-textPrimary">
-                  {entry.employee_name}
-                </h3>
-                <div className="mt-3 space-y-1 text-sm text-textSecondary">
-                  <p>
-                    <span className="font-medium text-textMuted">
-                      Clock In:
-                    </span>{" "}
-                    {formatTime(entry.clock_in)}
-                  </p>
-                  <p>
-                    <span className="font-medium text-textMuted">Elapsed:</span>{" "}
-                    {elapsedTimes[entry.id] || "calculating..."}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+        </div>
 
-      {/* SECTION C: Today&apos;s Punch Log */}
-      <section className="space-y-4">
-        <h2 className="text-lg font-semibold text-textPrimary">
-          Today&apos;s Punch Log
-        </h2>
-
-        {error ? <ErrorPanel message={error} /> : null}
-
-        {loading ? (
-          <LoadingPanel label="Loading punch log..." />
-        ) : todayEntries.length === 0 ? (
-          <div className="rounded-xl border border-borderSubtle bg-surface/95 p-8 text-center text-sm text-textMuted shadow-soft backdrop-blur-xl">
-            No punch entries for today.
-          </div>
+        {!status || loading ? (
+          <LoadingPanel label="Loading punch history..." />
+        ) : status.recentEntries.length === 0 ? (
+          <EmptyPanel label="No punch history found." />
         ) : (
           <>
-            {/* Table view (hidden on mobile) */}
             <div className="hidden overflow-hidden rounded-xl border border-borderSubtle bg-surface/95 shadow-soft backdrop-blur-xl md:block">
               <div className="overflow-x-auto">
                 <table className="min-w-full text-left text-sm">
@@ -459,13 +516,14 @@ export default function TimeclockPage() {
                       <th className="px-4 py-3 font-semibold">Employee</th>
                       <th className="px-4 py-3 font-semibold">Clock In</th>
                       <th className="px-4 py-3 font-semibold">Clock Out</th>
-                      <th className="px-4 py-3 font-semibold text-right">
-                        Total Minutes
+                      <th className="px-4 py-3 font-semibold">Source</th>
+                      <th className="px-4 py-3 text-right font-semibold">
+                        Total
                       </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-borderSubtle">
-                    {todayEntries.map((entry, idx) => (
+                    {status.recentEntries.map((entry, idx) => (
                       <tr
                         key={entry.id}
                         className={
@@ -473,21 +531,21 @@ export default function TimeclockPage() {
                         }
                       >
                         <td className="px-4 py-3 font-medium text-textPrimary">
-                          <Link
-                            href={`/employees?search=${encodeURIComponent(entry.employee_name)}`}
-                            className="text-accent hover:underline"
-                          >
-                            {entry.employee_name}
-                          </Link>
+                          {entry.employee_name}
                         </td>
                         <td className="px-4 py-3 text-textSecondary">
-                          {formatTime(entry.clock_in)}
+                          {formatDateTime(entry.clock_in)}
                         </td>
                         <td className="px-4 py-3 text-textSecondary">
-                          {entry.clock_out ? formatTime(entry.clock_out) : "—"}
+                          {entry.clock_out
+                            ? formatDateTime(entry.clock_out)
+                            : "-"}
+                        </td>
+                        <td className="px-4 py-3 text-textSecondary">
+                          <SourceBadge entry={entry} />
                         </td>
                         <td className="px-4 py-3 text-right text-textSecondary">
-                          {entry.total_minutes ?? "—"}
+                          {formatDuration(entry.total_minutes)}
                         </td>
                       </tr>
                     ))}
@@ -496,37 +554,27 @@ export default function TimeclockPage() {
               </div>
             </div>
 
-            {/* Card view (mobile only) */}
             <div className="grid gap-3 md:hidden">
-              {todayEntries.map((entry) => (
+              {status.recentEntries.map((entry) => (
                 <div
                   key={entry.id}
                   className="rounded-xl border border-borderSubtle bg-surface/95 p-5 shadow-soft backdrop-blur-xl"
                 >
-                  <h3 className="text-lg font-semibold text-textPrimary">
-                    {entry.employee_name}
-                  </h3>
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="text-base font-semibold text-textPrimary">
+                      {entry.employee_name}
+                    </h3>
+                    <SourceBadge entry={entry} />
+                  </div>
                   <dl className="mt-3 space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <dt className="text-textMuted">Clock In</dt>
-                      <dd className="text-textPrimary">
-                        {formatTime(entry.clock_in)}
-                      </dd>
-                    </div>
-                    <div className="flex justify-between">
-                      <dt className="text-textMuted">Clock Out</dt>
-                      <dd className="text-textPrimary">
-                        {entry.clock_out ? formatTime(entry.clock_out) : "—"}
-                      </dd>
-                    </div>
-                    <div className="flex justify-between border-t border-borderSubtle pt-2">
-                      <dt className="text-textMuted font-medium">
-                        Total Minutes
-                      </dt>
-                      <dd className="text-textPrimary font-medium">
-                        {entry.total_minutes ?? "—"}
-                      </dd>
-                    </div>
+                    <Row label="Clock In" value={formatDateTime(entry.clock_in)} />
+                    <Row
+                      label="Clock Out"
+                      value={
+                        entry.clock_out ? formatDateTime(entry.clock_out) : "-"
+                      }
+                    />
+                    <Row label="Total" value={formatDuration(entry.total_minutes)} />
                   </dl>
                 </div>
               ))}
@@ -538,9 +586,56 @@ export default function TimeclockPage() {
   );
 }
 
+function MiniActiveEntry({ entry }: { entry: TimeclockEntry }) {
+  return (
+    <div className="rounded-xl border border-borderSubtle bg-surface/95 p-4 shadow-soft">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="font-medium text-textPrimary">{entry.employee_name}</p>
+          <p className="mt-1 text-sm text-textSecondary">
+            Since {formatTime(entry.clock_in)}
+          </p>
+        </div>
+        <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+          {calculateElapsedTime(entry.clock_in)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function SourceBadge({ entry }: { entry: TimeclockEntry }) {
+  return entry.is_manual ? (
+    <span className="inline-flex rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-500/15 dark:text-amber-300">
+      Manual
+    </span>
+  ) : (
+    <span className="inline-flex rounded-full bg-surfaceSoft px-2.5 py-1 text-xs font-semibold text-textMuted">
+      Self
+    </span>
+  );
+}
+
+function Row({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex justify-between gap-4">
+      <dt className="text-textMuted">{label}</dt>
+      <dd className="text-right text-textPrimary">{value}</dd>
+    </div>
+  );
+}
+
 function LoadingPanel({ label }: { label: string }) {
   return (
-    <div className="rounded-xl border border-borderSubtle bg-surface/95 p-12 text-center text-sm text-textSecondary shadow-soft backdrop-blur-xl">
+    <div className="rounded-xl border border-borderSubtle bg-surface/95 p-8 text-center text-sm text-textSecondary shadow-soft backdrop-blur-xl">
+      {label}
+    </div>
+  );
+}
+
+function EmptyPanel({ label }: { label: string }) {
+  return (
+    <div className="rounded-xl border border-borderSubtle bg-surface/95 p-8 text-center text-sm text-textMuted shadow-soft backdrop-blur-xl">
       {label}
     </div>
   );

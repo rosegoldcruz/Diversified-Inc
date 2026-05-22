@@ -1,6 +1,7 @@
 import "../globals.css";
 import type { Metadata, Viewport } from "next";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { ToastProvider } from "@/components/ui/toast";
 
 export const metadata: Metadata = {
   title: "Diversified OS",
@@ -39,7 +40,9 @@ export default function RootLayout({
               "try{var t=localStorage.getItem('theme');var d=t?t==='dark':true;document.documentElement.classList.toggle('dark',d)}catch(e){document.documentElement.classList.add('dark')}",
           }}
         />
-        <DashboardShell>{children}</DashboardShell>
+        <ToastProvider>
+          <DashboardShell>{children}</DashboardShell>
+        </ToastProvider>
       </body>
     </html>
   );

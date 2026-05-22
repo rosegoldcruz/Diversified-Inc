@@ -1,25 +1,93 @@
 import { NextRequest, NextResponse } from "next/server";
 import { query } from "@/lib/db";
 import { ensureSchema } from "@/lib/schema";
-import { HttpError, getSession, requireUser } from "@/lib/session";
+import { safeCreateAuditLog } from "@/lib/audit-log";
+import { HttpError, requireUser } from "@/lib/session";
 import {
   ValidationError,
   optionalString,
-  requireEnum,
   requireInteger,
 } from "@/lib/validators";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const ACTIONS = ["in", "out"] as const;
-const SUPERVISOR_ROLES = new Set(["Manager", "Admin", "Leadership"]);
+const MANAGE_TIMECLOCK_ROLES = new Set(["Admin", "Leadership"]);
+type TimeclockAction = "in" | "out" | "manual";
+
+const ACTION_ALIASES: Record<string, TimeclockAction> = {
+  in: "in",
+  clock_in: "in",
+  "clock-in": "in",
+  out: "out",
+  clock_out: "out",
+  "clock-out": "out",
+  manual: "manual",
+  correction: "manual",
+  manual_correction: "manual",
+};
 
 type EmployeeRow = {
   id: number;
   name: string;
-  status: string;
+  email: string | null;
+  role: string | null;
+  department: string | null;
+  status: string | null;
 };
+
+type TimeclockEntryRow = {
+  id: number;
+  employee_id: number | null;
+  employee_name: string;
+  clock_in: string;
+  clock_out: string | null;
+  total_minutes: number | null;
+  notes: string | null;
+  created_at: string;
+};
+
+function isTimeclockManager(role: string) {
+  return MANAGE_TIMECLOCK_ROLES.has(role);
+}
+
+function parseAction(value: unknown): TimeclockAction {
+  if (typeof value !== "string") {
+    throw new ValidationError("action is required", {
+      allowed: Object.keys(ACTION_ALIASES).join(", "),
+    });
+  }
+  const normalized = ACTION_ALIASES[value.trim().toLowerCase()];
+  if (!normalized) {
+    throw new ValidationError("Invalid action", {
+      allowed: Object.keys(ACTION_ALIASES).join(", "),
+    });
+  }
+  return normalized;
+}
+
+function parseDateTime(value: unknown, label: string): Date {
+  if (typeof value !== "string" || !value.trim()) {
+    throw new ValidationError(`${label} is required`);
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    throw new ValidationError(`${label} must be a valid date/time`);
+  }
+  return date;
+}
+
+function publicEntry(row: TimeclockEntryRow) {
+  const isManual =
+    typeof row.notes === "string" &&
+    /^(manual adjustment|admin clock-|admin punch)/i.test(row.notes);
+
+  return {
+    ...row,
+    source: isManual ? "manual" : "self",
+    is_manual: isManual,
+  };
+}
 
 function toError(error: unknown) {
   if (error instanceof HttpError) {
@@ -35,38 +103,129 @@ function toError(error: unknown) {
     );
   }
   console.error("[timeclock]", error);
-  const message =
-    error instanceof Error ? error.message : "Failed to process punch";
-  return NextResponse.json({ error: message }, { status: 500 });
+  return NextResponse.json(
+    { error: "Failed to process timeclock request" },
+    { status: 500 },
+  );
 }
 
-export async function GET() {
+async function getSessionEmployee() {
+  const session = requireUser();
+  const rows = await query<EmployeeRow>(
+    `SELECT id, name, email, role, department, status
+     FROM employees
+     WHERE id = $1
+     LIMIT 1`,
+    [session.userId],
+  );
+
+  if (rows.length === 0) {
+    throw new HttpError(403, "No employee profile linked to this user");
+  }
+  if (rows[0].status !== "active") {
+    throw new HttpError(403, "Employee profile is inactive");
+  }
+
+  return { session, employee: rows[0] };
+}
+
+async function getEmployeeById(employeeId: number) {
+  const rows = await query<EmployeeRow>(
+    `SELECT id, name, email, role, department, status
+     FROM employees
+     WHERE id = $1
+     LIMIT 1`,
+    [employeeId],
+  );
+  return rows[0] ?? null;
+}
+
+async function resolveTargetEmployee(options: {
+  requestedEmployeeId: unknown;
+  actor: EmployeeRow;
+  canManageTimeclock: boolean;
+}) {
+  let targetEmployeeId = options.actor.id;
+
+  if (
+    options.requestedEmployeeId !== undefined &&
+    options.requestedEmployeeId !== null &&
+    options.requestedEmployeeId !== ""
+  ) {
+    targetEmployeeId = requireInteger(
+      options.requestedEmployeeId,
+      "employee_id",
+      { min: 1 },
+    );
+  }
+
+  if (targetEmployeeId !== options.actor.id && !options.canManageTimeclock) {
+    throw new HttpError(
+      403,
+      "You do not have permission to punch for another employee",
+    );
+  }
+
+  if (targetEmployeeId === options.actor.id) {
+    return options.actor;
+  }
+
+  const target = await getEmployeeById(targetEmployeeId);
+  if (!target) {
+    throw new HttpError(404, "Employee not found");
+  }
+  if (target.status !== "active") {
+    throw new HttpError(409, "Cannot punch for an inactive employee");
+  }
+  return target;
+}
+
+async function getActiveEntry(employeeId: number) {
+  const rows = await query<TimeclockEntryRow>(
+    `SELECT id, employee_id, employee_name, clock_in, clock_out, total_minutes, notes, created_at
+     FROM timeclock_entries
+     WHERE employee_id = $1 AND clock_out IS NULL
+     ORDER BY clock_in DESC
+     LIMIT 1`,
+    [employeeId],
+  );
+  return rows[0] ? publicEntry(rows[0]) : null;
+}
+
+export async function GET(request: NextRequest) {
   try {
     await ensureSchema();
-    const session = getSession();
-    if (!session) {
-      return NextResponse.json(
-        { error: "Authentication required" },
-        { status: 401 },
+    const { session, employee } = await getSessionEmployee();
+    const canManageTimeclock = isTimeclockManager(session.role);
+    const requestedEmployeeId =
+      request.nextUrl.searchParams.get("employee_id") ??
+      request.nextUrl.searchParams.get("employeeId");
+
+    if (canManageTimeclock && !requestedEmployeeId) {
+      const rows = await query<TimeclockEntryRow>(
+        `SELECT id, employee_id, employee_name, clock_in, clock_out, total_minutes, notes, created_at
+         FROM timeclock_entries
+         ORDER BY clock_in DESC
+         LIMIT 100`,
       );
+      return NextResponse.json(rows.map(publicEntry));
     }
-    const isSupervisor = SUPERVISOR_ROLES.has(session.role);
-    const rows = isSupervisor
-      ? await query(
-          `SELECT id, employee_id, employee_name, clock_in, clock_out, total_minutes, notes, created_at
-           FROM timeclock_entries
-           ORDER BY clock_in DESC
-           LIMIT 100`,
-        )
-      : await query(
-          `SELECT id, employee_id, employee_name, clock_in, clock_out, total_minutes, notes, created_at
-           FROM timeclock_entries
-           WHERE employee_name = $1 OR employee_id = $2
-           ORDER BY clock_in DESC
-           LIMIT 100`,
-          [session.name, session.userId],
-        );
-    return NextResponse.json(rows);
+
+    const target = await resolveTargetEmployee({
+      requestedEmployeeId,
+      actor: employee,
+      canManageTimeclock,
+    });
+
+    const rows = await query<TimeclockEntryRow>(
+      `SELECT id, employee_id, employee_name, clock_in, clock_out, total_minutes, notes, created_at
+       FROM timeclock_entries
+       WHERE employee_id = $1
+       ORDER BY clock_in DESC
+       LIMIT 100`,
+      [target.id],
+    );
+    return NextResponse.json(rows.map(publicEntry));
   } catch (error) {
     return toError(error);
   }
@@ -75,11 +234,13 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     await ensureSchema();
-    const session = requireUser();
+    const { session, employee } = await getSessionEmployee();
+    const canManageTimeclock = isTimeclockManager(session.role);
     const body = (await req.json().catch(() => null)) as Record<
       string,
       unknown
     > | null;
+
     if (!body) {
       return NextResponse.json(
         { error: "JSON body required" },
@@ -87,95 +248,137 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const action = requireEnum(body.action, ACTIONS, "action");
+    const action = parseAction(body.action);
+    const target = await resolveTargetEmployee({
+      requestedEmployeeId: body.employee_id ?? body.employeeId,
+      actor: employee,
+      canManageTimeclock,
+    });
+    const notes = optionalString(body.notes, "notes", 1000);
+    const isOnBehalf = target.id !== employee.id;
 
-    // Resolve target employee. Default to the current session user.
-    let targetEmployeeId = session.userId;
-    let targetEmployeeName = session.name;
-
-    if (
-      "employee_id" in body &&
-      body.employee_id !== undefined &&
-      body.employee_id !== null
-    ) {
-      const requestedId = requireInteger(body.employee_id, "employee_id", {
-        min: 1,
-      });
-      if (requestedId !== session.userId) {
-        if (!SUPERVISOR_ROLES.has(session.role)) {
-          return NextResponse.json(
-            {
-              error:
-                "Only Manager, Admin, or Leadership can punch on behalf of another employee",
-            },
-            { status: 403 },
-          );
-        }
-        const rows = await query<EmployeeRow>(
-          `SELECT id, name, status FROM employees WHERE id = $1 LIMIT 1`,
-          [requestedId],
+    if (action === "manual") {
+      if (!canManageTimeclock) {
+        return NextResponse.json(
+          { error: "Only Admin or Leadership can create manual corrections" },
+          { status: 403 },
         );
-        if (rows.length === 0) {
-          return NextResponse.json(
-            { error: "Employee not found" },
-            { status: 404 },
-          );
-        }
-        if (rows[0].status !== "active") {
-          return NextResponse.json(
-            { error: "Cannot punch for an inactive employee" },
-            { status: 409 },
-          );
-        }
-        targetEmployeeId = rows[0].id;
-        targetEmployeeName = rows[0].name;
       }
+
+      const clockIn = parseDateTime(body.clock_in ?? body.clockIn, "clock_in");
+      const clockOut = parseDateTime(
+        body.clock_out ?? body.clockOut,
+        "clock_out",
+      );
+
+      if (clockOut.getTime() < clockIn.getTime()) {
+        return NextResponse.json(
+          { error: "clock_out must be after clock_in" },
+          { status: 400 },
+        );
+      }
+
+      const manualNotes = `Manual adjustment by ${employee.name}: ${
+        notes || "created punch correction"
+      }`;
+      const rows = await query<TimeclockEntryRow>(
+        `INSERT INTO timeclock_entries
+          (employee_id, employee_name, clock_in, clock_out, notes)
+         VALUES ($1, $2, $3, $4, $5)
+         RETURNING id, employee_id, employee_name, clock_in, clock_out, total_minutes, notes, created_at`,
+        [target.id, target.name, clockIn.toISOString(), clockOut.toISOString(), manualNotes],
+      );
+      const entry = publicEntry(rows[0]);
+
+      await safeCreateAuditLog({
+        actorUserId: session.userId,
+        action: "timeclock.manual_correction",
+        module: "timeclock",
+        entityType: "timeclock_entry",
+        entityId: entry.id,
+        beforeData: null,
+        afterData: entry,
+        request: req,
+      });
+
+      return NextResponse.json(entry, { status: 201 });
     }
 
-    const notes = optionalString(body.notes, "notes", 1000);
-
     if (action === "in") {
-      const open = await query<{ id: number }>(
-        `SELECT id FROM timeclock_entries
-         WHERE employee_id = $1 AND clock_out IS NULL
-         LIMIT 1`,
-        [targetEmployeeId],
-      );
-      if (open.length > 0) {
+      const activeEntry = await getActiveEntry(target.id);
+      if (activeEntry) {
         return NextResponse.json(
-          { error: "Already clocked in" },
+          { error: "Already clocked in", activeEntry },
           { status: 409 },
         );
       }
-      const rows = await query(
+
+      const punchNotes = isOnBehalf
+        ? `Admin clock-in by ${employee.name}${notes ? `: ${notes}` : ""}`
+        : notes;
+      const rows = await query<TimeclockEntryRow>(
         `INSERT INTO timeclock_entries (employee_id, employee_name, clock_in, clock_out, notes)
          VALUES ($1, $2, NOW(), NULL, $3)
-         RETURNING *`,
-        [targetEmployeeId, targetEmployeeName, notes],
+         RETURNING id, employee_id, employee_name, clock_in, clock_out, total_minutes, notes, created_at`,
+        [target.id, target.name, punchNotes],
       );
-      return NextResponse.json(rows[0], { status: 201 });
+      const entry = publicEntry(rows[0]);
+
+      if (isOnBehalf) {
+        await safeCreateAuditLog({
+          actorUserId: session.userId,
+          action: "timeclock.clock_in_on_behalf",
+          module: "timeclock",
+          entityType: "timeclock_entry",
+          entityId: entry.id,
+          beforeData: null,
+          afterData: entry,
+          request: req,
+        });
+      }
+
+      return NextResponse.json(entry, { status: 201 });
     }
 
-    const rows = await query(
-      `UPDATE timeclock_entries
-       SET clock_out = NOW(),
-           total_minutes = GREATEST(0, ROUND(EXTRACT(EPOCH FROM (NOW() - clock_in)) / 60)),
-           notes = COALESCE($2, notes)
-       WHERE id = (
-         SELECT id FROM timeclock_entries
-         WHERE employee_id = $1 AND clock_out IS NULL
-         ORDER BY clock_in DESC LIMIT 1
-       )
-       RETURNING *`,
-      [targetEmployeeId, notes],
-    );
-    if (rows.length === 0) {
+    const beforeEntry = await getActiveEntry(target.id);
+    if (!beforeEntry) {
       return NextResponse.json(
         { error: "No active clock-in found" },
-        { status: 404 },
+        { status: 409 },
       );
     }
-    return NextResponse.json(rows[0]);
+
+    const punchNotes = isOnBehalf
+      ? `Admin clock-out by ${employee.name}${notes ? `: ${notes}` : ""}`
+      : notes;
+    const rows = await query<TimeclockEntryRow>(
+      `UPDATE timeclock_entries
+       SET clock_out = NOW(),
+           notes = CASE
+             WHEN $2::text IS NULL OR $2::text = '' THEN notes
+             WHEN notes IS NULL OR notes = '' THEN $2::text
+             ELSE notes || E'\n' || $2::text
+           END
+       WHERE id = $1
+       RETURNING id, employee_id, employee_name, clock_in, clock_out, total_minutes, notes, created_at`,
+      [beforeEntry.id, punchNotes],
+    );
+    const entry = publicEntry(rows[0]);
+
+    if (isOnBehalf) {
+      await safeCreateAuditLog({
+        actorUserId: session.userId,
+        action: "timeclock.clock_out_on_behalf",
+        module: "timeclock",
+        entityType: "timeclock_entry",
+        entityId: entry.id,
+        beforeData: beforeEntry,
+        afterData: entry,
+        request: req,
+      });
+    }
+
+    return NextResponse.json(entry);
   } catch (error) {
     return toError(error);
   }

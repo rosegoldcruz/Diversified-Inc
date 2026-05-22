@@ -212,3 +212,69 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
+
+export async function DELETE(request: NextRequest, { params }: RouteContext) {
+  const workOrderId = parseId(params.id);
+  if (!workOrderId) {
+    return NextResponse.json(
+      { error: "Invalid work order id" },
+      { status: 400 },
+    );
+  }
+
+  try {
+    const session = requireRole(["Manager", "Admin", "Leadership"]);
+    const existingWorkOrder = await getWorkOrderById(workOrderId);
+
+    if (!existingWorkOrder) {
+      return NextResponse.json(
+        { error: "Work order not found" },
+        { status: 404 },
+      );
+    }
+
+    await query(`DELETE FROM work_orders WHERE id = $1`, [workOrderId]);
+
+    await createAuditLog({
+      actorUserId: session.userId,
+      action: "work_order.deleted",
+      module: "work_orders",
+      entityType: "work_order",
+      entityId: workOrderId,
+      beforeData: existingWorkOrder,
+      request,
+    });
+
+    await safeCreateAutomationEvent({
+      eventType: "work_order_deleted",
+      sourceModule: "work_orders",
+      entityType: "work_order",
+      entityId: workOrderId,
+      actorUserId: session.userId,
+      path: "/work-orders",
+      payload: {
+        work_order_id: workOrderId,
+        title: existingWorkOrder.title ?? null,
+        status: existingWorkOrder.status ?? null,
+      },
+    });
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    if (error instanceof HttpError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status },
+      );
+    }
+    if (error instanceof ValidationError) {
+      return NextResponse.json(
+        { error: error.message, details: error.details },
+        { status: 400 },
+      );
+    }
+    const message =
+      error instanceof Error ? error.message : "Failed to delete work order";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+}

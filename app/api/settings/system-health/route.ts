@@ -18,7 +18,30 @@ const EXPECTED_TABLES = [
   "timesheets",
   "system_settings",
   "system_audit_logs",
+  "notifications",
+  "user_preferences",
 ];
+
+const LEGACY_ALIASES = [
+  { alias: "internal_forms", target: "forms" },
+  { alias: "workspace_files", target: "file_records" },
+];
+
+async function checkLegacyAliases() {
+  const aliasChecks = await Promise.all(
+    LEGACY_ALIASES.map(async ({ alias, target }) => {
+      const exists = await query(
+        `SELECT EXISTS (
+          SELECT 1 FROM information_schema.tables
+          WHERE table_schema = 'public' AND table_name = $1
+        )`,
+        [alias],
+      );
+      return { alias, target, exists: exists[0].exists };
+    }),
+  );
+  return aliasChecks;
+}
 
 function getDatabaseHostLabel() {
   const url = process.env.DATABASE_URL;
@@ -72,6 +95,8 @@ export async function GET() {
       name,
       exists: foundTables.has(name),
     }));
+
+    const legacyAliases = await checkLegacyAliases();
 
     const missingCount = expectedTables.filter((item) => !item.exists).length;
     const status = missingCount > 0 ? "degraded" : "healthy";
@@ -132,16 +157,10 @@ export async function GET() {
     return NextResponse.json({
       status,
       checkedAt,
-      database: {
-        status,
-        hostLabel: getDatabaseHostLabel(),
-        environment: process.env.NODE_ENV ?? "development",
-        latencyMs,
-        expectedTables,
-      },
-      n8n,
-      security,
-      runtime,
+      latencyMs,
+      expectedTables,
+      legacyAliases,
+      automationMode,
     });
   } catch (error) {
     if (error instanceof HttpError) {

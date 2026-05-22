@@ -8,7 +8,7 @@ import {
   signSession,
   verifyPassword,
 } from "@/lib/auth";
-import { sanitizeNextPath } from "@/lib/oidc";
+import { getAppRelativeUrl, sanitizeNextPath } from "@/lib/oidc";
 import { ensureSchema } from "@/lib/schema";
 
 export const runtime = "nodejs";
@@ -28,7 +28,7 @@ function loginErrorRedirect(
   nextPath: string,
   message: string,
 ) {
-  const loginUrl = new URL("/login", request.url);
+  const loginUrl = getAppRelativeUrl("/login");
   loginUrl.searchParams.set("error", message);
   if (nextPath && nextPath !== "/dashboard") {
     loginUrl.searchParams.set("next", nextPath);
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
       user.id,
     ]);
 
-    const response = NextResponse.redirect(new URL(nextPath, request.url));
+    const response = NextResponse.redirect(getAppRelativeUrl(nextPath));
     response.cookies.set(SESSION_COOKIE, token, {
       ...SESSION_COOKIE_OPTIONS,
       expires: expiresAt,

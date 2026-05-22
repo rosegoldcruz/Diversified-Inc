@@ -20,6 +20,10 @@ type WorkOrderDetail = {
   site_name?: string | null;
 };
 
+type SessionUser = {
+  role: "Employee" | "Manager" | "Admin" | "Leadership";
+};
+
 const STATUS_OPTIONS = [
   { label: "Open", value: "open" },
   { label: "In Progress", value: "in_progress" },
@@ -38,8 +42,10 @@ export default function WorkOrderDetailPage() {
 
   const [workOrder, setWorkOrder] = useState<WorkOrderDetail | null>(null);
   const [status, setStatus] = useState("open");
+  const [me, setMe] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -56,9 +62,12 @@ export default function WorkOrderDetailPage() {
         setLoading(true);
         setError(null);
 
-        const response = await fetch(`/api/work-orders/${workOrderId}`, {
-          cache: "no-store",
-        });
+        const [response, meResponse] = await Promise.all([
+          fetch(`/api/work-orders/${workOrderId}`, {
+            cache: "no-store",
+          }),
+          fetch("/api/auth/me", { cache: "no-store" }),
+        ]);
 
         if (!response.ok) {
           throw new Error(`Failed to load work order (${response.status})`);
@@ -69,6 +78,12 @@ export default function WorkOrderDetailPage() {
         if (!cancelled) {
           setWorkOrder(data);
           setStatus((data.status || "open").toLowerCase());
+          if (meResponse.ok) {
+            const meData = (await meResponse.json()) as {
+              user: SessionUser | null;
+            };
+            setMe(meData.user);
+          }
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -91,6 +106,9 @@ export default function WorkOrderDetailPage() {
       cancelled = true;
     };
   }, [workOrderId]);
+
+  const canDelete =
+    me?.role === "Manager" || me?.role === "Admin" || me?.role === "Leadership";
 
   async function updateStatus() {
     if (!workOrderId) {
@@ -124,6 +142,46 @@ export default function WorkOrderDetailPage() {
       );
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function deleteWorkOrder() {
+    if (!workOrderId || !workOrder) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete work order \"${workOrder.title}\"? This action cannot be undone.`,
+    );
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setDeleting(true);
+      setError(null);
+      const response = await fetch(`/api/work-orders/${workOrderId}`, {
+        method: "DELETE",
+      });
+      const payload = (await response.json().catch(() => null)) as {
+        ok?: boolean;
+        error?: string;
+      } | null;
+      if (!response.ok) {
+        throw new Error(
+          payload?.error || `Failed to delete work order (${response.status})`,
+        );
+      }
+
+      router.push("/work-orders");
+    } catch (deleteError) {
+      setError(
+        deleteError instanceof Error
+          ? deleteError.message
+          : "Failed to delete work order",
+      );
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -176,9 +234,19 @@ export default function WorkOrderDetailPage() {
             </h1>
             <p className="mt-1 text-sm text-textMuted">WO-{workOrder.id}</p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={workOrder.status} />
             <PriorityBadge priority={workOrder.priority} />
+            {canDelete ? (
+              <button
+                type="button"
+                onClick={deleteWorkOrder}
+                disabled={deleting}
+                className="h-9 rounded-md border border-red-300 bg-red-50 px-3 text-xs font-semibold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300"
+              >
+                {deleting ? "Deleting..." : "Delete"}
+              </button>
+            ) : null}
           </div>
         </div>
 

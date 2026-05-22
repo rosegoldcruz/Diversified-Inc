@@ -51,13 +51,18 @@ function getIssuer(): string {
   return requireEnv("ZITADEL_ISSUER").replace(/\/+$/, "");
 }
 
-function getAppUrl(): string {
+export function getAppUrl(): string {
   const appUrl =
     process.env.APP_URL?.trim() || process.env.NEXT_PUBLIC_APP_URL?.trim();
   if (appUrl) {
     return appUrl.replace(/\/+$/, "");
   }
   throw new Error("APP_URL or NEXT_PUBLIC_APP_URL must be configured");
+}
+
+export function getAppRelativeUrl(path: string): URL {
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+  return new URL(normalizedPath, `${getAppUrl()}/`);
 }
 
 export function getRedirectUri(): string {
@@ -288,4 +293,28 @@ export function getDisplayName(
       .join(" ") ||
     fallbackEmail
   );
+}
+
+export async function verifyOidcToken(
+  token: string,
+  userId: number,
+): Promise<boolean> {
+  try {
+    const discovery = await getOidcDiscovery();
+    const response = await fetch(discovery.userinfo_endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    if (!response.ok) {
+      console.error("OIDC token verification failed", await response.text());
+      return false;
+    }
+
+    const userInfo = await parseJson<OidcUserInfo>(response);
+    return userInfo.sub === String(userId);
+  } catch (error) {
+    console.error("Error verifying OIDC token", error);
+    return false;
+  }
 }

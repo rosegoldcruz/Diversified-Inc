@@ -12,6 +12,7 @@ import {
   clearOidcHandshakeCookies,
   exchangeCodeForTokens,
   fetchOidcUserInfo,
+  getAppRelativeUrl,
   getDisplayName,
   OIDC_NEXT_COOKIE,
   OIDC_STATE_COOKIE,
@@ -36,7 +37,7 @@ function makeLoginErrorResponse(
   request: NextRequest,
   message: string,
 ): NextResponse {
-  const loginUrl = new URL("/login", request.url);
+  const loginUrl = getAppRelativeUrl("/login");
   loginUrl.searchParams.set("error", message);
   const response = NextResponse.redirect(loginUrl);
   clearOidcHandshakeCookies(response);
@@ -182,7 +183,7 @@ export async function GET(request: NextRequest) {
       subject: profile.sub,
     });
 
-    const response = NextResponse.redirect(new URL(nextPath, request.url));
+    const response = NextResponse.redirect(getAppRelativeUrl(nextPath));
     clearOidcHandshakeCookies(response);
     response.cookies.set(SESSION_COOKIE, token, {
       ...SESSION_COOKIE_OPTIONS,

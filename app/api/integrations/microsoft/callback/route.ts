@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { handleMicrosoftOAuthCallback } from "@/lib/microsoft-calendar";
 import { HttpError, requireUser } from "@/lib/session";
+import { createAuditLog } from "@/lib/audit-log";
 
 const OAUTH_STATE_COOKIE = "microsoft_oauth_state";
 
@@ -70,6 +71,17 @@ export async function GET(request: NextRequest) {
     }
 
     await handleMicrosoftOAuthCallback({ userId: session.userId, code });
+
+    await createAuditLog({
+      actorUserId: session.userId,
+      action: "microsoft_graph.connected",
+      module: "integrations",
+      entityType: "microsoft_graph_connection",
+      afterData: {
+        status: "connected",
+      },
+      request,
+    });
 
     const success = NextResponse.redirect(
       toCalendarRedirect(request, "connected"),

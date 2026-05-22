@@ -37,6 +37,10 @@ type TimeclockEntry = {
   created_at: string;
 };
 
+type SessionUser = {
+  role: "Employee" | "Manager" | "Admin" | "Leadership";
+};
+
 export default function EmployeeDetailPage() {
   const params = useParams();
   const router = useRouter();
@@ -48,7 +52,9 @@ export default function EmployeeDetailPage() {
   const [employee, setEmployee] = useState<Employee | null>(null);
   const [assignedTasks, setAssignedTasks] = useState<Task[]>([]);
   const [recentEntries, setRecentEntries] = useState<TimeclockEntry[]>([]);
+  const [me, setMe] = useState<SessionUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -65,11 +71,12 @@ export default function EmployeeDetailPage() {
         setLoading(true);
         setError(null);
 
-        const [employeeResponse, tasksResponse, timeclockResponse] =
+        const [employeeResponse, tasksResponse, timeclockResponse, meResponse] =
           await Promise.all([
             fetch(`/api/employees/${employeeId}`, { cache: "no-store" }),
             fetch("/api/tasks", { cache: "no-store" }),
             fetch("/api/timeclock", { cache: "no-store" }),
+            fetch("/api/auth/me", { cache: "no-store" }),
           ]);
 
         if (!employeeResponse.ok) {
@@ -116,6 +123,12 @@ export default function EmployeeDetailPage() {
           setEmployee(employeeData);
           setAssignedTasks(filteredTasks);
           setRecentEntries(filteredEntries);
+          if (meResponse.ok) {
+            const meData = (await meResponse.json()) as {
+              user: SessionUser | null;
+            };
+            setMe(meData.user);
+          }
         }
       } catch (loadError) {
         if (!cancelled) {
@@ -138,6 +151,46 @@ export default function EmployeeDetailPage() {
       cancelled = true;
     };
   }, [employeeId]);
+
+  const canDelete = me?.role === "Admin" || me?.role === "Leadership";
+
+  async function deactivateEmployee() {
+    if (!employee) return;
+    const confirmed = window.confirm(
+      `Deactivate ${employee.name}? They will lose access until reactivated.`,
+    );
+    if (!confirmed) return;
+
+    try {
+      setDeleting(true);
+      setError(null);
+      const response = await fetch(`/api/employees/${employee.id}`, {
+        method: "DELETE",
+      });
+      const payload = (await response.json().catch(() => null)) as
+        | Employee
+        | { error?: string }
+        | null;
+      if (!response.ok) {
+        throw new Error(
+          (payload as { error?: string } | null)?.error ||
+            `Failed to deactivate employee (${response.status})`,
+        );
+      }
+
+      const updated = payload as Employee;
+      setEmployee(updated);
+      router.push("/employees");
+    } catch (deactivateError) {
+      setError(
+        deactivateError instanceof Error
+          ? deactivateError.message
+          : "Failed to deactivate employee",
+      );
+    } finally {
+      setDeleting(false);
+    }
+  }
 
   if (loading) {
     return (
@@ -194,7 +247,21 @@ export default function EmployeeDetailPage() {
               </p>
             </div>
           </div>
-          <StatusBadge status={employee.status} />
+          <div className="flex items-center gap-2">
+            <StatusBadge status={employee.status} />
+            {canDelete ? (
+              <button
+                type="button"
+                onClick={deactivateEmployee}
+                disabled={
+                  deleting || employee.status?.toLowerCase() === "inactive"
+                }
+                className="inline-flex h-9 items-center rounded-md border border-red-300 bg-red-50 px-3 text-xs font-semibold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300"
+              >
+                {deleting ? "Deactivating..." : "Deactivate"}
+              </button>
+            ) : null}
+          </div>
         </div>
 
         {error ? (

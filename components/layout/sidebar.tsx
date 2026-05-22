@@ -83,7 +83,8 @@ const NAV_GROUPS: NavGroup[] = [
       { label: "AI Chat", href: "/ai-chat", icon: ChatCircle },
       { label: "AI Tools", href: "/ai-tools", icon: Robot },
       { label: "Automations", href: "/automations", icon: Lightning },
-      { label: "Admin Settings", href: "/settings", icon: GearSix },
+      { label: "Settings", href: "/settings", icon: GearSix },
+      { label: "Admin Settings", href: "/admin", icon: GearSix },
     ],
   },
 ];
@@ -155,8 +156,10 @@ export function Sidebar({
         >
           <div
             className={[
-              "relative w-full overflow-hidden border border-white/35 bg-white/65 shadow-glass ring-1 ring-white/20 backdrop-blur-2xl dark:border-white/10 dark:bg-slate-900/40 dark:ring-white/10",
-              desktopCollapsed ? "h-12 rounded-xl" : "h-20 rounded-2xl",
+              "relative w-full overflow-hidden border border-white bg-white shadow-glass ring-1 ring-white/60 dark:border-white dark:bg-white dark:ring-white/20",
+              desktopCollapsed
+                ? "h-12 rounded-xl"
+                : "aspect-[2/1] max-h-32 rounded-2xl",
             ].join(" ")}
           >
             <Image
@@ -164,10 +167,9 @@ export function Sidebar({
               alt="Diversified OS"
               fill
               priority
-              className="object-contain p-2"
+              className="object-cover"
               sizes="(max-width: 1024px) 85vw, 256px"
             />
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-white/10 dark:to-black/10" />
           </div>
           <button
             type="button"

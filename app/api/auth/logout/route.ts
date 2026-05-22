@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { SESSION_COOKIE, SESSION_COOKIE_OPTIONS } from "@/lib/auth";
-import { buildLogoutUrl } from "@/lib/oidc";
+import { buildLogoutUrl, getAppRelativeUrl } from "@/lib/oidc";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     clearSessionCookie(response);
     return response;
   } catch {
-    const response = NextResponse.redirect(new URL("/login", request.url));
+    const response = NextResponse.redirect(getAppRelativeUrl("/login"));
     clearSessionCookie(response);
     return response;
   }

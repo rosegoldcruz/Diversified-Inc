@@ -78,17 +78,19 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
             ? "/documents"
             : pathname.startsWith("/settings/")
               ? "/settings"
-              : pathname.startsWith("/tasks/")
-                ? "/tasks"
-                : pathname.startsWith("/work-orders/")
-                  ? "/work-orders"
-                  : pathname.startsWith("/employees/")
-                    ? "/employees"
-                    : pathname.startsWith("/inventory/")
-                      ? "/inventory"
-                      : pathname.startsWith("/documents/")
-                        ? "/documents"
-                        : null;
+              : pathname.startsWith("/admin/")
+                ? "/admin"
+                : pathname.startsWith("/tasks/")
+                  ? "/tasks"
+                  : pathname.startsWith("/work-orders/")
+                    ? "/work-orders"
+                    : pathname.startsWith("/employees/")
+                      ? "/employees"
+                      : pathname.startsWith("/inventory/")
+                        ? "/inventory"
+                        : pathname.startsWith("/documents/")
+                          ? "/documents"
+                          : null;
 
   const canGoBack = !TOP_LEVEL_PATHS.has(pathname) && Boolean(parentRoute);
 
