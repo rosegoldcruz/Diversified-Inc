@@ -643,7 +643,13 @@ export default function TimeclockPage() {
               ) : (
                 <div className="space-y-3">
                   {normalAndWarningEntries.map((entry) => (
-                    <MiniActiveEntry key={entry.id} entry={entry} />
+                    <MiniActiveEntry
+                      key={entry.id}
+                      entry={entry}
+                      canManage={canManageTimeclock}
+                      onView={openEntryDetails}
+                      onEdit={startEditEntry}
+                    />
                   ))}
                 </div>
               )}
@@ -662,7 +668,13 @@ export default function TimeclockPage() {
               ) : (
                 <div className="space-y-3">
                   {exceptionEntries.map((entry) => (
-                    <MiniActiveEntry key={`exception-${entry.id}`} entry={entry} />
+                    <MiniActiveEntry
+                      key={`exception-${entry.id}`}
+                      entry={entry}
+                      canManage={canManageTimeclock}
+                      onView={openEntryDetails}
+                      onEdit={startEditEntry}
+                    />
                   ))}
                 </div>
               )}
@@ -932,71 +944,83 @@ export default function TimeclockPage() {
       ) : null}
 
       {editingEntry ? (
-        <section className="glass-surface space-y-4 p-6 md:p-8">
-          <div className="flex items-center justify-between gap-4">
-            <h2 className="text-lg font-semibold text-textPrimary">Edit Punch</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <section className="max-h-[88vh] w-full max-w-4xl overflow-y-auto rounded-xl border border-borderSubtle bg-bgDark p-6 shadow-2xl md:p-8">
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-lg font-semibold text-textPrimary">Edit Punch</h2>
+              <button
+                type="button"
+                onClick={() => setEditingEntry(null)}
+                className="rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary dark:bg-bgDark"
+              >
+                Cancel
+              </button>
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <label className="block text-sm font-medium text-textPrimary">
+                Clock In
+                <input
+                  type="datetime-local"
+                  value={editClockIn}
+                  onChange={(event) => setEditClockIn(event.target.value)}
+                  className="mt-2 w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary shadow-soft dark:bg-bgDark"
+                />
+              </label>
+              <label className="block text-sm font-medium text-textPrimary">
+                Clock Out
+                <input
+                  type="datetime-local"
+                  value={editClockOut}
+                  onChange={(event) => setEditClockOut(event.target.value)}
+                  className="mt-2 w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary shadow-soft dark:bg-bgDark"
+                />
+              </label>
+              <label className="block text-sm font-medium text-textPrimary md:col-span-2">
+                Manager Note
+                <input
+                  type="text"
+                  value={editNotes}
+                  onChange={(event) => setEditNotes(event.target.value)}
+                  className="mt-2 w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary shadow-soft dark:bg-bgDark"
+                />
+              </label>
+              <label className="block text-sm font-medium text-textPrimary md:col-span-2">
+                Correction Reason
+                <input
+                  type="text"
+                  value={editReason}
+                  onChange={(event) => setEditReason(event.target.value)}
+                  placeholder="Required"
+                  className="mt-2 w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary shadow-soft dark:bg-bgDark"
+                />
+              </label>
+            </div>
             <button
               type="button"
-              onClick={() => setEditingEntry(null)}
-              className="rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary dark:bg-bgDark"
+              onClick={handleSaveEntryCorrection}
+              disabled={pendingAction !== null || !editReason.trim()}
+              className="mt-4 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white shadow-soft transition-colors hover:bg-accent/90 disabled:opacity-60"
             >
-              Cancel
+              {pendingAction === "manual" ? "Saving..." : "Save Punch Edit"}
             </button>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            <label className="block text-sm font-medium text-textPrimary">
-              Clock In
-              <input
-                type="datetime-local"
-                value={editClockIn}
-                onChange={(event) => setEditClockIn(event.target.value)}
-                className="mt-2 w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary shadow-soft dark:bg-bgDark"
-              />
-            </label>
-            <label className="block text-sm font-medium text-textPrimary">
-              Clock Out
-              <input
-                type="datetime-local"
-                value={editClockOut}
-                onChange={(event) => setEditClockOut(event.target.value)}
-                className="mt-2 w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary shadow-soft dark:bg-bgDark"
-              />
-            </label>
-            <label className="block text-sm font-medium text-textPrimary md:col-span-2">
-              Manager Note
-              <input
-                type="text"
-                value={editNotes}
-                onChange={(event) => setEditNotes(event.target.value)}
-                className="mt-2 w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary shadow-soft dark:bg-bgDark"
-              />
-            </label>
-            <label className="block text-sm font-medium text-textPrimary md:col-span-2">
-              Correction Reason
-              <input
-                type="text"
-                value={editReason}
-                onChange={(event) => setEditReason(event.target.value)}
-                placeholder="Required"
-                className="mt-2 w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary shadow-soft dark:bg-bgDark"
-              />
-            </label>
-          </div>
-          <button
-            type="button"
-            onClick={handleSaveEntryCorrection}
-            disabled={pendingAction !== null || !editReason.trim()}
-            className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white shadow-soft transition-colors hover:bg-accent/90 disabled:opacity-60"
-          >
-            {pendingAction === "manual" ? "Saving..." : "Save Punch Edit"}
-          </button>
-        </section>
+          </section>
+        </div>
       ) : null}
     </div>
   );
 }
 
-function MiniActiveEntry({ entry }: { entry: TimeclockEntry }) {
+function MiniActiveEntry({
+  entry,
+  canManage,
+  onView,
+  onEdit,
+}: {
+  entry: TimeclockEntry;
+  canManage: boolean;
+  onView: (entry: TimeclockEntry) => void;
+  onEdit: (entry: TimeclockEntry) => void;
+}) {
   const severity = classifyActiveShift(entry);
   const elapsedLabel = entry.elapsed_label || calculateElapsedTime(entry.clock_in);
 
@@ -1008,7 +1032,7 @@ function MiniActiveEntry({ entry }: { entry: TimeclockEntry }) {
         : "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300";
 
   return (
-    <div className="rounded-xl border border-borderSubtle bg-surface/95 p-4 shadow-soft">
+    <div className="rounded-xl border border-borderSubtle bg-surface/95 p-4 shadow-soft transition-colors hover:bg-surface">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="font-medium text-textPrimary">{entry.employee_name}</p>
@@ -1028,6 +1052,24 @@ function MiniActiveEntry({ entry }: { entry: TimeclockEntry }) {
         <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${badgeClass}`}>
           {elapsedLabel}
         </span>
+      </div>
+      <div className="mt-3 flex gap-2">
+        <button
+          type="button"
+          onClick={() => onView(entry)}
+          className="rounded-md border border-borderSubtle bg-surface px-2.5 py-1 text-xs font-semibold text-textPrimary"
+        >
+          View
+        </button>
+        {canManage ? (
+          <button
+            type="button"
+            onClick={() => onEdit(entry)}
+            className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300"
+          >
+            Edit
+          </button>
+        ) : null}
       </div>
     </div>
   );

@@ -330,6 +330,7 @@ export default function TimesheetsPage() {
   }
 
   function beginEditTimesheet(timesheet: Timesheet) {
+    setDetail(null);
     setEditingTimesheet(timesheet);
     setEditHours({
       monday_hours: String(timesheet.monday_hours ?? 0),
@@ -914,46 +915,48 @@ export default function TimesheetsPage() {
       ) : null}
 
       {editingTimesheet ? (
-        <section className="glass-surface space-y-4 p-6 md:p-8 print:hidden">
-          <div className="flex items-center justify-between gap-3">
-            <h2 className="text-lg font-semibold text-textPrimary">Edit Timesheet</h2>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm print:hidden">
+          <section className="max-h-[88vh] w-full max-w-5xl overflow-y-auto rounded-xl border border-borderSubtle bg-bgDark p-6 shadow-2xl md:p-8">
+            <div className="flex items-center justify-between gap-3">
+              <h2 className="text-lg font-semibold text-textPrimary">Edit Timesheet</h2>
+              <button
+                type="button"
+                onClick={() => setEditingTimesheet(null)}
+                className="rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary dark:bg-bgDark"
+              >
+                Cancel
+              </button>
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-4">
+              <HourInput label="Mon" value={editHours.monday_hours} onChange={(value) => setEditHours((prev) => ({ ...prev, monday_hours: value }))} />
+              <HourInput label="Tue" value={editHours.tuesday_hours} onChange={(value) => setEditHours((prev) => ({ ...prev, tuesday_hours: value }))} />
+              <HourInput label="Wed" value={editHours.wednesday_hours} onChange={(value) => setEditHours((prev) => ({ ...prev, wednesday_hours: value }))} />
+              <HourInput label="Thu" value={editHours.thursday_hours} onChange={(value) => setEditHours((prev) => ({ ...prev, thursday_hours: value }))} />
+              <HourInput label="Fri" value={editHours.friday_hours} onChange={(value) => setEditHours((prev) => ({ ...prev, friday_hours: value }))} />
+              <HourInput label="Sat" value={editHours.saturday_hours} onChange={(value) => setEditHours((prev) => ({ ...prev, saturday_hours: value }))} />
+              <HourInput label="Sun" value={editHours.sunday_hours} onChange={(value) => setEditHours((prev) => ({ ...prev, sunday_hours: value }))} />
+            </div>
+            <label className="mt-4 block text-sm font-medium text-textPrimary">
+              Notes
+              <textarea
+                value={editHours.notes}
+                onChange={(event) =>
+                  setEditHours((prev) => ({ ...prev, notes: event.target.value }))
+                }
+                rows={3}
+                className="mt-2 w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary dark:bg-bgDark"
+              />
+            </label>
             <button
               type="button"
-              onClick={() => setEditingTimesheet(null)}
-              className="rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary dark:bg-bgDark"
+              onClick={() => void saveTimesheetEdits()}
+              disabled={actionBusyId === editingTimesheet.id}
+              className="mt-4 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white shadow-soft transition-colors hover:bg-accent/90 disabled:opacity-60"
             >
-              Cancel
+              {actionBusyId === editingTimesheet.id ? "Saving..." : "Save Timesheet"}
             </button>
-          </div>
-          <div className="grid gap-3 md:grid-cols-4">
-            <HourInput label="Mon" value={editHours.monday_hours} onChange={(value) => setEditHours((prev) => ({ ...prev, monday_hours: value }))} />
-            <HourInput label="Tue" value={editHours.tuesday_hours} onChange={(value) => setEditHours((prev) => ({ ...prev, tuesday_hours: value }))} />
-            <HourInput label="Wed" value={editHours.wednesday_hours} onChange={(value) => setEditHours((prev) => ({ ...prev, wednesday_hours: value }))} />
-            <HourInput label="Thu" value={editHours.thursday_hours} onChange={(value) => setEditHours((prev) => ({ ...prev, thursday_hours: value }))} />
-            <HourInput label="Fri" value={editHours.friday_hours} onChange={(value) => setEditHours((prev) => ({ ...prev, friday_hours: value }))} />
-            <HourInput label="Sat" value={editHours.saturday_hours} onChange={(value) => setEditHours((prev) => ({ ...prev, saturday_hours: value }))} />
-            <HourInput label="Sun" value={editHours.sunday_hours} onChange={(value) => setEditHours((prev) => ({ ...prev, sunday_hours: value }))} />
-          </div>
-          <label className="block text-sm font-medium text-textPrimary">
-            Notes
-            <textarea
-              value={editHours.notes}
-              onChange={(event) =>
-                setEditHours((prev) => ({ ...prev, notes: event.target.value }))
-              }
-              rows={3}
-              className="mt-2 w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary dark:bg-bgDark"
-            />
-          </label>
-          <button
-            type="button"
-            onClick={() => void saveTimesheetEdits()}
-            disabled={actionBusyId === editingTimesheet.id}
-            className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white shadow-soft transition-colors hover:bg-accent/90 disabled:opacity-60"
-          >
-            {actionBusyId === editingTimesheet.id ? "Saving..." : "Save Timesheet"}
-          </button>
-        </section>
+          </section>
+        </div>
       ) : null}
     </div>
   );
