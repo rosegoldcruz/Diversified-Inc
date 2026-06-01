@@ -36,6 +36,7 @@ type TimeclockEntry = {
   severity?: "normal" | "warning" | "exception";
   needs_review?: boolean;
   review_reason?: string | null;
+  include_in_active_now?: boolean;
   notes: string | null;
   created_at: string;
   source?: "manual" | "self";
@@ -126,6 +127,14 @@ function todayForInput() {
   return now.toISOString().slice(0, 16);
 }
 
+function toInputDateTime(isoString: string | null) {
+  if (!isoString) return "";
+  const date = new Date(isoString);
+  if (Number.isNaN(date.getTime())) return "";
+  date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+  return date.toISOString().slice(0, 16);
+}
+
 export default function TimeclockPage() {
   const [status, setStatus] = useState<TimeclockStatus | null>(null);
   const [selectedEmployeeId, setSelectedEmployeeId] = useState<number | null>(
@@ -140,6 +149,17 @@ export default function TimeclockPage() {
   const [manualClockIn, setManualClockIn] = useState(todayForInput);
   const [manualClockOut, setManualClockOut] = useState(todayForInput);
   const [manualNotes, setManualNotes] = useState("");
+  const [recentStatusFilter, setRecentStatusFilter] = useState<
+    "all" | "open" | "closed" | "manual" | "exception"
+  >("all");
+  const [recentDateFrom, setRecentDateFrom] = useState("");
+  const [recentDateTo, setRecentDateTo] = useState("");
+  const [selectedEntry, setSelectedEntry] = useState<TimeclockEntry | null>(null);
+  const [editingEntry, setEditingEntry] = useState<TimeclockEntry | null>(null);
+  const [editClockIn, setEditClockIn] = useState("");
+  const [editClockOut, setEditClockOut] = useState("");
+  const [editReason, setEditReason] = useState("");
+  const [editNotes, setEditNotes] = useState("");
   const [nowTick, setNowTick] = useState(0);
 
   const loadStatus = useCallback(async (employeeId?: number | null) => {
@@ -212,7 +232,12 @@ export default function TimeclockPage() {
 
   const normalAndWarningEntries = useMemo(
     () =>
-      visibleActiveEntries.filter((entry) => classifyActiveShift(entry) !== "exception"),
+      visibleActiveEntries.filter((entry) => {
+        if (entry.include_in_active_now !== undefined) {
+          return entry.include_in_active_now;
+        }
+        return classifyActiveShift(entry) !== "exception";
+      }),
     [visibleActiveEntries],
   );
 
@@ -221,6 +246,33 @@ export default function TimeclockPage() {
       visibleActiveEntries.filter((entry) => classifyActiveShift(entry) === "exception"),
     [visibleActiveEntries],
   );
+
+  const filteredRecentEntries = useMemo(() => {
+    if (!status) return [] as TimeclockEntry[];
+
+    return status.recentEntries.filter((entry) => {
+      const isOpen = entry.clock_out === null;
+      const isManual = !!entry.is_manual;
+      const isException = classifyActiveShift(entry) === "exception";
+
+      if (recentStatusFilter === "open" && !isOpen) return false;
+      if (recentStatusFilter === "closed" && isOpen) return false;
+      if (recentStatusFilter === "manual" && !isManual) return false;
+      if (recentStatusFilter === "exception" && !isException) return false;
+
+      if (recentDateFrom) {
+        const minDate = new Date(`${recentDateFrom}T00:00:00`).getTime();
+        if (new Date(entry.clock_in).getTime() < minDate) return false;
+      }
+
+      if (recentDateTo) {
+        const maxDate = new Date(`${recentDateTo}T23:59:59`).getTime();
+        if (new Date(entry.clock_in).getTime() > maxDate) return false;
+      }
+
+      return true;
+    });
+  }, [recentDateFrom, recentDateTo, recentStatusFilter, status]);
 
   const handleEmployeeChange = async (employeeId: number) => {
     setSelectedEmployeeId(employeeId);
@@ -284,6 +336,14 @@ export default function TimeclockPage() {
     if (!status || !canManageTimeclock || pendingAction) return;
     const targetId = selectedEmployeeId ?? status.user.id;
 
+    if (!manualNotes.trim()) {
+      setMessage({
+        type: "error",
+        text: "Manual correction reason is required.",
+      });
+      return;
+    }
+
     try {
       setPendingAction("manual");
       const response = await fetch("/api/timeclock", {
@@ -320,6 +380,64 @@ export default function TimeclockPage() {
     } finally {
       setPendingAction(null);
     }
+  };
+
+  const openEntryDetails = (entry: TimeclockEntry) => {
+    setSelectedEntry(entry);
+  };
+
+  const startEditEntry = (entry: TimeclockEntry) => {
+    setEditingEntry(entry);
+    setEditClockIn(toInputDateTime(entry.clock_in));
+    setEditClockOut(toInputDateTime(entry.clock_out));
+    setEditReason("");
+    setEditNotes("");
+  };
+
+  const handleSaveEntryCorrection = async () => {
+    if (!status || !editingEntry || pendingAction) return;
+    if (!editReason.trim()) {
+      setMessage({ type: "error", text: "Correction reason is required." });
+      return;
+    }
+
+    try {
+      setPendingAction("manual");
+      const response = await fetch("/api/timeclock", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          entry_id: editingEntry.id,
+          clock_in: editClockIn ? new Date(editClockIn).toISOString() : undefined,
+          clock_out: editClockOut ? new Date(editClockOut).toISOString() : undefined,
+          correction_reason: editReason,
+          notes: editNotes || undefined,
+        }),
+      });
+      const result = (await response.json().catch(() => ({}))) as {
+        error?: string;
+      };
+
+      if (!response.ok) {
+        setMessage({
+          type: "error",
+          text: result.error || "Failed to save punch correction",
+        });
+        return;
+      }
+
+      setMessage({ type: "success", text: "Punch correction saved." });
+      setEditingEntry(null);
+      await loadStatus(selectedEmployeeId ?? status.user.id);
+    } catch {
+      setMessage({ type: "error", text: "Network error" });
+    } finally {
+      setPendingAction(null);
+    }
+  };
+
+  const handlePrintTimecard = () => {
+    window.print();
   };
 
   return (
@@ -372,6 +490,14 @@ export default function TimeclockPage() {
                   : "Employee timeclock"}
               </p>
             </div>
+
+            <button
+              type="button"
+              onClick={handlePrintTimecard}
+              className="rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm font-medium text-textPrimary shadow-soft transition-colors hover:bg-surfaceSoft dark:bg-bgDark"
+            >
+              Print Timecard
+            </button>
 
             {canManageTimeclock ? (
               <div className="w-full sm:w-72">
@@ -577,18 +703,23 @@ export default function TimeclockPage() {
               />
             </label>
             <label className="block text-sm font-medium text-textPrimary">
-              Note
+              Correction Reason
               <input
                 type="text"
                 value={manualNotes}
                 onChange={(event) => setManualNotes(event.target.value)}
-                placeholder="Reason"
+                placeholder="Required"
                 className="mt-2 w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary shadow-soft focus:border-borderFocus focus:outline-none dark:bg-bgDark"
               />
             </label>
             <button
               onClick={handleManualCorrection}
-              disabled={loading || pendingAction !== null || !status}
+              disabled={
+                loading ||
+                pendingAction !== null ||
+                !status ||
+                !manualNotes.trim()
+              }
               className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white shadow-soft transition-colors hover:bg-accent/90 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {pendingAction === "manual" ? "Saving..." : "Save Correction"}
@@ -609,11 +740,45 @@ export default function TimeclockPage() {
                 : "Showing your punches only"}
             </p>
           </div>
+          <div className="grid gap-2 sm:grid-cols-3">
+            <select
+              value={recentStatusFilter}
+              onChange={(event) =>
+                setRecentStatusFilter(
+                  event.target.value as
+                    | "all"
+                    | "open"
+                    | "closed"
+                    | "manual"
+                    | "exception",
+                )
+              }
+              className="rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary shadow-soft dark:bg-bgDark"
+            >
+              <option value="all">All statuses</option>
+              <option value="open">Open</option>
+              <option value="closed">Closed</option>
+              <option value="manual">Manual</option>
+              <option value="exception">Exception</option>
+            </select>
+            <input
+              type="date"
+              value={recentDateFrom}
+              onChange={(event) => setRecentDateFrom(event.target.value)}
+              className="rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary shadow-soft dark:bg-bgDark"
+            />
+            <input
+              type="date"
+              value={recentDateTo}
+              onChange={(event) => setRecentDateTo(event.target.value)}
+              className="rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary shadow-soft dark:bg-bgDark"
+            />
+          </div>
         </div>
 
         {!status || loading ? (
           <LoadingPanel label="Loading punch history..." />
-        ) : status.recentEntries.length === 0 ? (
+        ) : filteredRecentEntries.length === 0 ? (
           <EmptyPanel label="No punch history found." />
         ) : (
           <>
@@ -629,10 +794,13 @@ export default function TimeclockPage() {
                       <th className="px-4 py-3 text-right font-semibold">
                         Total
                       </th>
+                      <th className="px-4 py-3 text-right font-semibold">
+                        Actions
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-borderSubtle">
-                    {status.recentEntries.map((entry, idx) => (
+                    {filteredRecentEntries.map((entry, idx) => (
                       <tr
                         key={entry.id}
                         className={
@@ -656,6 +824,26 @@ export default function TimeclockPage() {
                         <td className="px-4 py-3 text-right text-textSecondary">
                           {formatDuration(entry.total_minutes)}
                         </td>
+                        <td className="px-4 py-3 text-right">
+                          <div className="flex justify-end gap-2">
+                            <button
+                              type="button"
+                              onClick={() => openEntryDetails(entry)}
+                              className="rounded-md border border-borderSubtle bg-surface px-2.5 py-1 text-xs font-semibold text-textPrimary"
+                            >
+                              View
+                            </button>
+                            {canManageTimeclock ? (
+                              <button
+                                type="button"
+                                onClick={() => startEditEntry(entry)}
+                                className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300"
+                              >
+                                Edit
+                              </button>
+                            ) : null}
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -664,7 +852,7 @@ export default function TimeclockPage() {
             </div>
 
             <div className="grid gap-3 md:hidden">
-              {status.recentEntries.map((entry) => (
+              {filteredRecentEntries.map((entry) => (
                 <div
                   key={entry.id}
                   className="rounded-xl border border-borderSubtle bg-surface/95 p-5 shadow-soft backdrop-blur-xl"
@@ -685,12 +873,123 @@ export default function TimeclockPage() {
                     />
                     <Row label="Total" value={formatDuration(entry.total_minutes)} />
                   </dl>
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => openEntryDetails(entry)}
+                      className="rounded-md border border-borderSubtle bg-surface px-2.5 py-1 text-xs font-semibold text-textPrimary"
+                    >
+                      View
+                    </button>
+                    {canManageTimeclock ? (
+                      <button
+                        type="button"
+                        onClick={() => startEditEntry(entry)}
+                        className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300"
+                      >
+                        Edit
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
               ))}
             </div>
           </>
         )}
       </section>
+
+      {selectedEntry ? (
+        <section className="glass-surface space-y-4 p-6 md:p-8">
+          <div className="flex items-center justify-between gap-4">
+            <h2 className="text-lg font-semibold text-textPrimary">Punch Detail</h2>
+            <button
+              type="button"
+              onClick={() => setSelectedEntry(null)}
+              className="rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary dark:bg-bgDark"
+            >
+              Close
+            </button>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            <Row label="Employee" value={selectedEntry.employee_name} />
+            <Row label="Clock In" value={formatDateTime(selectedEntry.clock_in)} />
+            <Row
+              label="Clock Out"
+              value={
+                selectedEntry.clock_out ? formatDateTime(selectedEntry.clock_out) : "Open"
+              }
+            />
+            <Row label="Total" value={formatDuration(selectedEntry.total_minutes)} />
+            <Row
+              label="Review"
+              value={selectedEntry.review_reason || "No review flags"}
+            />
+            <Row label="Notes" value={selectedEntry.notes || "-"} />
+          </div>
+        </section>
+      ) : null}
+
+      {editingEntry ? (
+        <section className="glass-surface space-y-4 p-6 md:p-8">
+          <div className="flex items-center justify-between gap-4">
+            <h2 className="text-lg font-semibold text-textPrimary">Edit Punch</h2>
+            <button
+              type="button"
+              onClick={() => setEditingEntry(null)}
+              className="rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary dark:bg-bgDark"
+            >
+              Cancel
+            </button>
+          </div>
+          <div className="grid gap-3 md:grid-cols-2">
+            <label className="block text-sm font-medium text-textPrimary">
+              Clock In
+              <input
+                type="datetime-local"
+                value={editClockIn}
+                onChange={(event) => setEditClockIn(event.target.value)}
+                className="mt-2 w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary shadow-soft dark:bg-bgDark"
+              />
+            </label>
+            <label className="block text-sm font-medium text-textPrimary">
+              Clock Out
+              <input
+                type="datetime-local"
+                value={editClockOut}
+                onChange={(event) => setEditClockOut(event.target.value)}
+                className="mt-2 w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary shadow-soft dark:bg-bgDark"
+              />
+            </label>
+            <label className="block text-sm font-medium text-textPrimary md:col-span-2">
+              Manager Note
+              <input
+                type="text"
+                value={editNotes}
+                onChange={(event) => setEditNotes(event.target.value)}
+                className="mt-2 w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary shadow-soft dark:bg-bgDark"
+              />
+            </label>
+            <label className="block text-sm font-medium text-textPrimary md:col-span-2">
+              Correction Reason
+              <input
+                type="text"
+                value={editReason}
+                onChange={(event) => setEditReason(event.target.value)}
+                placeholder="Required"
+                className="mt-2 w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary shadow-soft dark:bg-bgDark"
+              />
+            </label>
+          </div>
+          <button
+            type="button"
+            onClick={handleSaveEntryCorrection}
+            disabled={pendingAction !== null || !editReason.trim()}
+            className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white shadow-soft transition-colors hover:bg-accent/90 disabled:opacity-60"
+          >
+            {pendingAction === "manual" ? "Saving..." : "Save Punch Edit"}
+          </button>
+        </section>
+      ) : null}
     </div>
   );
 }

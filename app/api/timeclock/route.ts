@@ -48,6 +48,10 @@ type TimeclockEntryRow = {
   created_at: string;
 };
 
+type TimeclockEntryLookupRow = TimeclockEntryRow & {
+  employee_status: string | null;
+};
+
 function isTimeclockManager(role: string) {
   return MANAGE_TIMECLOCK_ROLES.has(role);
 }
@@ -199,6 +203,27 @@ async function getActiveEntry(employeeId: number) {
     [employeeId],
   );
   return rows[0] ? publicEntry(rows[0]) : null;
+}
+
+async function getEntryById(entryId: number) {
+  const rows = await query<TimeclockEntryLookupRow>(
+    `SELECT t.id,
+            t.employee_id,
+            t.employee_name,
+            t.clock_in,
+            t.clock_out,
+            t.total_minutes,
+            t.notes,
+            t.created_at,
+            e.status AS employee_status
+     FROM timeclock_entries t
+     LEFT JOIN employees e ON e.id = t.employee_id
+     WHERE t.id = $1
+     LIMIT 1`,
+    [entryId],
+  );
+
+  return rows[0] ?? null;
 }
 
 export async function GET(request: NextRequest) {
@@ -414,6 +439,126 @@ export async function POST(req: NextRequest) {
     }
 
     return NextResponse.json(entry);
+  } catch (error) {
+    return toError(error);
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    await ensureSchema();
+    const { session, employee } = await getSessionEmployee();
+    const canManageTimeclock = isTimeclockManager(session.role);
+
+    if (!canManageTimeclock) {
+      return NextResponse.json(
+        { error: "Only managers and admins can correct existing punches" },
+        { status: 403 },
+      );
+    }
+
+    const body = (await req.json().catch(() => null)) as Record<
+      string,
+      unknown
+    > | null;
+
+    if (!body) {
+      return NextResponse.json(
+        { error: "JSON body required" },
+        { status: 400 },
+      );
+    }
+
+    const entryId = requireInteger(body.entry_id ?? body.entryId, "entry_id", {
+      min: 1,
+    });
+    const correctionReason = optionalString(
+      body.correction_reason ?? body.reason,
+      "correction_reason",
+      1000,
+    );
+
+    if (!correctionReason) {
+      return NextResponse.json(
+        { error: "A correction reason is required" },
+        { status: 400 },
+      );
+    }
+
+    const beforeRow = await getEntryById(entryId);
+    if (!beforeRow) {
+      return NextResponse.json({ error: "Entry not found" }, { status: 404 });
+    }
+
+    const nextClockInRaw = body.clock_in ?? body.clockIn;
+    const nextClockOutRaw = body.clock_out ?? body.clockOut;
+    const managerNote = optionalString(body.notes, "notes", 1000);
+
+    const hasClockIn = nextClockInRaw !== undefined && nextClockInRaw !== null;
+    const hasClockOut = nextClockOutRaw !== undefined && nextClockOutRaw !== null;
+    const hasManagerNote = !!managerNote;
+
+    if (!hasClockIn && !hasClockOut && !hasManagerNote) {
+      return NextResponse.json(
+        {
+          error:
+            "At least one correction field is required (clock_in, clock_out, or notes)",
+        },
+        { status: 400 },
+      );
+    }
+
+    const nextClockIn = hasClockIn
+      ? parseDateTime(nextClockInRaw, "clock_in")
+      : new Date(beforeRow.clock_in);
+    const nextClockOut = hasClockOut
+      ? parseDateTime(nextClockOutRaw, "clock_out")
+      : beforeRow.clock_out
+        ? new Date(beforeRow.clock_out)
+        : null;
+
+    if (nextClockOut && nextClockOut.getTime() <= nextClockIn.getTime()) {
+      return NextResponse.json(
+        { error: "clock_out must be after clock_in" },
+        { status: 400 },
+      );
+    }
+
+    const notesToAppend = [
+      managerNote,
+      `Correction by ${employee.name}: ${correctionReason}`,
+    ]
+      .filter((value): value is string => typeof value === "string" && value.trim().length > 0)
+      .join("\n");
+
+    const updatedRows = await query<TimeclockEntryRow>(
+      `UPDATE timeclock_entries
+       SET clock_in = $2,
+           clock_out = $3,
+           notes = CASE
+             WHEN $4::text IS NULL OR $4::text = '' THEN notes
+             WHEN notes IS NULL OR notes = '' THEN $4::text
+             ELSE notes || E'\n' || $4::text
+           END
+       WHERE id = $1
+       RETURNING id, employee_id, employee_name, clock_in, clock_out, total_minutes, notes, created_at`,
+      [entryId, nextClockIn.toISOString(), nextClockOut?.toISOString() ?? null, notesToAppend],
+    );
+
+    const updated = publicEntry(updatedRows[0]);
+
+    await safeCreateAuditLog({
+      actorUserId: session.userId,
+      action: "timeclock.entry_corrected",
+      module: "timeclock",
+      entityType: "timeclock_entry",
+      entityId: updated.id,
+      beforeData: publicEntry(beforeRow),
+      afterData: updated,
+      request: req,
+    });
+
+    return NextResponse.json(updated);
   } catch (error) {
     return toError(error);
   }

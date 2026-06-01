@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { FadeContent } from "@/components/ui/FadeContent";
 import { ShinyText } from "@/components/ui/ShinyText";
 
@@ -32,6 +32,22 @@ interface Timesheet {
   approved_by: string | null;
   notes: string | null;
   created_at: string;
+}
+
+interface TimesheetPunch {
+  id: number;
+  employee_id: number | null;
+  employee_name: string;
+  clock_in: string;
+  clock_out: string | null;
+  total_minutes: number | null;
+  notes: string | null;
+  created_at: string;
+}
+
+interface TimesheetDetailResponse {
+  timesheet: Timesheet;
+  punches: TimesheetPunch[];
 }
 
 type SessionUser = {
@@ -82,6 +98,23 @@ function toDateOnly(value: string): string {
   return value.split("T")[0];
 }
 
+function formatDateTime(value: string) {
+  return new Date(value).toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function formatMinutes(minutes: number | null) {
+  if (minutes === null) return "-";
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (hours === 0) return `${mins}m`;
+  return `${hours}h ${mins}m`;
+}
+
 function getDisplayStatus(timesheet: Timesheet) {
   return timesheet.needs_review ? "needs_review" : timesheet.status;
 }
@@ -92,45 +125,92 @@ export default function TimesheetsPage() {
   const [error, setError] = useState<string | null>(null);
   const [me, setMe] = useState<SessionUser | null>(null);
   const [actionBusyId, setActionBusyId] = useState<number | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [needsReviewFilter, setNeedsReviewFilter] = useState("all");
+  const [employeeFilter, setEmployeeFilter] = useState("all");
+  const [weekFilter, setWeekFilter] = useState("all");
+  const [searchFilter, setSearchFilter] = useState("");
+  const [detail, setDetail] = useState<TimesheetDetailResponse | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [editingTimesheet, setEditingTimesheet] = useState<Timesheet | null>(null);
+  const [editHours, setEditHours] = useState({
+    monday_hours: "0",
+    tuesday_hours: "0",
+    wednesday_hours: "0",
+    thursday_hours: "0",
+    friday_hours: "0",
+    saturday_hours: "0",
+    sunday_hours: "0",
+    notes: "",
+  });
+
+  const fetchTimesheets = useCallback(async (showRefresh = false) => {
+    if (showRefresh) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+
+    try {
+      const [response, meResponse] = await Promise.all([
+        fetch("/api/timesheets", { cache: "no-store" }),
+        fetch("/api/auth/me", { cache: "no-store" }),
+      ]);
+      if (!response.ok) throw new Error("Failed to fetch timesheets");
+
+      const data = (await response.json()) as Timesheet[];
+      setTimesheets(data);
+
+      if (meResponse.ok) {
+        const meData = (await meResponse.json()) as { user: SessionUser | null };
+        setMe(meData.user);
+      }
+
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to fetch timesheets");
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
   useEffect(() => {
-    let cancelled = false;
+    void fetchTimesheets(false);
+  }, [fetchTimesheets]);
 
-    const fetchTimesheets = async () => {
-      try {
-        const [response, meResponse] = await Promise.all([
-          fetch("/api/timesheets", { cache: "no-store" }),
-          fetch("/api/auth/me", { cache: "no-store" }),
-        ]);
-        if (!response.ok) throw new Error("Failed to fetch timesheets");
-        const data = await response.json();
-        if (!cancelled) {
-          setTimesheets(data);
-          if (meResponse.ok) {
-            const meData = (await meResponse.json()) as {
-              user: SessionUser | null;
-            };
-            setMe(meData.user);
-          }
-          setError(null);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          setError(
-            err instanceof Error ? err.message : "Failed to fetch timesheets",
-          );
-        }
-      } finally {
-        if (!cancelled) {
-          setLoading(false);
-        }
+  const loadTimesheetDetail = useCallback(async (timesheetId: number) => {
+    try {
+      setDetailLoading(true);
+      const response = await fetch(`/api/timesheets/${timesheetId}`, {
+        cache: "no-store",
+      });
+      const payload = (await response.json().catch(() => null)) as
+        | TimesheetDetailResponse
+        | { error?: string }
+        | null;
+
+      if (!response.ok || !payload || !("timesheet" in payload)) {
+        throw new Error(
+          (payload as { error?: string } | null)?.error ||
+            "Failed to load timesheet detail",
+        );
       }
-    };
 
-    fetchTimesheets();
-    return () => {
-      cancelled = true;
-    };
+      setDetail(payload);
+      setError(null);
+      return payload;
+    } catch (detailError) {
+      setError(
+        detailError instanceof Error
+          ? detailError.message
+          : "Failed to load timesheet detail",
+      );
+      return null;
+    } finally {
+      setDetailLoading(false);
+    }
   }, []);
 
   const currentWeekStart = getCurrentWeekStart();
@@ -147,6 +227,56 @@ export default function TimesheetsPage() {
 
   const isManagerLevel =
     me?.role === "Manager" || me?.role === "Admin" || me?.role === "Leadership";
+
+  const uniqueEmployees = useMemo(
+    () => Array.from(new Set(timesheets.map((item) => item.employee_name))).sort(),
+    [timesheets],
+  );
+
+  const uniqueWeeks = useMemo(
+    () => Array.from(new Set(timesheets.map((item) => toDateOnly(item.week_start)))).sort().reverse(),
+    [timesheets],
+  );
+
+  const filteredTimesheets = useMemo(() => {
+    return timesheets.filter((item) => {
+      if (statusFilter !== "all" && item.status !== statusFilter) {
+        return false;
+      }
+
+      if (needsReviewFilter === "needs_review" && !item.needs_review) {
+        return false;
+      }
+
+      if (needsReviewFilter === "clean" && item.needs_review) {
+        return false;
+      }
+
+      if (employeeFilter !== "all" && item.employee_name !== employeeFilter) {
+        return false;
+      }
+
+      if (weekFilter !== "all" && toDateOnly(item.week_start) !== weekFilter) {
+        return false;
+      }
+
+      if (
+        searchFilter.trim() &&
+        !item.employee_name.toLowerCase().includes(searchFilter.trim().toLowerCase())
+      ) {
+        return false;
+      }
+
+      return true;
+    });
+  }, [
+    employeeFilter,
+    needsReviewFilter,
+    searchFilter,
+    statusFilter,
+    timesheets,
+    weekFilter,
+  ]);
 
   async function updateTimesheetStatus(
     timesheetId: number,
@@ -186,6 +316,83 @@ export default function TimesheetsPage() {
     }
   }
 
+  async function handleViewTimesheet(timesheetId: number) {
+    await loadTimesheetDetail(timesheetId);
+    setEditingTimesheet(null);
+  }
+
+  async function handlePrintTimesheet(timesheetId: number) {
+    const loaded = await loadTimesheetDetail(timesheetId);
+    if (loaded) {
+      setEditingTimesheet(null);
+      window.print();
+    }
+  }
+
+  function beginEditTimesheet(timesheet: Timesheet) {
+    setEditingTimesheet(timesheet);
+    setEditHours({
+      monday_hours: String(timesheet.monday_hours ?? 0),
+      tuesday_hours: String(timesheet.tuesday_hours ?? 0),
+      wednesday_hours: String(timesheet.wednesday_hours ?? 0),
+      thursday_hours: String(timesheet.thursday_hours ?? 0),
+      friday_hours: String(timesheet.friday_hours ?? 0),
+      saturday_hours: String(timesheet.saturday_hours ?? 0),
+      sunday_hours: String(timesheet.sunday_hours ?? 0),
+      notes: timesheet.notes || "",
+    });
+  }
+
+  async function saveTimesheetEdits() {
+    if (!editingTimesheet) return;
+
+    try {
+      setActionBusyId(editingTimesheet.id);
+      const response = await fetch(`/api/timesheets/${editingTimesheet.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          monday_hours: Number(editHours.monday_hours || 0),
+          tuesday_hours: Number(editHours.tuesday_hours || 0),
+          wednesday_hours: Number(editHours.wednesday_hours || 0),
+          thursday_hours: Number(editHours.thursday_hours || 0),
+          friday_hours: Number(editHours.friday_hours || 0),
+          saturday_hours: Number(editHours.saturday_hours || 0),
+          sunday_hours: Number(editHours.sunday_hours || 0),
+          notes: editHours.notes,
+        }),
+      });
+      const payload = (await response.json().catch(() => null)) as
+        | Timesheet
+        | { error?: string }
+        | null;
+
+      if (!response.ok) {
+        throw new Error(
+          (payload as { error?: string } | null)?.error ||
+            "Failed to save timesheet edits",
+        );
+      }
+
+      setTimesheets((prev) =>
+        prev.map((item) =>
+          item.id === editingTimesheet.id ? (payload as Timesheet) : item,
+        ),
+      );
+      setEditingTimesheet(null);
+      await loadTimesheetDetail(editingTimesheet.id);
+      setError(null);
+    } catch (saveError) {
+      setError(
+        saveError instanceof Error
+          ? saveError.message
+          : "Failed to save timesheet edits",
+      );
+    } finally {
+      setActionBusyId(null);
+    }
+  }
+
   return (
     <div className="space-y-8 font-sans">
       <FadeContent
@@ -216,6 +423,88 @@ export default function TimesheetsPage() {
         <SummaryCard label="Needs Review" value={needsReviewCount} />
       </FadeContent>
 
+      <section className="glass-surface grid gap-3 p-5 md:grid-cols-6 md:items-end">
+        <label className="text-sm font-medium text-textPrimary">
+          Week
+          <select
+            value={weekFilter}
+            onChange={(event) => setWeekFilter(event.target.value)}
+            className="mt-2 w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary dark:bg-bgDark"
+          >
+            <option value="all">All weeks</option>
+            {uniqueWeeks.map((week) => (
+              <option key={week} value={week}>
+                {week}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="text-sm font-medium text-textPrimary">
+          Employee
+          <select
+            value={employeeFilter}
+            onChange={(event) => setEmployeeFilter(event.target.value)}
+            className="mt-2 w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary dark:bg-bgDark"
+          >
+            <option value="all">All employees</option>
+            {uniqueEmployees.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="text-sm font-medium text-textPrimary">
+          Status
+          <select
+            value={statusFilter}
+            onChange={(event) => setStatusFilter(event.target.value)}
+            className="mt-2 w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary dark:bg-bgDark"
+          >
+            <option value="all">All statuses</option>
+            <option value="draft">Draft</option>
+            <option value="submitted">Submitted</option>
+            <option value="approved">Approved</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </label>
+
+        <label className="text-sm font-medium text-textPrimary">
+          Needs Review
+          <select
+            value={needsReviewFilter}
+            onChange={(event) => setNeedsReviewFilter(event.target.value)}
+            className="mt-2 w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary dark:bg-bgDark"
+          >
+            <option value="all">All</option>
+            <option value="needs_review">Needs review</option>
+            <option value="clean">No review flags</option>
+          </select>
+        </label>
+
+        <label className="text-sm font-medium text-textPrimary">
+          Search Employee
+          <input
+            type="text"
+            value={searchFilter}
+            onChange={(event) => setSearchFilter(event.target.value)}
+            placeholder="Name"
+            className="mt-2 w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary dark:bg-bgDark"
+          />
+        </label>
+
+        <button
+          type="button"
+          onClick={() => void fetchTimesheets(true)}
+          disabled={refreshing}
+          className="rounded-md border border-borderSubtle bg-surface px-4 py-2 text-sm font-semibold text-textPrimary shadow-soft disabled:opacity-60 dark:bg-bgDark"
+        >
+          {refreshing ? "Refreshing..." : "Refresh"}
+        </button>
+      </section>
+
       {error && <ErrorPanel message={error} />}
 
       {loading ? (
@@ -244,7 +533,7 @@ export default function TimesheetsPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-borderSubtle">
-                  {timesheets.map((timesheet, idx) => (
+                  {filteredTimesheets.map((timesheet, idx) => (
                     <tr
                       key={timesheet.id}
                       className={`transition-colors hover:bg-surfaceHover ${
@@ -310,6 +599,29 @@ export default function TimesheetsPage() {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => void handleViewTimesheet(timesheet.id)}
+                            className="rounded-md border border-borderSubtle bg-surface px-2.5 py-1 text-xs font-semibold text-textPrimary dark:bg-bgDark"
+                          >
+                            View
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void handlePrintTimesheet(timesheet.id)}
+                            className="rounded-md border border-borderSubtle bg-surface px-2.5 py-1 text-xs font-semibold text-textPrimary dark:bg-bgDark"
+                          >
+                            Print
+                          </button>
+                          {isManagerLevel || timesheet.status !== "approved" ? (
+                            <button
+                              type="button"
+                              onClick={() => beginEditTimesheet(timesheet)}
+                              className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300"
+                            >
+                              Edit
+                            </button>
+                          ) : null}
                           {timesheet.status === "draft" ? (
                             <button
                               type="button"
@@ -369,7 +681,7 @@ export default function TimesheetsPage() {
           </section>
 
           <section className="space-y-3 md:hidden">
-            {timesheets.map((timesheet) => (
+            {filteredTimesheets.map((timesheet) => (
               <article
                 key={timesheet.id}
                 className="rounded-xl border border-borderSubtle bg-surface/95 p-5 shadow-soft backdrop-blur-xl"
@@ -432,6 +744,29 @@ export default function TimesheetsPage() {
                     </p>
                   ) : null}
                   <div className="mt-2 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void handleViewTimesheet(timesheet.id)}
+                      className="rounded-md border border-borderSubtle bg-surface px-2.5 py-1 text-xs font-semibold text-textPrimary dark:bg-bgDark"
+                    >
+                      View
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handlePrintTimesheet(timesheet.id)}
+                      className="rounded-md border border-borderSubtle bg-surface px-2.5 py-1 text-xs font-semibold text-textPrimary dark:bg-bgDark"
+                    >
+                      Print
+                    </button>
+                    {isManagerLevel || timesheet.status !== "approved" ? (
+                      <button
+                        type="button"
+                        onClick={() => beginEditTimesheet(timesheet)}
+                        className="rounded-md border border-amber-500/30 bg-amber-500/10 px-2.5 py-1 text-xs font-semibold text-amber-700 dark:text-amber-300"
+                      >
+                        Edit
+                      </button>
+                    ) : null}
                     {timesheet.status === "draft" ? (
                       <button
                         type="button"
@@ -477,13 +812,141 @@ export default function TimesheetsPage() {
             ))}
           </section>
 
-          {timesheets.length === 0 && (
+          {filteredTimesheets.length === 0 && (
             <section className="rounded-lg border border-dashed border-borderSubtle bg-surface p-8 text-center text-sm text-textSecondary">
               No timesheets found.
             </section>
           )}
         </>
       )}
+
+      {detailLoading ? (
+        <LoadingPanel label="Loading timesheet detail..." />
+      ) : null}
+
+      {detail ? (
+        <section className="glass-surface space-y-4 p-6 md:p-8 print:block">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-semibold text-textPrimary">
+                Timesheet Detail
+              </h2>
+              <p className="text-sm text-textSecondary">
+                {detail.timesheet.employee_name} · {formatWeekRange(detail.timesheet.week_start, detail.timesheet.week_end)}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setDetail(null)}
+              className="rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary dark:bg-bgDark print:hidden"
+            >
+              Close
+            </button>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-4">
+            <DetailCell label="Status" value={getDisplayStatus(detail.timesheet)} />
+            <DetailCell label="Total Hours" value={String(detail.timesheet.total_hours)} />
+            <DetailCell
+              label="Review"
+              value={
+                detail.timesheet.needs_review
+                  ? "Needs review"
+                  : "No review flags"
+              }
+            />
+            <DetailCell
+              label="Notes"
+              value={detail.timesheet.notes || "-"}
+            />
+          </div>
+
+          <div className="overflow-x-auto rounded-xl border border-borderSubtle">
+            <table className="min-w-full text-left text-sm">
+              <thead className="bg-surfaceSoft text-xs uppercase tracking-wide text-textMuted">
+                <tr>
+                  <th className="px-3 py-2 font-semibold">Clock In</th>
+                  <th className="px-3 py-2 font-semibold">Clock Out</th>
+                  <th className="px-3 py-2 font-semibold">Total</th>
+                  <th className="px-3 py-2 font-semibold">Notes</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-borderSubtle">
+                {detail.punches.length === 0 ? (
+                  <tr>
+                    <td
+                      className="px-3 py-4 text-center text-textSecondary"
+                      colSpan={4}
+                    >
+                      No punches for this week.
+                    </td>
+                  </tr>
+                ) : (
+                  detail.punches.map((punch) => (
+                    <tr key={punch.id}>
+                      <td className="px-3 py-2 text-textPrimary">
+                        {formatDateTime(punch.clock_in)}
+                      </td>
+                      <td className="px-3 py-2 text-textPrimary">
+                        {punch.clock_out ? formatDateTime(punch.clock_out) : "Open"}
+                      </td>
+                      <td className="px-3 py-2 text-textPrimary">
+                        {formatMinutes(punch.total_minutes)}
+                      </td>
+                      <td className="px-3 py-2 text-textSecondary">
+                        {punch.notes || "-"}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      ) : null}
+
+      {editingTimesheet ? (
+        <section className="glass-surface space-y-4 p-6 md:p-8 print:hidden">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold text-textPrimary">Edit Timesheet</h2>
+            <button
+              type="button"
+              onClick={() => setEditingTimesheet(null)}
+              className="rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary dark:bg-bgDark"
+            >
+              Cancel
+            </button>
+          </div>
+          <div className="grid gap-3 md:grid-cols-4">
+            <HourInput label="Mon" value={editHours.monday_hours} onChange={(value) => setEditHours((prev) => ({ ...prev, monday_hours: value }))} />
+            <HourInput label="Tue" value={editHours.tuesday_hours} onChange={(value) => setEditHours((prev) => ({ ...prev, tuesday_hours: value }))} />
+            <HourInput label="Wed" value={editHours.wednesday_hours} onChange={(value) => setEditHours((prev) => ({ ...prev, wednesday_hours: value }))} />
+            <HourInput label="Thu" value={editHours.thursday_hours} onChange={(value) => setEditHours((prev) => ({ ...prev, thursday_hours: value }))} />
+            <HourInput label="Fri" value={editHours.friday_hours} onChange={(value) => setEditHours((prev) => ({ ...prev, friday_hours: value }))} />
+            <HourInput label="Sat" value={editHours.saturday_hours} onChange={(value) => setEditHours((prev) => ({ ...prev, saturday_hours: value }))} />
+            <HourInput label="Sun" value={editHours.sunday_hours} onChange={(value) => setEditHours((prev) => ({ ...prev, sunday_hours: value }))} />
+          </div>
+          <label className="block text-sm font-medium text-textPrimary">
+            Notes
+            <textarea
+              value={editHours.notes}
+              onChange={(event) =>
+                setEditHours((prev) => ({ ...prev, notes: event.target.value }))
+              }
+              rows={3}
+              className="mt-2 w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary dark:bg-bgDark"
+            />
+          </label>
+          <button
+            type="button"
+            onClick={() => void saveTimesheetEdits()}
+            disabled={actionBusyId === editingTimesheet.id}
+            className="rounded-md bg-accent px-4 py-2 text-sm font-semibold text-white shadow-soft transition-colors hover:bg-accent/90 disabled:opacity-60"
+          >
+            {actionBusyId === editingTimesheet.id ? "Saving..." : "Save Timesheet"}
+          </button>
+        </section>
+      ) : null}
     </div>
   );
 }
@@ -499,12 +962,48 @@ function SummaryCard({ label, value }: { label: string; value: number }) {
   );
 }
 
-function MobileHourCell({ day, hours }: { day: string; hours: number }) {
+function MobileHourCell({ day, hours }: { day: string; hours: number | string }) {
   return (
     <div className="text-center">
       <p className="font-semibold text-textMuted">{day}</p>
       <p className="text-textPrimary">{hours || "0"}</p>
     </div>
+  );
+}
+
+function DetailCell({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-borderSubtle bg-surface/90 p-3">
+      <p className="text-xs font-semibold uppercase tracking-wide text-textMuted">
+        {label}
+      </p>
+      <p className="mt-1 text-sm text-textPrimary">{value}</p>
+    </div>
+  );
+}
+
+function HourInput({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="block text-sm font-medium text-textPrimary">
+      {label}
+      <input
+        type="number"
+        min={0}
+        max={24}
+        step="0.25"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="mt-2 w-full rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary dark:bg-bgDark"
+      />
+    </label>
   );
 }
 

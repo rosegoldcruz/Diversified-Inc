@@ -60,6 +60,7 @@ function publicEntry(row: TimeclockEntryRow) {
   const elapsedMinutes = getElapsedMinutes(row.clock_in, row.clock_out);
   const severity = classifyActiveShift(elapsedMinutes);
   const needsReview = row.clock_out === null && severity === "exception";
+  const includeInActiveNow = row.clock_out === null && severity !== "exception";
 
   const isManual =
     typeof row.notes === "string" &&
@@ -73,10 +74,11 @@ function publicEntry(row: TimeclockEntryRow) {
     elapsed_label: formatElapsed(elapsedMinutes),
     severity,
     needs_review: needsReview,
+    include_in_active_now: includeInActiveNow,
     review_reason: needsReview
       ? elapsedMinutes === null
-        ? "Missing or invalid clock-in timestamp"
-        : `Open shift exceeds ${EXCEPTION_ACTIVE_SHIFT_HOURS} hours`
+        ? "Clock-in timestamp is invalid and requires manager review"
+        : `Likely missed clock-out; open shift exceeds ${EXCEPTION_ACTIVE_SHIFT_HOURS} hours`
       : severity === "warning" && row.clock_out === null
         ? `Approaching ${MAX_ACTIVE_SHIFT_HOURS} hour maximum`
         : null,
