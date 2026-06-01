@@ -325,7 +325,7 @@ export default function TimesheetsPage() {
     const loaded = await loadTimesheetDetail(timesheetId);
     if (loaded) {
       setEditingTimesheet(null);
-      window.print();
+      window.setTimeout(() => window.print(), 0);
     }
   }
 
@@ -820,89 +820,97 @@ export default function TimesheetsPage() {
         </>
       )}
 
-      {detailLoading ? (
-        <LoadingPanel label="Loading timesheet detail..." />
-      ) : null}
+      {detailLoading || detail ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm print:static print:block print:bg-transparent print:p-0">
+          <section className="max-h-[88vh] w-full max-w-5xl overflow-y-auto rounded-xl border border-borderSubtle bg-bgDark p-6 shadow-2xl md:p-8 print:max-h-none print:max-w-none print:overflow-visible print:border-0 print:shadow-none">
+            {detailLoading && !detail ? (
+              <div className="p-12 text-center text-sm text-textSecondary">
+                Loading timesheet detail...
+              </div>
+            ) : null}
 
-      {detail ? (
-        <section className="glass-surface space-y-4 p-6 md:p-8 print:block">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold text-textPrimary">
-                Timesheet Detail
-              </h2>
-              <p className="text-sm text-textSecondary">
-                {detail.timesheet.employee_name} · {formatWeekRange(detail.timesheet.week_start, detail.timesheet.week_end)}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => setDetail(null)}
-              className="rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary dark:bg-bgDark print:hidden"
-            >
-              Close
-            </button>
-          </div>
+            {detail ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-semibold text-textPrimary">
+                      Timesheet Detail
+                    </h2>
+                    <p className="text-sm text-textSecondary">
+                      {detail.timesheet.employee_name} · {formatWeekRange(detail.timesheet.week_start, detail.timesheet.week_end)}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setDetail(null)}
+                    className="rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary dark:bg-bgDark print:hidden"
+                  >
+                    Close
+                  </button>
+                </div>
 
-          <div className="grid gap-3 md:grid-cols-4">
-            <DetailCell label="Status" value={getDisplayStatus(detail.timesheet)} />
-            <DetailCell label="Total Hours" value={String(detail.timesheet.total_hours)} />
-            <DetailCell
-              label="Review"
-              value={
-                detail.timesheet.needs_review
-                  ? "Needs review"
-                  : "No review flags"
-              }
-            />
-            <DetailCell
-              label="Notes"
-              value={detail.timesheet.notes || "-"}
-            />
-          </div>
+                <div className="grid gap-3 md:grid-cols-4">
+                  <DetailCell label="Status" value={getDisplayStatus(detail.timesheet)} />
+                  <DetailCell label="Total Hours" value={String(detail.timesheet.total_hours)} />
+                  <DetailCell
+                    label="Review"
+                    value={
+                      detail.timesheet.needs_review
+                        ? "Needs review"
+                        : "No review flags"
+                    }
+                  />
+                  <DetailCell
+                    label="Notes"
+                    value={detail.timesheet.notes || "-"}
+                  />
+                </div>
 
-          <div className="overflow-x-auto rounded-xl border border-borderSubtle">
-            <table className="min-w-full text-left text-sm">
-              <thead className="bg-surfaceSoft text-xs uppercase tracking-wide text-textMuted">
-                <tr>
-                  <th className="px-3 py-2 font-semibold">Clock In</th>
-                  <th className="px-3 py-2 font-semibold">Clock Out</th>
-                  <th className="px-3 py-2 font-semibold">Total</th>
-                  <th className="px-3 py-2 font-semibold">Notes</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-borderSubtle">
-                {detail.punches.length === 0 ? (
-                  <tr>
-                    <td
-                      className="px-3 py-4 text-center text-textSecondary"
-                      colSpan={4}
-                    >
-                      No punches for this week.
-                    </td>
-                  </tr>
-                ) : (
-                  detail.punches.map((punch) => (
-                    <tr key={punch.id}>
-                      <td className="px-3 py-2 text-textPrimary">
-                        {formatDateTime(punch.clock_in)}
-                      </td>
-                      <td className="px-3 py-2 text-textPrimary">
-                        {punch.clock_out ? formatDateTime(punch.clock_out) : "Open"}
-                      </td>
-                      <td className="px-3 py-2 text-textPrimary">
-                        {formatMinutes(punch.total_minutes)}
-                      </td>
-                      <td className="px-3 py-2 text-textSecondary">
-                        {punch.notes || "-"}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </section>
+                <div className="overflow-x-auto rounded-xl border border-borderSubtle">
+                  <table className="min-w-full text-left text-sm">
+                    <thead className="bg-surfaceSoft text-xs uppercase tracking-wide text-textMuted">
+                      <tr>
+                        <th className="px-3 py-2 font-semibold">Clock In</th>
+                        <th className="px-3 py-2 font-semibold">Clock Out</th>
+                        <th className="px-3 py-2 font-semibold">Total</th>
+                        <th className="px-3 py-2 font-semibold">Notes</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-borderSubtle">
+                      {detail.punches.length === 0 ? (
+                        <tr>
+                          <td
+                            className="px-3 py-4 text-center text-textSecondary"
+                            colSpan={4}
+                          >
+                            No punches for this week.
+                          </td>
+                        </tr>
+                      ) : (
+                        detail.punches.map((punch) => (
+                          <tr key={punch.id}>
+                            <td className="px-3 py-2 text-textPrimary">
+                              {formatDateTime(punch.clock_in)}
+                            </td>
+                            <td className="px-3 py-2 text-textPrimary">
+                              {punch.clock_out ? formatDateTime(punch.clock_out) : "Open"}
+                            </td>
+                            <td className="px-3 py-2 text-textPrimary">
+                              {formatMinutes(punch.total_minutes)}
+                            </td>
+                            <td className="px-3 py-2 text-textSecondary">
+                              {punch.notes || "-"}
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            ) : null}
+          </section>
+        </div>
       ) : null}
 
       {editingTimesheet ? (

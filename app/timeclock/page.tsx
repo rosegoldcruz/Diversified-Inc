@@ -899,34 +899,36 @@ export default function TimeclockPage() {
       </section>
 
       {selectedEntry ? (
-        <section className="glass-surface space-y-4 p-6 md:p-8">
-          <div className="flex items-center justify-between gap-4">
-            <h2 className="text-lg font-semibold text-textPrimary">Punch Detail</h2>
-            <button
-              type="button"
-              onClick={() => setSelectedEntry(null)}
-              className="rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary dark:bg-bgDark"
-            >
-              Close
-            </button>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2">
-            <Row label="Employee" value={selectedEntry.employee_name} />
-            <Row label="Clock In" value={formatDateTime(selectedEntry.clock_in)} />
-            <Row
-              label="Clock Out"
-              value={
-                selectedEntry.clock_out ? formatDateTime(selectedEntry.clock_out) : "Open"
-              }
-            />
-            <Row label="Total" value={formatDuration(selectedEntry.total_minutes)} />
-            <Row
-              label="Review"
-              value={selectedEntry.review_reason || "No review flags"}
-            />
-            <Row label="Notes" value={selectedEntry.notes || "-"} />
-          </div>
-        </section>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <section className="w-full max-w-3xl rounded-xl border border-borderSubtle bg-bgDark p-6 shadow-2xl md:p-8">
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-lg font-semibold text-textPrimary">Punch Detail</h2>
+              <button
+                type="button"
+                onClick={() => setSelectedEntry(null)}
+                className="rounded-md border border-borderSubtle bg-surface px-3 py-2 text-sm text-textPrimary dark:bg-bgDark"
+              >
+                Close
+              </button>
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <Row label="Employee" value={selectedEntry.employee_name} />
+              <Row label="Clock In" value={formatDateTime(selectedEntry.clock_in)} />
+              <Row
+                label="Clock Out"
+                value={
+                  selectedEntry.clock_out ? formatDateTime(selectedEntry.clock_out) : "Open"
+                }
+              />
+              <Row label="Total" value={formatDuration(selectedEntry.total_minutes)} />
+              <Row
+                label="Review"
+                value={selectedEntry.review_reason || "No review flags"}
+              />
+              <Row label="Notes" value={selectedEntry.notes || "-"} />
+            </div>
+          </section>
+        </div>
       ) : null}
 
       {editingEntry ? (
