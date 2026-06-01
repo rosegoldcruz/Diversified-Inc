@@ -7,7 +7,12 @@ import { ValidationError, requireInteger } from "@/lib/validators";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const MANAGE_TIMECLOCK_ROLES = new Set(["Admin", "Leadership"]);
+const MANAGE_TIMECLOCK_ROLES = new Set(["Manager", "Admin", "Leadership"]);
+const WARNING_ACTIVE_SHIFT_HOURS = 12;
+const MAX_ACTIVE_SHIFT_HOURS = 16;
+const EXCEPTION_ACTIVE_SHIFT_HOURS = 16;
+
+type ActiveSeverity = "normal" | "warning" | "exception";
 
 type EmployeeRow = {
   id: number;
@@ -52,15 +57,67 @@ function publicSessionUser(employee: EmployeeRow, role: string) {
 }
 
 function publicEntry(row: TimeclockEntryRow) {
+  const elapsedMinutes = getElapsedMinutes(row.clock_in, row.clock_out);
+  const severity = classifyActiveShift(elapsedMinutes);
+  const needsReview = row.clock_out === null && severity === "exception";
+
   const isManual =
     typeof row.notes === "string" &&
     /^(manual adjustment|admin clock-|admin punch)/i.test(row.notes);
 
   return {
     ...row,
+    entry_id: row.id,
+    name: row.employee_name,
+    elapsed_minutes: elapsedMinutes,
+    elapsed_label: formatElapsed(elapsedMinutes),
+    severity,
+    needs_review: needsReview,
+    review_reason: needsReview
+      ? elapsedMinutes === null
+        ? "Missing or invalid clock-in timestamp"
+        : `Open shift exceeds ${EXCEPTION_ACTIVE_SHIFT_HOURS} hours`
+      : severity === "warning" && row.clock_out === null
+        ? `Approaching ${MAX_ACTIVE_SHIFT_HOURS} hour maximum`
+        : null,
     source: isManual ? "manual" : "self",
     is_manual: isManual,
   };
+}
+
+function getElapsedMinutes(
+  clockInValue: string,
+  clockOutValue: string | null,
+): number | null {
+  const clockInTime = new Date(clockInValue).getTime();
+  if (Number.isNaN(clockInTime)) {
+    return null;
+  }
+
+  const endTime = clockOutValue
+    ? new Date(clockOutValue).getTime()
+    : Date.now();
+
+  if (Number.isNaN(endTime)) {
+    return null;
+  }
+
+  return Math.max(0, Math.floor((endTime - clockInTime) / 60000));
+}
+
+function formatElapsed(minutes: number | null) {
+  if (minutes === null) return "Unknown elapsed";
+  const hours = Math.floor(minutes / 60);
+  const mins = minutes % 60;
+  if (hours <= 0) return `${mins}m elapsed`;
+  return `${hours}h ${mins}m elapsed`;
+}
+
+function classifyActiveShift(minutes: number | null): ActiveSeverity {
+  if (minutes === null) return "exception";
+  if (minutes >= EXCEPTION_ACTIVE_SHIFT_HOURS * 60) return "exception";
+  if (minutes >= WARNING_ACTIVE_SHIFT_HOURS * 60) return "warning";
+  return "normal";
 }
 
 function toError(error: unknown) {

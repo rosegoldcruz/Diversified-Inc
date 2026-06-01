@@ -24,11 +24,18 @@ type EmployeeOption = {
 
 type TimeclockEntry = {
   id: number;
+  entry_id?: number;
   employee_id: number | null;
   employee_name: string;
+  name?: string;
   clock_in: string;
   clock_out: string | null;
   total_minutes: number | null;
+  elapsed_minutes?: number | null;
+  elapsed_label?: string;
+  severity?: "normal" | "warning" | "exception";
+  needs_review?: boolean;
+  review_reason?: string | null;
   notes: string | null;
   created_at: string;
   source?: "manual" | "self";
@@ -74,6 +81,32 @@ function formatDuration(minutes: number | null) {
   const mins = minutes % 60;
   if (hours === 0) return `${mins}m`;
   return `${hours}h ${mins}m`;
+}
+
+const WARNING_ACTIVE_SHIFT_HOURS = 12;
+const MAX_ACTIVE_SHIFT_HOURS = 16;
+const EXCEPTION_ACTIVE_SHIFT_HOURS = 16;
+
+function getElapsedMinutes(clockInIso: string) {
+  const clockInTime = new Date(clockInIso).getTime();
+  if (Number.isNaN(clockInTime)) return null;
+  return Math.max(0, Math.floor((Date.now() - clockInTime) / 60000));
+}
+
+function classifyActiveShift(entry: TimeclockEntry) {
+  if (entry.severity) return entry.severity;
+  const elapsedMinutes =
+    typeof entry.elapsed_minutes === "number"
+      ? entry.elapsed_minutes
+      : getElapsedMinutes(entry.clock_in);
+  if (elapsedMinutes === null) return "exception" as const;
+  if (elapsedMinutes >= EXCEPTION_ACTIVE_SHIFT_HOURS * 60) {
+    return "exception" as const;
+  }
+  if (elapsedMinutes >= WARNING_ACTIVE_SHIFT_HOURS * 60) {
+    return "warning" as const;
+  }
+  return "normal" as const;
 }
 
 function calculateElapsedTime(clockInIso: string) {
@@ -162,20 +195,39 @@ export default function TimeclockPage() {
   const activeEntry = status?.activeEntry ?? null;
   const selectedEmployee = status?.selectedEmployee ?? null;
   const canManageTimeclock = status?.canManageTimeclock ?? false;
-  const actionLabel = activeEntry ? "Clock Out" : "Clock In";
-  const action = activeEntry ? "out" : "in";
+  const activeSeverity = activeEntry ? classifyActiveShift(activeEntry) : null;
+  const isExceptionActive =
+    !!activeEntry && (activeEntry.needs_review || activeSeverity === "exception");
 
   const selectedEmployeeName = useMemo(() => {
     if (!status) return "Employee";
     return selectedEmployee?.name ?? status.user.name;
   }, [selectedEmployee, status]);
 
+  const visibleActiveEntries = useMemo(() => {
+    if (!status) return [] as TimeclockEntry[];
+    if (canManageTimeclock) return status.activeEntries;
+    return activeEntry ? [activeEntry] : [];
+  }, [activeEntry, canManageTimeclock, status]);
+
+  const normalAndWarningEntries = useMemo(
+    () =>
+      visibleActiveEntries.filter((entry) => classifyActiveShift(entry) !== "exception"),
+    [visibleActiveEntries],
+  );
+
+  const exceptionEntries = useMemo(
+    () =>
+      visibleActiveEntries.filter((entry) => classifyActiveShift(entry) === "exception"),
+    [visibleActiveEntries],
+  );
+
   const handleEmployeeChange = async (employeeId: number) => {
     setSelectedEmployeeId(employeeId);
     await loadStatus(employeeId);
   };
 
-  const handlePunch = async () => {
+  const handlePunch = async (action: "in" | "out") => {
     if (!status || pendingAction) return;
 
     const targetId = canManageTimeclock
@@ -197,6 +249,7 @@ export default function TimeclockPage() {
       };
 
       if (!response.ok) {
+        const actionLabel = action === "out" ? "clock out" : "clock in";
         const conflictSync =
           response.status === 409 && result.activeEntry
             ? " Status has been synced."
@@ -204,7 +257,7 @@ export default function TimeclockPage() {
         setMessage({
           type: "error",
           text:
-            (result.error || `Failed to ${actionLabel.toLowerCase()}`) +
+            (result.error || `Failed to ${actionLabel}`) +
             conflictSync,
         });
         await loadStatus(targetId);
@@ -315,10 +368,8 @@ export default function TimeclockPage() {
               </h2>
               <p className="mt-1 text-sm text-textSecondary">
                 {canManageTimeclock
-                  ? "Admin timeclock management"
-                  : status?.user.role === "Manager"
-                    ? "Self-only manager view"
-                    : "Employee timeclock"}
+                  ? "Manager and admin timeclock management"
+                  : "Employee timeclock"}
               </p>
             </div>
 
@@ -356,7 +407,9 @@ export default function TimeclockPage() {
               <div
                 className={`rounded-xl border p-5 shadow-soft ${
                   activeEntry
-                    ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200"
+                    ? isExceptionActive
+                      ? "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-500/30 dark:bg-amber-500/10 dark:text-amber-200"
+                      : "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200"
                     : "border-borderSubtle bg-surface/95 text-textPrimary"
                 }`}
               >
@@ -364,7 +417,11 @@ export default function TimeclockPage() {
                   Status
                 </p>
                 <p className="mt-2 text-2xl font-semibold">
-                  {activeEntry ? "Clocked In" : "Clocked Out"}
+                  {!activeEntry
+                    ? "Clocked Out"
+                    : isExceptionActive
+                      ? "Needs Review"
+                      : "Clocked In"}
                 </p>
                 <p className="mt-2 text-sm text-textSecondary">
                   {activeEntry
@@ -373,7 +430,10 @@ export default function TimeclockPage() {
                 </p>
                 {activeEntry ? (
                   <p className="mt-1 text-sm font-medium">
-                    {calculateElapsedTime(activeEntry.clock_in)}
+                    {isExceptionActive
+                      ? "Missed clock-out likely. Manager review required."
+                      : activeEntry.elapsed_label ||
+                        calculateElapsedTime(activeEntry.clock_in)}
                     <span className="sr-only">{nowTick}</span>
                   </p>
                 ) : null}
@@ -387,22 +447,51 @@ export default function TimeclockPage() {
                     </p>
                     <p className="mt-1 text-sm text-textSecondary">
                       {activeEntry
-                        ? `${selectedEmployeeName} has an open shift.`
+                        ? isExceptionActive
+                          ? `${selectedEmployeeName} has an exception shift requiring review.`
+                          : `${selectedEmployeeName} has an open shift.`
                         : `${selectedEmployeeName} is not currently clocked in.`}
                     </p>
                   </div>
-                  <button
-                    onClick={handlePunch}
-                    disabled={loading || pendingAction !== null || !status}
-                    className={`rounded-md px-4 py-2 text-sm font-semibold text-white shadow-soft transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${
-                      activeEntry
-                        ? "bg-slate-700 hover:bg-slate-800 dark:bg-slate-600 dark:hover:bg-slate-500"
-                        : "bg-emerald-600 hover:bg-emerald-700"
-                    }`}
-                  >
-                    {pendingAction === action ? "Saving..." : actionLabel}
-                  </button>
+                  {!activeEntry ? (
+                    <button
+                      onClick={() => void handlePunch("in")}
+                      disabled={loading || pendingAction !== null || !status}
+                      className="rounded-md bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-soft transition-colors hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {pendingAction === "in" ? "Saving..." : "Clock In"}
+                    </button>
+                  ) : isExceptionActive ? (
+                    canManageTimeclock ? (
+                      <button
+                        onClick={() => void handlePunch("out")}
+                        disabled={loading || pendingAction !== null || !status}
+                        className="rounded-md bg-amber-600 px-4 py-2 text-sm font-semibold text-white shadow-soft transition-colors hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {pendingAction === "out"
+                          ? "Saving..."
+                          : "Resolve Open Punch"}
+                      </button>
+                    ) : (
+                      <p className="text-sm font-medium text-amber-300">
+                        Resolve in manager review.
+                      </p>
+                    )
+                  ) : (
+                    <button
+                      onClick={() => void handlePunch("out")}
+                      disabled={loading || pendingAction !== null || !status}
+                      className="rounded-md bg-slate-700 px-4 py-2 text-sm font-semibold text-white shadow-soft transition-colors hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-slate-600 dark:hover:bg-slate-500"
+                    >
+                      {pendingAction === "out" ? "Saving..." : "Clock Out"}
+                    </button>
+                  )}
                 </div>
+                {activeEntry && isExceptionActive ? (
+                  <p className="mt-3 text-sm text-amber-300">
+                    Likely missed clock-out. Shift duration exceeds {MAX_ACTIVE_SHIFT_HOURS} hours.
+                  </p>
+                ) : null}
               </div>
             </div>
           )}
@@ -414,25 +503,44 @@ export default function TimeclockPage() {
               Active Now
             </h2>
             <p className="mt-1 text-sm text-textSecondary">
-              {canManageTimeclock ? "All open shifts" : "Your open shift"}
+              {canManageTimeclock
+                ? "Open shifts under exception threshold"
+                : "Current shift visibility"}
             </p>
           </div>
           {!status || loading ? (
             <LoadingPanel label="Loading active shifts..." />
-          ) : canManageTimeclock ? (
-            status.activeEntries.length === 0 ? (
-              <EmptyPanel label="No employees are currently clocked in." />
-            ) : (
-              <div className="space-y-3">
-                {status.activeEntries.map((entry) => (
-                  <MiniActiveEntry key={entry.id} entry={entry} />
-                ))}
-              </div>
-            )
-          ) : activeEntry ? (
-            <MiniActiveEntry entry={activeEntry} />
           ) : (
-            <EmptyPanel label="You are currently clocked out." />
+            <>
+              {normalAndWarningEntries.length === 0 ? (
+                <EmptyPanel label="No normal active shifts." />
+              ) : (
+                <div className="space-y-3">
+                  {normalAndWarningEntries.map((entry) => (
+                    <MiniActiveEntry key={entry.id} entry={entry} />
+                  ))}
+                </div>
+              )}
+
+              <div className="pt-3">
+                <h3 className="text-base font-semibold text-textPrimary">
+                  Needs Review
+                </h3>
+                <p className="mt-1 text-sm text-textSecondary">
+                  Likely missed clock-outs ({EXCEPTION_ACTIVE_SHIFT_HOURS}h+)
+                </p>
+              </div>
+
+              {exceptionEntries.length === 0 ? (
+                <EmptyPanel label="No exception shifts requiring review." />
+              ) : (
+                <div className="space-y-3">
+                  {exceptionEntries.map((entry) => (
+                    <MiniActiveEntry key={`exception-${entry.id}`} entry={entry} />
+                  ))}
+                </div>
+              )}
+            </>
           )}
         </div>
       </FadeContent>
@@ -445,7 +553,8 @@ export default function TimeclockPage() {
             </h2>
             <p className="mt-1 text-sm text-textSecondary">
               Admin-created corrections are marked on the punch and written to
-              the audit log.
+              the audit log. Use Resolve Open Punch for missed clock-out
+              exceptions.
             </p>
           </div>
           <div className="grid gap-3 md:grid-cols-[1fr_1fr_minmax(180px,1fr)_auto] md:items-end">
@@ -587,6 +696,16 @@ export default function TimeclockPage() {
 }
 
 function MiniActiveEntry({ entry }: { entry: TimeclockEntry }) {
+  const severity = classifyActiveShift(entry);
+  const elapsedLabel = entry.elapsed_label || calculateElapsedTime(entry.clock_in);
+
+  const badgeClass =
+    severity === "exception"
+      ? "bg-red-500/20 text-red-200"
+      : severity === "warning"
+        ? "bg-amber-500/20 text-amber-200"
+        : "bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300";
+
   return (
     <div className="rounded-xl border border-borderSubtle bg-surface/95 p-4 shadow-soft">
       <div className="flex items-start justify-between gap-3">
@@ -595,9 +714,18 @@ function MiniActiveEntry({ entry }: { entry: TimeclockEntry }) {
           <p className="mt-1 text-sm text-textSecondary">
             Since {formatTime(entry.clock_in)}
           </p>
+          {severity === "warning" ? (
+            <p className="mt-1 text-xs text-amber-300">Approaching max shift</p>
+          ) : null}
+          {severity === "exception" ? (
+            <p className="mt-1 text-xs text-red-300">
+              Likely missed clock-out
+              {entry.review_reason ? `: ${entry.review_reason}` : ""}
+            </p>
+          ) : null}
         </div>
-        <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
-          {calculateElapsedTime(entry.clock_in)}
+        <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${badgeClass}`}>
+          {elapsedLabel}
         </span>
       </div>
     </div>

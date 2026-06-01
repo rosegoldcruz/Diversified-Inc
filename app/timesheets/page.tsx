@@ -19,6 +19,15 @@ interface Timesheet {
   sunday_hours: number;
   total_hours: number;
   status: "draft" | "submitted" | "approved" | "rejected";
+  needs_review?: boolean;
+  review_state?:
+    | "draft"
+    | "submitted"
+    | "approved"
+    | "rejected"
+    | "needs_review";
+  exception_open_entries?: number;
+  warning_open_entries?: number;
   submitted_at: string | null;
   approved_by: string | null;
   notes: string | null;
@@ -46,6 +55,8 @@ function formatWeekRange(weekStart: string, weekEnd: string): string {
 function getStatusBadgeClasses(status: string): string {
   const baseClasses = "px-3 py-1 rounded text-sm font-medium";
   switch (status) {
+    case "needs_review":
+      return `${baseClasses} bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-200`;
     case "draft":
       return `${baseClasses} bg-bgDark text-textSecondary`;
     case "submitted":
@@ -69,6 +80,10 @@ function getCurrentWeekStart(): string {
 
 function toDateOnly(value: string): string {
   return value.split("T")[0];
+}
+
+function getDisplayStatus(timesheet: Timesheet) {
+  return timesheet.needs_review ? "needs_review" : timesheet.status;
 }
 
 export default function TimesheetsPage() {
@@ -128,6 +143,7 @@ export default function TimesheetsPage() {
       ts.status === "approved" &&
       toDateOnly(ts.week_start) === currentWeekStart,
   ).length;
+  const needsReviewCount = timesheets.filter((ts) => ts.needs_review).length;
 
   const isManagerLevel =
     me?.role === "Manager" || me?.role === "Admin" || me?.role === "Leadership";
@@ -192,11 +208,12 @@ export default function TimesheetsPage() {
         blur={true}
         duration={800}
         delay={90}
-        className="grid gap-3 sm:grid-cols-3"
+        className="grid gap-3 sm:grid-cols-4"
       >
         <SummaryCard label="Total Timesheets" value={totalTimesheets} />
         <SummaryCard label="Pending Approval" value={pendingApproval} />
         <SummaryCard label="Approved This Week" value={approvedThisWeek} />
+        <SummaryCard label="Needs Review" value={needsReviewCount} />
       </FadeContent>
 
       {error && <ErrorPanel message={error} />}
@@ -268,14 +285,28 @@ export default function TimesheetsPage() {
                       </td>
                       <td className="px-4 py-3 text-right font-bold text-textPrimary">
                         {timesheet.total_hours}
+                        {timesheet.needs_review ? (
+                          <p className="mt-1 text-xs font-medium text-red-400">
+                            Exception punches excluded pending review
+                          </p>
+                        ) : null}
                       </td>
                       <td className="px-4 py-3">
                         <span
-                          className={getStatusBadgeClasses(timesheet.status)}
+                          className={getStatusBadgeClasses(
+                            getDisplayStatus(timesheet),
+                          )}
                         >
-                          {timesheet.status.charAt(0).toUpperCase() +
-                            timesheet.status.slice(1)}
+                          {getDisplayStatus(timesheet) === "needs_review"
+                            ? "Needs Review"
+                            : timesheet.status.charAt(0).toUpperCase() +
+                              timesheet.status.slice(1)}
                         </span>
+                        {timesheet.exception_open_entries ? (
+                          <p className="mt-1 text-xs text-red-400">
+                            {timesheet.exception_open_entries} open shift(s) over 16h
+                          </p>
+                        ) : null}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-wrap gap-2">
@@ -299,7 +330,10 @@ export default function TimesheetsPage() {
                             <>
                               <button
                                 type="button"
-                                disabled={actionBusyId === timesheet.id}
+                                disabled={
+                                  actionBusyId === timesheet.id ||
+                                  !!timesheet.needs_review
+                                }
                                 onClick={() =>
                                   void updateTimesheetStatus(
                                     timesheet.id,
@@ -352,9 +386,13 @@ export default function TimesheetsPage() {
                       )}
                     </p>
                   </div>
-                  <span className={getStatusBadgeClasses(timesheet.status)}>
-                    {timesheet.status.charAt(0).toUpperCase() +
-                      timesheet.status.slice(1)}
+                  <span
+                    className={getStatusBadgeClasses(getDisplayStatus(timesheet))}
+                  >
+                    {getDisplayStatus(timesheet) === "needs_review"
+                      ? "Needs Review"
+                      : timesheet.status.charAt(0).toUpperCase() +
+                        timesheet.status.slice(1)}
                   </span>
                 </div>
 
@@ -388,6 +426,11 @@ export default function TimesheetsPage() {
                       {timesheet.total_hours} hours
                     </span>
                   </p>
+                  {timesheet.exception_open_entries ? (
+                    <p className="mt-1 text-xs text-red-400">
+                      {timesheet.exception_open_entries} open shift(s) over 16h need review.
+                    </p>
+                  ) : null}
                   <div className="mt-2 flex flex-wrap gap-2">
                     {timesheet.status === "draft" ? (
                       <button
@@ -405,7 +448,10 @@ export default function TimesheetsPage() {
                       <>
                         <button
                           type="button"
-                          disabled={actionBusyId === timesheet.id}
+                          disabled={
+                            actionBusyId === timesheet.id ||
+                            !!timesheet.needs_review
+                          }
                           onClick={() =>
                             void updateTimesheetStatus(timesheet.id, "approved")
                           }

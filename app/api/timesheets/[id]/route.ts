@@ -15,6 +15,7 @@ const TIMESHEET_STATUSES = new Set([
   "approved",
   "rejected",
 ]);
+const EXCEPTION_ACTIVE_SHIFT_HOURS = 16;
 
 export async function PATCH(
   req: NextRequest,
@@ -44,8 +45,12 @@ export async function PATCH(
       employee_id: number | null;
       employee_name: string;
       status: string;
+      week_start: string;
+      week_end: string;
     }>(
-      `SELECT id, employee_id, employee_name, status FROM timesheets WHERE id = $1`,
+      `SELECT id, employee_id, employee_name, status, week_start, week_end
+       FROM timesheets
+       WHERE id = $1`,
       [timesheetId],
     );
 
@@ -61,6 +66,28 @@ export async function PATCH(
       requireRole(["Manager", "Admin", "Leadership"]);
       if (!canApproveTimesheet(session, existing)) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+      }
+
+      if (status === "approved" && existing.employee_id !== null) {
+        const openException = await query<{ count: string }>(
+          `SELECT COUNT(*)::text AS count
+           FROM timeclock_entries
+           WHERE employee_id = $1
+             AND clock_out IS NULL
+             AND clock_in < NOW() - INTERVAL '${EXCEPTION_ACTIVE_SHIFT_HOURS} hours'
+             AND clock_in::date BETWEEN $2::date AND $3::date`,
+          [existing.employee_id, existing.week_start, existing.week_end],
+        );
+
+        if (Number(openException[0]?.count || "0") > 0) {
+          return NextResponse.json(
+            {
+              error:
+                "Cannot approve this timesheet while open 16h+ punches still need review.",
+            },
+            { status: 409 },
+          );
+        }
       }
     } else if (
       existing.employee_id !== session.userId &&

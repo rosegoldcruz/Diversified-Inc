@@ -12,7 +12,8 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const MANAGE_TIMECLOCK_ROLES = new Set(["Admin", "Leadership"]);
+const MANAGE_TIMECLOCK_ROLES = new Set(["Manager", "Admin", "Leadership"]);
+const EXCEPTION_ACTIVE_SHIFT_HOURS = 16;
 type TimeclockAction = "in" | "out" | "manual";
 
 const ACTION_ALIASES: Record<string, TimeclockAction> = {
@@ -75,6 +76,14 @@ function parseDateTime(value: unknown, label: string): Date {
     throw new ValidationError(`${label} must be a valid date/time`);
   }
   return date;
+}
+
+function minutesSince(clockInIso: string) {
+  const clockInTime = new Date(clockInIso).getTime();
+  if (Number.isNaN(clockInTime)) {
+    return null;
+  }
+  return Math.max(0, Math.floor((Date.now() - clockInTime) / 60000));
 }
 
 function publicEntry(row: TimeclockEntryRow) {
@@ -348,20 +357,46 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const elapsedMinutes = minutesSince(beforeEntry.clock_in);
+    const requiresManagerReview =
+      elapsedMinutes !== null && elapsedMinutes >= EXCEPTION_ACTIVE_SHIFT_HOURS * 60;
+
+    if (requiresManagerReview && !canManageTimeclock) {
+      return NextResponse.json(
+        {
+          error:
+            "Open punch exceeds 16 hours and requires manager review for correction.",
+        },
+        { status: 409 },
+      );
+    }
+
+    let resolvedClockOut = new Date();
+    if (canManageTimeclock && (body.clock_out ?? body.clockOut)) {
+      resolvedClockOut = parseDateTime(body.clock_out ?? body.clockOut, "clock_out");
+    }
+
+    if (resolvedClockOut.getTime() <= new Date(beforeEntry.clock_in).getTime()) {
+      return NextResponse.json(
+        { error: "clock_out must be after clock_in" },
+        { status: 400 },
+      );
+    }
+
     const punchNotes = isOnBehalf
       ? `Admin clock-out by ${employee.name}${notes ? `: ${notes}` : ""}`
       : notes;
     const rows = await query<TimeclockEntryRow>(
       `UPDATE timeclock_entries
-       SET clock_out = NOW(),
+       SET clock_out = $2,
            notes = CASE
-             WHEN $2::text IS NULL OR $2::text = '' THEN notes
-             WHEN notes IS NULL OR notes = '' THEN $2::text
-             ELSE notes || E'\n' || $2::text
+             WHEN $3::text IS NULL OR $3::text = '' THEN notes
+             WHEN notes IS NULL OR notes = '' THEN $3::text
+             ELSE notes || E'\n' || $3::text
            END
        WHERE id = $1
        RETURNING id, employee_id, employee_name, clock_in, clock_out, total_minutes, notes, created_at`,
-      [beforeEntry.id, punchNotes],
+      [beforeEntry.id, resolvedClockOut.toISOString(), punchNotes],
     );
     const entry = publicEntry(rows[0]);
 
