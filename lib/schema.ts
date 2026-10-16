@@ -1,3 +1,4 @@
+import { hashPassword } from "@/lib/auth";
 import { query } from "./db";
 
 /**
@@ -78,11 +79,22 @@ async function bootstrap(): Promise<void> {
     [seedEmail],
   );
 
+  const seedPassword = process.env.SEED_ADMIN_PASSWORD || "";
+  const seedHash = seedPassword ? hashPassword(seedPassword) : null;
+
   if (existing.length === 0) {
     await query(
-      `INSERT INTO employees (name, role, department, status, email, hire_date)
-       VALUES ($1, 'Leadership', 'Leadership', 'active', $2, CURRENT_DATE)`,
-      [seedName, seedEmail],
+      `INSERT INTO employees (name, role, department, status, email, hire_date, password_hash)
+       VALUES ($1, 'Leadership', 'Leadership', 'active', $2, CURRENT_DATE, $3)`,
+      [seedName, seedEmail, seedHash],
+    );
+  } else if (seedHash) {
+    // Only fills a missing password; never overwrites one set in the app.
+    await query(
+      `UPDATE employees SET password_hash = $1, status = 'active',
+         role = COALESCE(NULLIF(role,''), 'Leadership')
+       WHERE id = $2 AND password_hash IS NULL`,
+      [seedHash, existing[0].id],
     );
   } else if (!existing[0].role) {
     await query(
