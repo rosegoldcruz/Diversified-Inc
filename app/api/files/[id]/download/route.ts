@@ -5,7 +5,7 @@ import {
   assertInsideStorage,
   getFileById,
   getStorageRoot,
-} from "@/app/api/files/route";
+} from "@/lib/files-store";
 import { createAuditLog } from "@/lib/audit-log";
 import { HttpError, requireUser } from "@/lib/session";
 

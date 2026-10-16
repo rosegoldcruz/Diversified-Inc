@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getFileById } from "@/app/api/files/route";
+import { getFileById } from "@/lib/files-store";
 import { HttpError, requireUser } from "@/lib/session";
 
 type RouteContext = { params: { id: string } };
