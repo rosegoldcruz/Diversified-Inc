@@ -29,6 +29,6 @@ export const SESSION_COOKIE_OPTIONS = {
   httpOnly: true as const,
   sameSite: "lax" as const,
   path: "/",
-  secure: process.env.NODE_ENV === "production",
+  secure: process.env.COOKIE_SECURE ? process.env.COOKIE_SECURE !== "false" : process.env.NODE_ENV === "production",
   maxAge: SESSION_TTL_SECONDS,
 };

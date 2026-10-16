@@ -929,7 +929,6 @@ Build in this order when deciding what to work on next:
 6. Add Auth, sessions, and role-based access
 7. Verify and finish Files upload/download/attachment behavior
 8. Wire n8n hooks for internal workflow events
-9. Add Outlook/Microsoft 365 sync foundation if explicitly scoped
 10. Polish mobile/PWA behavior
 
 ## Deliverable Standard

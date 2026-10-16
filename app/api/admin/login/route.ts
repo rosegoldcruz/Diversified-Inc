@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
     {
       status: 200,
       headers: {
-        "Set-Cookie": `${cookie.name}=${cookie.value}; Path=${cookie.options.path}; HttpOnly; SameSite=${cookie.options.sameSite}; Secure=${cookie.options.secure}; Max-Age=${cookie.options.maxAge}; Expires=${cookie.options.expires.toUTCString()}`,
+        "Set-Cookie": `${cookie.name}=${cookie.value}; Path=${cookie.options.path}; HttpOnly; SameSite=${cookie.options.sameSite};${cookie.options.secure ? " Secure;" : ""} Max-Age=${cookie.options.maxAge}; Expires=${cookie.options.expires.toUTCString()}`,
       },
     },
   );

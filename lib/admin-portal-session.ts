@@ -112,7 +112,7 @@ export function clearAdminPortalSessionCookie() {
     options: {
       httpOnly: true,
       sameSite: "lax" as const,
-      secure: process.env.NODE_ENV === "production",
+      secure: process.env.COOKIE_SECURE ? process.env.COOKIE_SECURE !== "false" : process.env.NODE_ENV === "production",
       path: "/",
       maxAge: 0,
       expires: new Date(0),
@@ -127,7 +127,7 @@ export function adminPortalCookie(token: string, expiresAt: Date) {
     options: {
       httpOnly: true,
       sameSite: "lax" as const,
-      secure: process.env.NODE_ENV === "production",
+      secure: process.env.COOKIE_SECURE ? process.env.COOKIE_SECURE !== "false" : process.env.NODE_ENV === "production",
       path: "/",
       expires: expiresAt,
       maxAge: ADMIN_TTL_SECONDS,

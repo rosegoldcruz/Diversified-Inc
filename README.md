@@ -122,6 +122,10 @@ N8N_FILE_UPLOADED_WEBHOOK=...
 N8N_CALENDAR_BLOCK_WEBHOOK=...
 ```
 
+## Railway
+
+See [docs/RAILWAY.md](docs/RAILWAY.md). Fresh databases: `bash scripts/migrate.sh`.
+
 ## Database Migrations
 
 Apply migrations against PostgreSQL in order. Inspect each script before applying in production.

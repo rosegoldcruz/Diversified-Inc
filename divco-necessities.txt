@@ -60,7 +60,6 @@
 ✅ Manage system settings — App-wide settings and defaults.
 ✅ Manage notification settings — Control when users get alerts or summaries.
 ✅ Manage AI settings — Configure AI assistant behavior, prompts, and permissions.
-✅ Manage integrations — Show/configure connection points like n8n, NocoDB, AI, Outlook, etc.
 ✅ View audit logs — See who changed what and when.
 ✅ Task list — Main list of internal work items.
 ✅ Create task — Add a new task into the system.
@@ -531,9 +530,6 @@ Optional SMS notifications later — Text alerts if added later.
 ✅ Creative request automation hooks — Trigger automation from creative asset workflow.
 ✅ Daily summary automation — Automatic daily summary.
 ✅ Weekly summary automation — Automatic weekly summary.
-✅ Outlook/Microsoft 365 planning — Foundation for future Outlook sync.
-✅ Import Outlook meetings — Pull meetings into workspace.
-✅ Link Outlook events to workspace calendar — Connect imported events to app calendar.
 ✅ Create workspace task from meeting — Turn meeting into follow-up task.
 ✅ Avoid duplicate meeting entry — Prevent retyping meetings manually.
 ✅ Calendar reminder foundation — Store reminder logic.

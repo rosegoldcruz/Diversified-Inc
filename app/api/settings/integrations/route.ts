@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { query } from "@/lib/db";
-import { getMicrosoftWorkspaceStatus } from "@/lib/microsoft-calendar";
 import { HttpError, requireRole } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
@@ -31,7 +30,6 @@ export async function GET() {
   const checkedAt = new Date().toISOString();
   try {
     requireRole(["Admin", "Leadership"]);
-    const microsoftStatus = await getMicrosoftWorkspaceStatus();
     let dbHealthy = false;
     try {
       await query("SELECT 1");
@@ -102,20 +100,6 @@ export async function GET() {
           ? "At least one AI provider key is configured."
           : "No supported AI API key found.",
         clientProductionVisibility: "visible",
-      },
-      {
-        key: "microsoft_365",
-        name: "Outlook / Microsoft 365",
-        status: microsoftStatus.status,
-        configured: microsoftStatus.configured,
-        purpose: "Calendar and mailbox sync",
-        lastChecked: checkedAt,
-        notes: !microsoftStatus.configured
-          ? `Missing env: ${microsoftStatus.missingEnv.join(", ")}`
-          : microsoftStatus.connected
-            ? `${microsoftStatus.connectedCount} connected account(s). Last sync: ${microsoftStatus.latestSyncAt ?? "No sync yet"}.`
-            : "Microsoft 365 is configured, but no user has connected yet.",
-        clientProductionVisibility: "internal",
       },
       {
         key: "file_storage",
