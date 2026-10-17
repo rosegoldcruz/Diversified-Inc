@@ -14,7 +14,6 @@ type Msg = { role: "user" | "assistant"; content: string };
  */
 export async function POST(req: NextRequest) {
   const key = process.env.ELEVENLABS_API_KEY;
-  if (!key) return NextResponse.json({ error: "ELEVENLABS_API_KEY not configured" }, { status: 503 });
   const { messages = [] } = (await req.json().catch(() => ({}))) as { messages?: Msg[] };
   const history = messages.slice(-10).map((m) => ({ role: m.role, content: String(m.content).slice(0, 2000) }));
 
@@ -32,6 +31,9 @@ export async function POST(req: NextRequest) {
       text = "I had trouble thinking about that. Try again in a moment.";
     }
   }
+
+  // No ElevenLabs key (e.g. xAI-realtime staging): still return the text reply so text/fallback clients work.
+  if (!key) return NextResponse.json({ text, audio: false }, { headers: { "X-Reply-Text": encodeURIComponent(text) } });
 
   const voiceId = process.env.ELEVENLABS_VOICE_ID || "pNInz6obpgDQGcFmaJgB";
   const tts = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?output_format=mp3_44100_128`, {
