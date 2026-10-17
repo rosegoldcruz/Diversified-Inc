@@ -7,7 +7,8 @@ import * as THREE from "three";
 import { buildRobotClips, fadeFor, loopFor, type RobotMove } from "./clips";
 
 export function GlbRobot({ url, moveRef, levelRef }: { url: string; moveRef: MutableRefObject<RobotMove>; levelRef?: MutableRefObject<number> }) {
-  const gltf = useGLTF(url);
+  // Draco decoders are self-hosted (CSP blocks gstatic)
+  const gltf = useGLTF(url, "/draco/");
   const group = useRef<THREE.Group>(null!);
   const clips = useMemo(() => Object.values(buildRobotClips(gltf.animations)), [gltf.animations]);
   const { actions, mixer } = useAnimations(clips, group);
