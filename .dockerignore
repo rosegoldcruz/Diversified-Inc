@@ -1,0 +1,8 @@
+node_modules
+.next
+.git
+storage
+*.log
+out.txt
+curl_out.txt
+pm2_out.txt

@@ -11,7 +11,7 @@ type FormName =
   | "Vehicle Request"
   | "Claim Report"
   | "PO Request"
-  | "Microsoft 365 Access Request";
+  | "IT Access Request";
 
 type FormDefinition = {
   name: FormName;
@@ -157,10 +157,10 @@ const formDefinitions: FormDefinition[] = [
     ],
   },
   {
-    name: "Microsoft 365 Access Request",
+    name: "IT Access Request",
     category: "IT / Access",
     description:
-      "Request a Microsoft 365 license, account setup, or access modification for a team member.",
+      "Request a software license, account setup, or access modification for a team member.",
     fields: [
       { type: "text", name: "full_name", label: "Full Name", required: true },
       { type: "text", name: "employee_id", label: "Employee ID" },

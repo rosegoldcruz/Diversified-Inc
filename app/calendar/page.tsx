@@ -61,40 +61,6 @@ type CalendarBlock = {
   updated_at: string;
 };
 
-type OutlookEvent = {
-  id: string;
-  outlook_event_id: string;
-  title: string;
-  subject: string | null;
-  organizer_name: string | null;
-  organizer_email: string | null;
-  location: string | null;
-  web_link: string | null;
-  start_time: string;
-  end_time: string;
-  is_all_day: boolean;
-  response_status: string | null;
-  source: "outlook";
-  read_only: true;
-};
-
-type MicrosoftStatusResponse = {
-  provider: "microsoft_365";
-  configured: boolean;
-  connected: boolean;
-  status: "Missing" | "Configured" | "Connected";
-  missingEnv: string[];
-  connection: null | {
-    email: string | null;
-    displayName: string | null;
-    status: string | null;
-    lastSyncAt: string | null;
-  };
-  checkedAt: string;
-};
-
-type MicrosoftStatusErrorKind = "none" | "sign-in-required" | "unavailable";
-
 type EditorState = {
   title: string;
   division: string;
@@ -190,13 +156,6 @@ export default function CalendarPage() {
   const [dropTargetKey, setDropTargetKey] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
-  const [microsoftStatus, setMicrosoftStatus] =
-    useState<MicrosoftStatusResponse | null>(null);
-  const [microsoftStatusLoading, setMicrosoftStatusLoading] = useState(true);
-  const [microsoftStatusErrorKind, setMicrosoftStatusErrorKind] =
-    useState<MicrosoftStatusErrorKind>("none");
-  const [outlookEvents, setOutlookEvents] = useState<OutlookEvent[]>([]);
-  const [syncingOutlook, setSyncingOutlook] = useState(false);
   const [quickBlockOpen, setQuickBlockOpen] = useState(false);
   const [quickBlockSaving, setQuickBlockSaving] = useState(false);
   const [quickBlockError, setQuickBlockError] = useState<string | null>(null);
@@ -268,152 +227,16 @@ export default function CalendarPage() {
     }
   }
 
-  async function loadMicrosoftStatus(cancelled?: () => boolean) {
-    if (!cancelled?.()) {
-      setMicrosoftStatusLoading(true);
-    }
-
-    try {
-      const response = await fetch("/api/integrations/microsoft/status", {
-        cache: "no-store",
-      });
-
-      if (response.status === 401) {
-        if (!cancelled?.()) {
-          setMicrosoftStatus(null);
-          setMicrosoftStatusErrorKind("sign-in-required");
-        }
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error(`Failed to load Microsoft status (${response.status})`);
-      }
-
-      const status = (await response.json()) as MicrosoftStatusResponse;
-      if (!cancelled?.()) {
-        setMicrosoftStatus(status);
-        setMicrosoftStatusErrorKind("none");
-      }
-    } catch {
-      if (!cancelled?.()) {
-        setMicrosoftStatus(null);
-        setMicrosoftStatusErrorKind("unavailable");
-      }
-    } finally {
-      if (!cancelled?.()) {
-        setMicrosoftStatusLoading(false);
-      }
-    }
-  }
-
-  async function loadOutlookEvents(
-    fromIso: string,
-    toIso: string,
-    cancelled?: () => boolean,
-  ) {
-    try {
-      const params = new URLSearchParams({ from: fromIso, to: toIso });
-      const response = await fetch(`/api/calendar/outlook-events?${params}`, {
-        cache: "no-store",
-      });
-      if (!response.ok) {
-        throw new Error(`Failed to load Outlook events (${response.status})`);
-      }
-      const payload = (await response.json()) as { events: OutlookEvent[] };
-      if (!cancelled?.()) {
-        setOutlookEvents(Array.isArray(payload.events) ? payload.events : []);
-      }
-    } catch {
-      if (!cancelled?.()) {
-        setOutlookEvents([]);
-      }
-    }
-  }
-
-  async function handleSyncOutlook() {
-    if (!microsoftStatus?.connected) {
-      setStatusMessage("Microsoft 365 is not connected.");
-      return;
-    }
-
-    try {
-      setSyncingOutlook(true);
-      setStatusMessage("Syncing Outlook current week...");
-
-      const response = await fetch(
-        "/api/integrations/microsoft/sync-calendar",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            from: visibleDateRange.from.toISOString(),
-            to: visibleDateRange.to.toISOString(),
-          }),
-        },
-      );
-      const payload = (await response.json().catch(() => null)) as {
-        error?: string;
-        synced?: { eventCount?: number };
-      } | null;
-
-      if (!response.ok) {
-        if (response.status === 400 || response.status === 409) {
-          setMicrosoftStatus(null);
-          setMicrosoftStatusErrorKind("none");
-        }
-        throw new Error(
-          payload?.error || `Outlook sync failed (${response.status})`,
-        );
-      }
-
-      const eventCount = payload?.synced?.eventCount ?? 0;
-      setStatusMessage(`Outlook sync complete (${eventCount} event(s)).`);
-      await loadMicrosoftStatus();
-      await loadOutlookEvents(
-        visibleDateRange.from.toISOString(),
-        visibleDateRange.to.toISOString(),
-      );
-    } catch (syncError) {
-      setStatusMessage(
-        syncError instanceof Error ? syncError.message : "Outlook sync failed.",
-      );
-    } finally {
-      setSyncingOutlook(false);
-    }
-  }
 
   useEffect(() => {
     let cancelled = false;
     void loadCalendarData(() => cancelled);
-    void loadMicrosoftStatus(() => cancelled);
 
     return () => {
       cancelled = true;
     };
   }, []);
 
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const microsoftResult = params.get("microsoft");
-    const details = params.get("details");
-
-    if (!microsoftResult) return;
-
-    if (microsoftResult === "connected") {
-      setStatusMessage("Microsoft 365 connected.");
-    } else if (microsoftResult === "error") {
-      setStatusMessage(details || "Microsoft 365 connection failed.");
-    }
-
-    void loadMicrosoftStatus();
-
-    params.delete("microsoft");
-    params.delete("details");
-    const next = params.toString();
-    const nextUrl = next ? `/calendar?${next}` : "/calendar";
-    window.history.replaceState({}, "", nextUrl);
-  }, []);
 
   useEffect(() => {
     if (!editorOpen) return;
@@ -526,55 +349,7 @@ export default function CalendarPage() {
     return { from, to };
   }, [monthMatrix, viewMode, visibleDays]);
 
-  const visibleOutlookEvents = useMemo(() => {
-    return outlookEvents.filter((event) => {
-      const eventDate = parseDateOnly(event.start_time);
-      if (!eventDate) return false;
-      return isWithinInclusive(eventDate, weekStart, weekEnd);
-    });
-  }, [outlookEvents, weekEnd, weekStart]);
 
-  const microsoftConnected = microsoftStatus?.connected === true;
-  const microsoftIdentity =
-    microsoftStatus?.connection?.email ||
-    microsoftStatus?.connection?.displayName ||
-    null;
-
-  const microsoftStatusLabel = useMemo(() => {
-    if (microsoftStatusLoading) {
-      return "Microsoft 365: Checking connection";
-    }
-    if (microsoftStatusErrorKind === "sign-in-required") {
-      return "Microsoft 365: Sign in required";
-    }
-    if (microsoftStatusErrorKind === "unavailable") {
-      return "Microsoft 365: Status unavailable";
-    }
-    if (microsoftConnected) {
-      return microsoftIdentity
-        ? `Microsoft 365: Connected as ${microsoftIdentity}`
-        : "Microsoft 365: Connected";
-    }
-    return "Microsoft 365: Not connected";
-  }, [
-    microsoftConnected,
-    microsoftIdentity,
-    microsoftStatusErrorKind,
-    microsoftStatusLoading,
-  ]);
-
-  useEffect(() => {
-    let cancelled = false;
-    void loadOutlookEvents(
-      visibleDateRange.from.toISOString(),
-      visibleDateRange.to.toISOString(),
-      () => cancelled,
-    );
-
-    return () => {
-      cancelled = true;
-    };
-  }, [visibleDateRange]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -933,7 +708,6 @@ export default function CalendarPage() {
           monthMatrix={monthMatrix}
           tasks={calendarTasks}
           calendarBlocks={visibleCalendarBlocks}
-          outlookEvents={visibleOutlookEvents}
           onOpenTask={openExistingTask}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
@@ -952,7 +726,6 @@ export default function CalendarPage() {
             visibleDays={visibleDays}
             calendarTasks={calendarTasks}
             calendarBlocks={visibleCalendarBlocks}
-            outlookEvents={visibleOutlookEvents}
             onOpenTask={openExistingTask}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -967,7 +740,6 @@ export default function CalendarPage() {
             visibleDays={visibleDays}
             calendarTasks={calendarTasks}
             calendarBlocks={visibleCalendarBlocks}
-            outlookEvents={visibleOutlookEvents}
             onOpenTask={openExistingTask}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
@@ -1137,33 +909,6 @@ export default function CalendarPage() {
             >
               + New Block
             </button>
-            <button
-              type="button"
-              onClick={() => {
-                window.location.href = "/api/integrations/microsoft/connect";
-              }}
-              disabled={
-                microsoftStatus !== null &&
-                !microsoftStatus.configured &&
-                microsoftStatus.missingEnv.length > 0
-              }
-              className="rounded-xl border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-sm font-semibold text-sky-700 transition-all hover:-translate-y-px hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60 dark:text-sky-300"
-            >
-              {microsoftConnected
-                ? "Reconnect Microsoft 365"
-                : "Connect Microsoft 365"}
-            </button>
-            <button
-              type="button"
-              onClick={() => void handleSyncOutlook()}
-              disabled={syncingOutlook || !microsoftConnected}
-              className="rounded-xl border border-slate-500/30 bg-slate-500/10 px-3 py-2 text-sm font-semibold text-slate-700 transition-all hover:-translate-y-px hover:bg-slate-500/20 disabled:cursor-not-allowed disabled:opacity-60 dark:text-slate-300"
-            >
-              {syncingOutlook ? "Syncing..." : "Sync Outlook Week"}
-            </button>
-            <span className="text-xs text-textMuted">
-              {microsoftStatusLabel}
-            </span>
           </div>
         </div>
 
@@ -1181,7 +926,6 @@ export default function CalendarPage() {
           <LegendDot className="bg-slate-500" label="Completed" />
           <LegendDot className="bg-rose-500" label="Blocked/Urgent" />
           <LegendDot className="bg-amber-500" label="Default" />
-          <LegendDot className="bg-blue-500" label="Outlook (read-only)" />
           <span className="text-textMuted">
             Adjust task duration, owner, and notes in Task Editor.
           </span>
@@ -1222,7 +966,6 @@ function DesktopWeekGrid({
   visibleDays,
   calendarTasks,
   calendarBlocks,
-  outlookEvents,
   onOpenTask,
   onDragOver,
   onDragLeave,
@@ -1234,7 +977,6 @@ function DesktopWeekGrid({
   visibleDays: Date[];
   calendarTasks: Task[];
   calendarBlocks: CalendarBlock[];
-  outlookEvents: OutlookEvent[];
   onOpenTask: (task: Task) => void;
   onDragOver: (event: DragEvent<HTMLElement>, slotKey: string) => void;
   onDragLeave: (slotKey: string) => void;
@@ -1293,9 +1035,6 @@ function DesktopWeekGrid({
               const slotBlocks = calendarBlocks.filter((block) =>
                 doesBlockMatchSlot(block, day, hour),
               );
-              const slotOutlookEvents = outlookEvents.filter((event) =>
-                doesOutlookEventMatchSlot(event, day, hour),
-              );
               const slotKey = `${toDateKey(day)}-${hour}`;
 
               return (
@@ -1320,12 +1059,6 @@ function DesktopWeekGrid({
                   {slotBlocks.map((block) => (
                     <CalendarBlockChip key={block.id} block={block} />
                   ))}
-                  {slotOutlookEvents.map((event) => (
-                    <OutlookEventChip
-                      key={event.outlook_event_id}
-                      event={event}
-                    />
-                  ))}
                 </div>
               );
             })}
@@ -1340,7 +1073,6 @@ function MobileWeekGrid({
   visibleDays,
   calendarTasks,
   calendarBlocks,
-  outlookEvents,
   onOpenTask,
   onDragOver,
   onDragLeave,
@@ -1352,7 +1084,6 @@ function MobileWeekGrid({
   visibleDays: Date[];
   calendarTasks: Task[];
   calendarBlocks: CalendarBlock[];
-  outlookEvents: OutlookEvent[];
   onOpenTask: (task: Task) => void;
   onDragOver: (event: DragEvent<HTMLElement>, slotKey: string) => void;
   onDragLeave: (slotKey: string) => void;
@@ -1386,9 +1117,6 @@ function MobileWeekGrid({
               );
               const slotBlocks = calendarBlocks.filter((block) =>
                 doesBlockMatchSlot(block, day, hour),
-              );
-              const slotOutlookEvents = outlookEvents.filter((event) =>
-                doesOutlookEventMatchSlot(event, day, hour),
               );
               return (
                 <div
@@ -1426,15 +1154,8 @@ function MobileWeekGrid({
                     {slotBlocks.map((block) => (
                       <CalendarBlockChip key={block.id} block={block} />
                     ))}
-                    {slotOutlookEvents.map((event) => (
-                      <OutlookEventChip
-                        key={event.outlook_event_id}
-                        event={event}
-                      />
-                    ))}
                     {slotTasks.length === 0 &&
-                    slotBlocks.length === 0 &&
-                    slotOutlookEvents.length === 0 ? (
+                    slotBlocks.length === 0 ? (
                       <p className="text-[11px] text-textMuted">
                         {enableDrag
                           ? "Drop projected task here"
@@ -1456,7 +1177,6 @@ function MonthProjectionView({
   monthMatrix,
   tasks,
   calendarBlocks,
-  outlookEvents,
   onOpenTask,
   onDragOver,
   onDragLeave,
@@ -1468,7 +1188,6 @@ function MonthProjectionView({
   monthMatrix: Date[];
   tasks: Task[];
   calendarBlocks: CalendarBlock[];
-  outlookEvents: OutlookEvent[];
   onOpenTask: (task: Task) => void;
   onDragOver: (event: DragEvent<HTMLElement>, slotKey: string) => void;
   onDragLeave: (slotKey: string) => void;
@@ -1495,10 +1214,6 @@ function MonthProjectionView({
         const dayBlocks = calendarBlocks.filter((block) => {
           const blockDate = parseDateOnly(block.start_time);
           return blockDate ? toDateKey(blockDate) === dayKey : false;
-        });
-        const dayOutlookEvents = outlookEvents.filter((event) => {
-          const eventDate = parseDateOnly(event.start_time);
-          return eventDate ? toDateKey(eventDate) === dayKey : false;
         });
         const slotKey = `${dayKey}-9`;
         return (
@@ -1535,28 +1250,18 @@ function MonthProjectionView({
                 .map((block) => (
                   <CalendarBlockChip key={block.id} block={block} />
                 ))}
-              {dayOutlookEvents
-                .slice(0, Math.max(0, 4 - dayTasks.length - dayBlocks.length))
-                .map((event) => (
-                  <OutlookEventChip
-                    key={event.outlook_event_id}
-                    event={event}
-                  />
-                ))}
-              {dayTasks.length + dayBlocks.length + dayOutlookEvents.length >
+              {dayTasks.length + dayBlocks.length  >
               4 ? (
                 <p className="text-xs text-textMuted">
                   +
                   {dayTasks.length +
-                    dayBlocks.length +
-                    dayOutlookEvents.length -
+                    dayBlocks.length -
                     4}{" "}
                   more
                 </p>
               ) : null}
               {dayTasks.length === 0 &&
-              dayBlocks.length === 0 &&
-              dayOutlookEvents.length === 0 ? (
+              dayBlocks.length === 0 ? (
                 <p className="text-xs text-textMuted">
                   {enableDrag
                     ? "Drop to schedule at 9:00 AM"
@@ -2246,23 +1951,6 @@ function CalendarBlockChip({ block }: { block: CalendarBlock }) {
   );
 }
 
-function OutlookEventChip({ event }: { event: OutlookEvent }) {
-  return (
-    <div
-      className="mb-1 w-full rounded border border-blue-500/30 bg-blue-500/10 px-1.5 py-1 text-left text-xs font-medium text-blue-700 dark:text-blue-300"
-      title="Outlook event (read-only)"
-    >
-      <span className="block truncate">{event.title}</span>
-      <span className="block truncate text-[10px] opacity-80">
-        Outlook{event.location ? ` - ${event.location}` : ""}
-      </span>
-      <span className="mt-0.5 inline-flex items-center rounded border border-current/30 px-1 py-0 text-[9px] opacity-75">
-        Read-only
-      </span>
-    </div>
-  );
-}
-
 function StatusBadge({
   status,
   compact = false,
@@ -2418,16 +2106,6 @@ function doesBlockMatchSlot(block: CalendarBlock, day: Date, hour: number) {
   const blockDate = parseDateOnly(block.start_time);
   if (!blockDate || toDateKey(blockDate) !== toDateKey(day)) return false;
   return parseStartHour(toTimeKey(new Date(block.start_time))) === hour;
-}
-
-function doesOutlookEventMatchSlot(
-  event: OutlookEvent,
-  day: Date,
-  hour: number,
-) {
-  const eventDate = parseDateOnly(event.start_time);
-  if (!eventDate || toDateKey(eventDate) !== toDateKey(day)) return false;
-  return parseStartHour(toTimeKey(new Date(event.start_time))) === hour;
 }
 
 function getTaskDate(task: Task) {

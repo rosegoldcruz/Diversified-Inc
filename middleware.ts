@@ -59,6 +59,6 @@ export async function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     // Run on every path except Next internal assets and static files.
-    "/((?!_next/static|_next/image|images|fonts|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map|txt)$).*)",
+    "/((?!_next/static|_next/image|images|fonts|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|css|js|map|txt|glb|wasm)$).*)",
   ],
 };

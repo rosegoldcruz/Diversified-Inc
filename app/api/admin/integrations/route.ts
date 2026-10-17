@@ -92,35 +92,12 @@ export async function GET() {
       adminUrl: null,
     },
     {
-      key: "outlook_microsoft_365",
-      name: "Outlook / Microsoft 365",
-      status: status(
-        Boolean(
-          process.env.MICROSOFT_CLIENT_ID &&
-          process.env.MICROSOFT_CLIENT_SECRET &&
-          process.env.MICROSOFT_TENANT_ID,
-        ),
-      ),
-      configured: Boolean(
-        process.env.MICROSOFT_CLIENT_ID &&
-        process.env.MICROSOFT_CLIENT_SECRET &&
-        process.env.MICROSOFT_TENANT_ID,
-      ),
-      details:
-        process.env.MICROSOFT_CLIENT_ID &&
-        process.env.MICROSOFT_CLIENT_SECRET &&
-        process.env.MICROSOFT_TENANT_ID
-          ? "OAuth environment appears configured."
-          : "OAuth environment is incomplete.",
-      adminUrl: null,
-    },
-    {
       key: "file_storage",
       name: "File storage",
       status: "configured",
       configured: true,
       details: process.env.FILE_STORAGE_DIR
-        ? "Local file storage directory configured."
+        ? `File storage directory: ${process.env.FILE_STORAGE_DIR} (Railway volume).`
         : "Using application default local file storage.",
       adminUrl: null,
     },

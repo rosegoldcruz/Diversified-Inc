@@ -3,6 +3,7 @@
 @tailwind utilities;
 
 @import "./styles/corporate.css";
+@import "./styles/futurist.css";
 
 html,
 body {

@@ -1,3 +1,4 @@
+import { authDisabled, bypassSession } from "./auth-shared";
 import { ROLES, type SessionPayload } from "@/lib/auth-shared";
 
 function getSecret(): string | null {
@@ -55,6 +56,7 @@ async function sign(body: string): Promise<string | null> {
 export async function verifySessionEdge(
   token: string | undefined | null,
 ): Promise<SessionPayload | null> {
+  if (authDisabled()) return bypassSession();
   if (!token) return null;
 
   const parts = token.split(".");

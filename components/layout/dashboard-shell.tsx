@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { usePathname } from "next/navigation";
 import { Sidebar } from "./sidebar";
 import { TopBar } from "./topbar";
+import { SiteFooter } from "./site-footer";
 
 export function DashboardShell({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -44,6 +45,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
         <TopBar onMenuToggle={toggleSidebar} />
         <main className="main-content page-shell min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden px-3 pb-6 pt-4 sm:px-5 sm:pt-6 lg:px-10 lg:pb-8 lg:pt-8">
           {children}
+          <SiteFooter />
         </main>
       </div>
     </div>

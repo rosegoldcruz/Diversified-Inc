@@ -40,7 +40,7 @@ const FORM_TYPES = [
   "Vehicle Request",
   "Claim Report",
   "PO Request",
-  "Microsoft 365 Access Request",
+  "IT Access Request",
 ] as const;
 
 const FORM_TYPE_TO_REQUEST_CATEGORY: Record<
@@ -51,7 +51,7 @@ const FORM_TYPE_TO_REQUEST_CATEGORY: Record<
   "Vehicle Request": "Operations",
   "Claim Report": "Claims",
   "PO Request": "Purchasing",
-  "Microsoft 365 Access Request": "IT / Access",
+  "IT Access Request": "IT / Access",
 };
 
 const FORM_TYPE_TO_REVIEWER: Record<(typeof FORM_TYPES)[number], string> = {
@@ -59,7 +59,7 @@ const FORM_TYPE_TO_REVIEWER: Record<(typeof FORM_TYPES)[number], string> = {
   "Vehicle Request": "Fleet Queue",
   "Claim Report": "Claims Queue",
   "PO Request": "Purchasing Queue",
-  "Microsoft 365 Access Request": "IT Access Queue",
+  "IT Access Request": "IT Access Queue",
 };
 
 export async function GET(request: NextRequest) {

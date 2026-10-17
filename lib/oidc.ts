@@ -9,7 +9,7 @@ export const OIDC_COOKIE_OPTIONS = {
   httpOnly: true as const,
   sameSite: "lax" as const,
   path: "/",
-  secure: process.env.NODE_ENV === "production",
+  secure: process.env.COOKIE_SECURE ? process.env.COOKIE_SECURE !== "false" : process.env.NODE_ENV === "production",
   maxAge: 60 * 10,
 };
 

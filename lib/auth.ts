@@ -1,3 +1,4 @@
+import { authDisabled, bypassSession } from "./auth-shared";
 import { createHmac, randomBytes, scryptSync, timingSafeEqual } from "crypto";
 import {
   ROLES,
@@ -67,6 +68,7 @@ export function signSession(
 export function verifySession(
   token: string | undefined | null,
 ): SessionPayload | null {
+  if (authDisabled()) return bypassSession();
   if (!token) return null;
   const parts = token.split(".");
   if (parts.length !== 2) return null;

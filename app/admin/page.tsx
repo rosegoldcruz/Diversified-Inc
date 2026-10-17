@@ -16,7 +16,7 @@ const CARDS = [
   {
     href: "/admin/integrations",
     title: "Integrations",
-    description: "PostgreSQL, NocoDB, n8n, AI provider, and Microsoft status.",
+    description: "PostgreSQL, NocoDB, n8n, and AI provider status.",
   },
   {
     href: "/admin/audit",
