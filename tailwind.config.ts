@@ -83,10 +83,9 @@ const config: Config = {
         cyber: "0.9375rem",
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
-        // mono and display also use Inter — no monospace or display fonts in this theme
-        mono: ["Inter", "system-ui", "sans-serif"],
-        display: ["Inter", "system-ui", "sans-serif"],
+        sans: ["var(--font-body)", "Inter", "system-ui", "sans-serif"],
+        mono: ["var(--font-mono)", "ui-monospace", "monospace"],
+        display: ["var(--font-display)", "Space Grotesk", "sans-serif"],
       },
       animation: {
         "pulse-glow": "pulse 2s infinite",

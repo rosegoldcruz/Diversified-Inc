@@ -194,7 +194,7 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
     : "D";
 
   return (
-    <header className="m-3 mb-0 flex min-w-0 items-center justify-between rounded-2xl border border-white/30 bg-white/70 px-4 py-3 shadow-glass ring-1 ring-white/20 backdrop-blur-2xl dark:border-white/10 dark:bg-slate-950/70 dark:ring-white/10 sm:mx-5 sm:px-5 lg:mx-8 lg:px-6">
+    <header className="m-3 mb-0 flex min-w-0 items-center justify-between rounded-2xl border border-white/30 bg-white/70 px-4 py-3 shadow-glass ring-1 ring-white/20 backdrop-blur-2xl dark:border-cyan-400/15 dark:bg-[#050a14]/75 dark:ring-cyan-400/10 dark:shadow-[0_0_40px_rgba(34,211,238,0.08)] sm:mx-5 sm:px-5 lg:mx-8 lg:px-6">
       {/* Search Section */}
       <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3">
         {canGoBack && (
@@ -216,6 +216,10 @@ export function TopBar({ onMenuToggle }: TopBarProps) {
         >
           <List className="h-4 w-4" weight="bold" />
         </button>
+        <a href="/" className="hidden shrink-0 items-center rounded-xl bg-white/95 px-2 py-1 ring-1 ring-cyan-400/40 shadow-[0_0_18px_rgba(1,125,213,0.45)] sm:inline-flex" aria-label="Online Autonomous home">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/brand/online-autonomous.png" alt="Online Autonomous" className="h-8 w-auto" />
+        </a>
         <div className="relative min-w-0 flex-1">
           <div className="relative">
             <MagnifyingGlass

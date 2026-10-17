@@ -2,6 +2,12 @@ import "../globals.css";
 import type { Metadata, Viewport } from "next";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { ToastProvider } from "@/components/ui/toast";
+import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
+import { RobotCompanion } from "@/components/robot/RobotCompanion";
+
+const display = Space_Grotesk({ subsets: ["latin"], variable: "--font-display", display: "swap" });
+const body = Inter({ subsets: ["latin"], variable: "--font-body", display: "swap" });
+const mono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-mono", display: "swap" });
 
 export const metadata: Metadata = {
   title: "Diversified OS",
@@ -22,7 +28,7 @@ export const metadata: Metadata = {
 export const viewport: Viewport = {
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#0b1a3a" },
-    { media: "(prefers-color-scheme: dark)", color: "#0b1a3a" },
+    { media: "(prefers-color-scheme: dark)", color: "#04070e" },
   ],
 };
 
@@ -32,7 +38,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="h-full dark">
+    <html lang="en" className={`h-full dark ${display.variable} ${body.variable} ${mono.variable}`}>
       <body className="h-full bg-bgDark text-textPrimary antialiased">
         <script
           dangerouslySetInnerHTML={{
@@ -42,6 +48,7 @@ export default function RootLayout({
         />
         <ToastProvider>
           <DashboardShell>{children}</DashboardShell>
+          <RobotCompanion />
         </ToastProvider>
       </body>
     </html>
