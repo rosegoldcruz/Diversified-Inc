@@ -1,4 +1,5 @@
 "use client";
+import { Component, type ReactNode } from "react";
 /**
  * Full-page robot overlay. A transparent fixed canvas (pointer-events: none) with an orthographic camera in pixel
  * units; the robot walks between waypoints, turns, and stops to wave/talk/point. Only a hit-box that follows the
@@ -63,12 +64,24 @@ function Actor({
   return (
     <group ref={g} scale={[scale, scale, scale]}>
       {ROBOT_GLB_URL ? (
-        <GlbRobot url={ROBOT_GLB_URL} moveRef={moveRef} />
+        <GlbBoundary fallback={<PrimitiveRobot moveRef={moveRef} levelRef={levelRef} still={reduced} />}>
+          <Suspense fallback={<PrimitiveRobot moveRef={moveRef} levelRef={levelRef} still={reduced} />}>
+            <GlbRobot url={ROBOT_GLB_URL} moveRef={moveRef} levelRef={levelRef} />
+          </Suspense>
+        </GlbBoundary>
       ) : (
         <PrimitiveRobot moveRef={moveRef} levelRef={levelRef} still={reduced} />
       )}
     </group>
   );
+}
+
+/** Falls back to the primitive robot if the GLB fails to load/parse. */
+class GlbBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  componentDidCatch(e: unknown) { console.warn("[robot] GLB failed, using primitive robot", e); }
+  render() { return this.state.failed ? this.props.fallback : this.props.children; }
 }
 
 export function RobotCompanion() {

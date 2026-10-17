@@ -6,7 +6,7 @@ import { useAnimations, useGLTF } from "@react-three/drei";
 import * as THREE from "three";
 import { buildRobotClips, fadeFor, loopFor, type RobotMove } from "./clips";
 
-export function GlbRobot({ url, moveRef }: { url: string; moveRef: MutableRefObject<RobotMove> }) {
+export function GlbRobot({ url, moveRef, levelRef }: { url: string; moveRef: MutableRefObject<RobotMove>; levelRef?: MutableRefObject<number> }) {
   const gltf = useGLTF(url);
   const group = useRef<THREE.Group>(null!);
   const clips = useMemo(() => Object.values(buildRobotClips(gltf.animations)), [gltf.animations]);
@@ -27,6 +27,25 @@ export function GlbRobot({ url, moveRef }: { url: string; moveRef: MutableRefObj
     mixer.addEventListener("finished", onDone);
     return () => mixer.removeEventListener("finished", onDone);
   }, [mixer, moveRef]);
+
+  // visor material (named "Visor" in the Blender export) glows with voice amplitude
+  const visors = useMemo(() => {
+    const out: THREE.MeshStandardMaterial[] = [];
+    gltf.scene.traverse((o) => {
+      const m = (o as THREE.Mesh).material;
+      (Array.isArray(m) ? m : m ? [m] : []).forEach((mm) => {
+        if (/visor/i.test(mm.name) && "emissiveIntensity" in mm && !out.includes(mm as THREE.MeshStandardMaterial)) out.push(mm as THREE.MeshStandardMaterial);
+      });
+    });
+    return out;
+  }, [gltf.scene]);
+
+  useFrame((_, dt) => {
+    const lvl = levelRef?.current ?? 0;
+    const target = 1 + Math.min(1, lvl) * 4;
+    const k = Math.min(1, dt * 12);
+    for (const v of visors) v.emissiveIntensity += (target - v.emissiveIntensity) * k;
+  });
 
   useFrame(() => {
     const want = moveRef.current;

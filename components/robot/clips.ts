@@ -34,5 +34,5 @@ export function buildRobotClips(animations: THREE.AnimationClip[]) {
 export const loopFor = (m: RobotMove) => (LOOPING.has(m) ? THREE.LoopRepeat : THREE.LoopOnce);
 export const fadeFor = (m: RobotMove) => (m === "walk" ? 0.2 : 0.3);
 
-/** Swap in the real model by setting NEXT_PUBLIC_ROBOT_GLB (e.g. /models/robot.glb). Empty = primitive stand-in. */
-export const ROBOT_GLB_URL = process.env.NEXT_PUBLIC_ROBOT_GLB || "";
+/** Swap in the real model by setting NEXT_PUBLIC_ROBOT_GLB (e.g. /models/robot.glb). Defaults to the bundled model; set to "" for the primitive stand-in (also used if the GLB fails to load). */
+export const ROBOT_GLB_URL = process.env.NEXT_PUBLIC_ROBOT_GLB ?? "/models/robot.glb";
