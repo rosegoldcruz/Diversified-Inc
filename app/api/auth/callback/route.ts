@@ -54,9 +54,9 @@ async function findOrProvisionEmployee(
 ): Promise<{ employee: EmployeeRow; pending: boolean; created: boolean }> {
   const email =
     typeof profile.email === "string" ? profile.email.trim().toLowerCase() : "";
-  if (!email) {
+  if (!email || profile.email_verified !== true) {
     throw new Error(
-      "Your Zitadel account did not provide a usable email address.",
+      "Your Keycloak account must have a verified email address.",
     );
   }
 
@@ -66,7 +66,7 @@ async function findOrProvisionEmployee(
     let rows = await q<EmployeeRow>(
       `SELECT id, name, email, role, status, department
        FROM employees
-       WHERE auth_provider = 'zitadel' AND auth_subject = $1
+       WHERE auth_provider = 'keycloak' AND auth_subject = $1
        LIMIT 1`,
       [profile.sub],
     );
@@ -85,7 +85,7 @@ async function findOrProvisionEmployee(
       const inserted = await q<EmployeeRow>(
         `INSERT INTO employees
           (name, role, department, status, email, auth_provider, auth_subject, auth_last_synced_at, hire_date)
-         VALUES ($1, 'Employee', 'Pending Access', 'inactive', $2, 'zitadel', $3, NOW(), CURRENT_DATE)
+         VALUES ($1, 'Employee', 'Pending Access', 'inactive', $2, 'keycloak', $3, NOW(), CURRENT_DATE)
          RETURNING id, name, email, role, status, department`,
         [name, email, profile.sub],
       );
@@ -97,7 +97,7 @@ async function findOrProvisionEmployee(
       `UPDATE employees
        SET name = $1,
            email = $2,
-           auth_provider = 'zitadel',
+           auth_provider = 'keycloak',
            auth_subject = $3,
            auth_last_synced_at = NOW(),
            last_login_at = CASE WHEN status = 'active' THEN NOW() ELSE last_login_at END
@@ -146,7 +146,7 @@ export async function GET(request: NextRequest) {
     if (!code) {
       return makeLoginErrorResponse(
         request,
-        "Zitadel did not return an authorization code.",
+        "Keycloak did not return an authorization code.",
       );
     }
 
@@ -179,7 +179,7 @@ export async function GET(request: NextRequest) {
       email: mapped.employee.email || profile.email || "",
       name: mapped.employee.name,
       role,
-      provider: "zitadel",
+      provider: "keycloak",
       subject: profile.sub,
     });
 

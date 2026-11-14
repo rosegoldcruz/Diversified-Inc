@@ -48,7 +48,7 @@ function requireEnv(name: string): string {
 }
 
 function getIssuer(): string {
-  return requireEnv("ZITADEL_ISSUER").replace(/\/+$/, "");
+  return requireEnv("KEYCLOAK_ISSUER").replace(/\/+$/, "");
 }
 
 export function getAppUrl(): string {
@@ -67,14 +67,14 @@ export function getAppRelativeUrl(path: string): URL {
 
 export function getRedirectUri(): string {
   return (
-    process.env.ZITADEL_REDIRECT_URI?.trim() ||
+    process.env.KEYCLOAK_REDIRECT_URI?.trim() ||
     `${getAppUrl()}/api/auth/callback`
   );
 }
 
 export function getPostLogoutRedirectUri(): string {
   return (
-    process.env.ZITADEL_POST_LOGOUT_REDIRECT_URI?.trim() ||
+    process.env.KEYCLOAK_POST_LOGOUT_REDIRECT_URI?.trim() ||
     `${getAppUrl()}/login`
   );
 }
@@ -88,20 +88,13 @@ async function parseJson<T>(response: Response): Promise<T> {
 }
 
 function getDiscoveryCandidates(): string[] {
-  const configured = process.env.ZITADEL_DISCOVERY_URL?.trim();
+  const configured = process.env.KEYCLOAK_DISCOVERY_URL?.trim();
   if (configured) {
     return [configured];
   }
 
   const issuer = getIssuer();
-  const candidates = [`${issuer}/.well-known/openid-configuration`];
-
-  // Zitadel commonly exposes OIDC discovery beneath /oauth/v2.
-  if (!issuer.endsWith("/oauth/v2")) {
-    candidates.push(`${issuer}/oauth/v2/.well-known/openid-configuration`);
-  }
-
-  return candidates;
+  return [`${issuer}/.well-known/openid-configuration`];
 }
 
 export async function getOidcDiscovery(): Promise<OidcDiscovery> {
@@ -119,7 +112,7 @@ export async function getOidcDiscovery(): Promise<OidcDiscovery> {
       }
 
       throw new Error(
-        `Failed to load Zitadel discovery document: ${failures.join(", ")}`,
+        `Failed to load Keycloak discovery document: ${failures.join(", ")}`,
       );
     })();
   }
@@ -179,7 +172,7 @@ export async function buildAuthorizationUrl(
 ): Promise<string> {
   const discovery = await getOidcDiscovery();
   const url = new URL(discovery.authorization_endpoint);
-  url.searchParams.set("client_id", requireEnv("ZITADEL_CLIENT_ID"));
+  url.searchParams.set("client_id", requireEnv("KEYCLOAK_CLIENT_ID"));
   url.searchParams.set("redirect_uri", getRedirectUri());
   url.searchParams.set("response_type", "code");
   url.searchParams.set("scope", "openid profile email");
@@ -197,11 +190,11 @@ export async function exchangeCodeForTokens(
   const body = new URLSearchParams({
     grant_type: "authorization_code",
     code,
-    client_id: requireEnv("ZITADEL_CLIENT_ID"),
+    client_id: requireEnv("KEYCLOAK_CLIENT_ID"),
     code_verifier: codeVerifier,
     redirect_uri: getRedirectUri(),
   });
-  const clientSecret = process.env.ZITADEL_CLIENT_SECRET?.trim();
+  const clientSecret = process.env.KEYCLOAK_CLIENT_SECRET?.trim();
   if (clientSecret) {
     body.set("client_secret", clientSecret);
   }
@@ -227,7 +220,7 @@ export async function exchangeCodeForTokens(
   }
 
   if (typeof payload.access_token !== "string") {
-    throw new Error("Zitadel did not return an access token");
+    throw new Error("Keycloak did not return an access token");
   }
 
   return payload as unknown as TokenResponse;
@@ -257,7 +250,7 @@ export async function fetchOidcUserInfo(
 
   if (typeof payload.sub !== "string") {
     throw new Error(
-      "Zitadel user profile did not include a subject identifier",
+      "Keycloak user profile did not include a subject identifier",
     );
   }
 
@@ -273,7 +266,7 @@ export async function buildLogoutUrl(): Promise<string> {
       return postLogoutRedirectUri;
     }
     const url = new URL(discovery.end_session_endpoint);
-    url.searchParams.set("client_id", requireEnv("ZITADEL_CLIENT_ID"));
+    url.searchParams.set("client_id", requireEnv("KEYCLOAK_CLIENT_ID"));
     url.searchParams.set("post_logout_redirect_uri", postLogoutRedirectUri);
     return url.toString();
   } catch {

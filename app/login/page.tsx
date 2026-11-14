@@ -79,7 +79,7 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
           href={`/api/auth/login?next=${encodeURIComponent(next)}`}
           className="inline-flex h-11 w-full items-center justify-center rounded-lg border border-white/20 bg-transparent px-4 text-sm font-semibold text-white transition-colors hover:bg-white/10"
         >
-          Sign in with Zitadel
+          Sign in with Keycloak
         </Link>
       </div>
     </LoginShell>

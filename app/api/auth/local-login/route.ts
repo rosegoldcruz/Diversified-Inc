@@ -33,7 +33,7 @@ function loginErrorRedirect(
   if (nextPath && nextPath !== "/dashboard") {
     loginUrl.searchParams.set("next", nextPath);
   }
-  return NextResponse.redirect(loginUrl);
+  return NextResponse.redirect(loginUrl, 303);
 }
 
 async function parseCredentials(request: NextRequest) {
@@ -119,7 +119,7 @@ export async function POST(request: NextRequest) {
       user.id,
     ]);
 
-    const response = NextResponse.redirect(getAppRelativeUrl(nextPath));
+    const response = NextResponse.redirect(getAppRelativeUrl(nextPath), 303);
     response.cookies.set(SESSION_COOKIE, token, {
       ...SESSION_COOKIE_OPTIONS,
       expires: expiresAt,

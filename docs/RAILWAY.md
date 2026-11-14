@@ -23,8 +23,8 @@ Required:
 - `FILE_STORAGE_DIR=/data/uploads` (mount a Railway volume at `/data`)
 - `APP_URL`, `NEXT_PUBLIC_APP_URL` — the public Railway domain (NEXT_PUBLIC_* is baked at build time)
 
-Auth (ZITADEL OIDC):
-- `ZITADEL_DISCOVERY_URL`, `ZITADEL_CLIENT_SECRET` (secret), `ZITADEL_REDIRECT_URI` (`$APP_URL/api/auth/callback`), `ZITADEL_POST_LOGOUT_REDIRECT_URI`
+Auth (Keycloak OIDC):
+- `KEYCLOAK_ISSUER` (realm URL), `KEYCLOAK_CLIENT_ID`, and, for confidential clients, `KEYCLOAK_CLIENT_SECRET` (secret). Optional: `KEYCLOAK_REDIRECT_URI` and `KEYCLOAK_POST_LOGOUT_REDIRECT_URI`.
 - Optional bootstrap admin: `SEED_ADMIN_EMAIL`, `SEED_ADMIN_NAME`
 
 Cookies: session cookies are `HttpOnly; SameSite=Lax` and `Secure` in production.

@@ -22,7 +22,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: blob:",
               "font-src 'self' data: https://fonts.gstatic.com",
-              "connect-src 'self' https://snrg-labs-qlkczg.us1.zitadel.cloud",
+              "connect-src 'self'",
               "frame-src 'self'",
             ].join("; "),
           },

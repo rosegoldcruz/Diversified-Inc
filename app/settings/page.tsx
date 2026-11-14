@@ -967,7 +967,7 @@ export default function SettingsPage() {
         <div className="space-y-5">
           <Section
             title="Password Change"
-            description="For local accounts only. Zitadel-managed accounts must change passwords via the identity provider."
+            description="For local accounts only. Keycloak-managed accounts must change passwords via the identity provider."
           >
             <div className="grid gap-4 md:grid-cols-3">
               <label className="space-y-1 text-sm">

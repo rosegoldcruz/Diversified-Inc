@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         {
           error:
-            "Passwords are managed in Zitadel. Do not set a local password in Diversified OS.",
+            "Passwords are managed in Keycloak. Do not set a local password in Diversified OS.",
         },
         { status: 400 },
       );
