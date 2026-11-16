@@ -9,7 +9,7 @@ export type SessionPayload = {
   email: string;
   name: string;
   role: Role;
-  provider?: "local" | "keycloak" | "zitadel";
+  provider?: "local" | "keycloak";
   subject?: string;
   iat: number;
   exp: number;
